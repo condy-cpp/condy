@@ -533,7 +533,7 @@ public:
     MovePushSender(Channel &channel, T &&item)
         : channel_(channel), item_(std::move(item)) {}
 
-    template <typename Receiver> auto connect(Receiver receiver) noexcept {
+    template <typename Receiver> auto connect_impl(Receiver receiver) noexcept {
         return OperationState<Receiver>(channel_, std::move(item_),
                                         std::move(receiver));
     }
@@ -565,7 +565,7 @@ public:
     CopyPushSender(Channel &channel, const T &item)
         : channel_(channel), item_(item) {}
 
-    template <typename Receiver> auto connect(Receiver receiver) noexcept {
+    template <typename Receiver> auto connect_impl(Receiver receiver) noexcept {
         return OperationState<Receiver>(channel_, item_, std::move(receiver));
     }
 
@@ -599,7 +599,7 @@ public:
 
     PopSender(Channel &channel) : channel_(channel) {}
 
-    template <typename Receiver> auto connect(Receiver receiver) noexcept {
+    template <typename Receiver> auto connect_impl(Receiver receiver) noexcept {
         return OperationState<Receiver>(channel_, std::move(receiver));
     }
 

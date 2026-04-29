@@ -53,7 +53,7 @@ template <unsigned int Flags, typename Sender, typename Receiver>
 class FlaggedOpState {
 public:
     FlaggedOpState(Sender sender, Receiver receiver)
-        : op_state_(sender.connect(std::move(receiver))) {}
+        : op_state_(sender.connect_impl(std::move(receiver))) {}
 
     CONDY_DELETE_COPY_MOVE(FlaggedOpState);
 
@@ -137,7 +137,7 @@ private:
         if constexpr (I < sizeof...(Senders)) {
             std::get<I>(op_states_).accept([&] {
                 return std::move(std::get<I>(senders))
-                    .connect(ChildReceiver<I>{this, token});
+                    .connect_impl(ChildReceiver<I>{this, token});
             });
             connect_senders_<I + 1>(senders, token);
         }
@@ -258,7 +258,7 @@ public:
         for (size_t i = 0; i < senders.size(); ++i) {
             op_states_[i].accept([&] {
                 return std::move(senders[i])
-                    .connect(ChildReceiver{this, i, next_token});
+                    .connect_impl(ChildReceiver{this, i, next_token});
             });
         }
     }

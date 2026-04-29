@@ -26,7 +26,7 @@ public:
         : prep_func_(std::move(func)), cqe_handler_(std::move(cqe_handler)),
           args_(std::make_tuple(std::move(args)...)) {}
 
-    template <typename Receiver> auto connect(Receiver receiver) noexcept {
+    template <typename Receiver> auto connect_impl(Receiver receiver) noexcept {
         return std::apply(
             [&](auto &&...args) {
                 return detail::OpSenderOperationState<
@@ -62,7 +62,7 @@ public:
 
     FlaggedOpSender(Sender sender) : sender_(std::move(sender)) {}
 
-    template <typename Receiver> auto connect(Receiver receiver) noexcept {
+    template <typename Receiver> auto connect_impl(Receiver receiver) noexcept {
         return detail::FlaggedOpState<Flags, Sender, Receiver>(
             std::move(sender_), std::move(receiver));
     }
@@ -96,7 +96,7 @@ public:
         : senders_(std::tuple_cat(std::move(other.senders_),
                                   std::make_tuple(std::move(sender)))) {}
 
-    template <typename Receiver> auto connect(Receiver receiver) noexcept {
+    template <typename Receiver> auto connect_impl(Receiver receiver) noexcept {
         return OperationState<Receiver, Senders...>(std::move(senders_),
                                                     std::move(receiver));
     }
@@ -152,7 +152,7 @@ public:
     RangedParallelSenderBase(std::vector<Sender> senders)
         : senders_(std::move(senders)) {}
 
-    template <typename Receiver> auto connect(Receiver receiver) noexcept {
+    template <typename Receiver> auto connect_impl(Receiver receiver) noexcept {
         return OperationState<Receiver, Sender>(std::move(senders_),
                                                 std::move(receiver));
     }
