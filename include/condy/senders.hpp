@@ -8,7 +8,6 @@
 #include "condy/concepts.hpp"
 #include "condy/op_states.hpp"
 #include <array>
-#include <stdexcept>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -202,12 +201,12 @@ using RangedParallelAnySender = RangedParallelSender<
 template <typename Sender>
 using RangedWhenAllSender =
     RangedParallelSender<std::vector<typename Sender::ReturnType>,
-                         detail::WhenAllRangeOperationState, Sender>;
+                         detail::RangedWhenAllOperationState, Sender>;
 
 template <typename Sender>
 using RangedWhenAnySender =
     RangedParallelSender<std::pair<size_t, typename Sender::ReturnType>,
-                         detail::WhenAnyRangeOperationState, Sender>;
+                         detail::RangedWhenAnyOperationState, Sender>;
 
 template <unsigned int Flags, typename Sender>
 using RangedLinkSenderBase = RangedParallelSender<
