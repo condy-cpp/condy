@@ -73,9 +73,11 @@ public:
         return stop_source_.get_token();
     }
 
-    void maybe_request_stop() noexcept { stop_source_.request_stop(); }
+    template <typename R> void operator()(const R &) noexcept {
+        stop_source_.request_stop();
+    }
 
-    void maybe_reset() noexcept { stop_callback_.reset(); }
+    void reset() noexcept { stop_callback_.reset(); }
 
 private:
     struct Cancellation {
@@ -94,9 +96,9 @@ template <typename TokenType> class WhenAllCanceller {
 public:
     auto chain_token(TokenType token) noexcept { return token; }
 
-    void maybe_request_stop() noexcept {}
+    template <typename R> void operator()(const R &) noexcept {}
 
-    void maybe_reset() noexcept {}
+    void reset() noexcept {}
 };
 
 template <typename Receiver, typename Canceller, typename... Senders>
@@ -144,12 +146,12 @@ private:
     }
 
     template <size_t I, typename R> void receive_(R &&result) noexcept {
-        canceller_.maybe_request_stop();
+        canceller_(result);
         auto no = completed_count_++;
         order_[no] = I;
         std::get<I>(results_) = std::forward<R>(result);
         if (no + 1 == sizeof...(Senders)) {
-            canceller_.maybe_reset();
+            canceller_.reset();
             std::move(receiver_)(
                 std::make_pair(std::move(order_), std::move(results_)));
         }
@@ -288,7 +290,7 @@ private:
             std::declval<stop_token_t<Receiver>>()))>;
 
     template <typename R> void receive_(size_t index, R &&result) noexcept {
-        canceller_.maybe_request_stop();
+        canceller_(result);
         size_t no = completed_count_++;
         order_[no] = index;
         results_[index] = std::forward<R>(result);
