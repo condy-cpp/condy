@@ -99,81 +99,53 @@ private:
     Sender sender_;
 };
 
-template <typename... Senders> class [[nodiscard]] ParallelAllSender {
+template <typename Return, template <typename...> class OperationState,
+          typename... Senders>
+class [[nodiscard]] ParallelSender {
 public:
-    using ReturnType = std::pair<std::array<size_t, sizeof...(Senders)>,
-                                 std::tuple<typename Senders::ReturnType...>>;
+    using ReturnType = Return;
 
-    ParallelAllSender(Senders... senders) : senders_(std::move(senders)...) {}
+    ParallelSender(Senders... senders) : senders_(std::move(senders)...) {}
 
-    template <typename Receiver> auto connect(Receiver receiver) noexcept {
-        return detail::ParallelAllOperationState<Receiver, Senders...>(
-            std::move(senders_), std::move(receiver));
-    }
-
-private:
-    std::tuple<Senders...> senders_;
-};
-
-template <typename... Senders> class [[nodiscard]] ParallelAnySender {
-public:
-    using ReturnType = std::pair<std::array<size_t, sizeof...(Senders)>,
-                                 std::tuple<typename Senders::ReturnType...>>;
-
-    ParallelAnySender(Senders... senders) : senders_(std::move(senders)...) {}
-
-    template <typename Receiver> auto connect(Receiver receiver) noexcept {
-        return detail::ParallelAnyOperationState<Receiver, Senders...>(
-            std::move(senders_), std::move(receiver));
-    }
-
-private:
-    std::tuple<Senders...> senders_;
-};
-
-template <typename... Senders> class [[nodiscard]] WhenAllSender {
-public:
-    using ReturnType = std::tuple<typename Senders::ReturnType...>;
-
-    WhenAllSender(Senders... senders) : senders_(std::move(senders)...) {}
-
-    template <typename S, typename... Ss>
-    WhenAllSender(WhenAllSender<Ss...> other, S sender)
+    template <typename PrevReturn, typename S, typename... Ss>
+    ParallelSender(ParallelSender<PrevReturn, OperationState, Ss...> &&other,
+                   S sender)
         : senders_(std::tuple_cat(std::move(other.senders_),
                                   std::make_tuple(std::move(sender)))) {}
 
     template <typename Receiver> auto connect(Receiver receiver) noexcept {
-        return detail::WhenAllOperationState<Receiver, Senders...>(
-            std::move(senders_), std::move(receiver));
+        return OperationState<Receiver, Senders...>(std::move(senders_),
+                                                    std::move(receiver));
     }
 
 private:
     std::tuple<Senders...> senders_;
 
-    template <typename...> friend class WhenAllSender;
+    template <typename, template <typename...> class, typename...>
+    friend class ParallelSender;
 };
 
-template <typename... Senders> class [[nodiscard]] WhenAnySender {
-public:
-    using ReturnType = std::variant<typename Senders::ReturnType...>;
+template <typename... Senders>
+using ParallelAllSender =
+    ParallelSender<std::pair<std::array<size_t, sizeof...(Senders)>,
+                             std::tuple<typename Senders::ReturnType...>>,
+                   detail::ParallelAllOperationState, Senders...>;
 
-    WhenAnySender(Senders... senders) : senders_(std::move(senders)...) {}
+template <typename... Senders>
+using ParallelAnySender =
+    ParallelSender<std::pair<std::array<size_t, sizeof...(Senders)>,
+                             std::tuple<typename Senders::ReturnType...>>,
+                   detail::ParallelAnyOperationState, Senders...>;
 
-    template <typename S, typename... Ss>
-    WhenAnySender(WhenAnySender<Ss...> other, S sender)
-        : senders_(std::tuple_cat(std::move(other.senders_),
-                                  std::make_tuple(std::move(sender)))) {}
+template <typename... Senders>
+using WhenAllSender =
+    ParallelSender<std::tuple<typename Senders::ReturnType...>,
+                   detail::WhenAllOperationState, Senders...>;
 
-    template <typename Receiver> auto connect(Receiver receiver) noexcept {
-        return detail::WhenAnyOperationState<Receiver, Senders...>(
-            std::move(senders_), std::move(receiver));
-    }
-
-private:
-    std::tuple<Senders...> senders_;
-
-    template <typename...> friend class WhenAnySender;
-};
+template <typename... Senders>
+using WhenAnySender =
+    ParallelSender<std::variant<typename Senders::ReturnType...>,
+                   detail::WhenAnyOperationState, Senders...>;
 
 template <unsigned int Flags, typename... Senders>
 class [[nodiscard]] LinkSenderBase {
