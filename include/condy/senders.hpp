@@ -111,15 +111,15 @@ struct link_sender_helper {
 
 template <typename Return, template <typename...> class OperationState,
           typename... Senders>
-class [[nodiscard]] ParallelSender {
+class [[nodiscard]] ParallelSenderBase {
 public:
     using ReturnType = Return;
 
-    ParallelSender(Senders... senders) : senders_(std::move(senders)...) {}
+    ParallelSenderBase(Senders... senders) : senders_(std::move(senders)...) {}
 
     template <typename PrevReturn, typename S, typename... Ss>
-    ParallelSender(ParallelSender<PrevReturn, OperationState, Ss...> &&other,
-                   S sender)
+    ParallelSenderBase(
+        ParallelSenderBase<PrevReturn, OperationState, Ss...> &&other, S sender)
         : senders_(std::tuple_cat(std::move(other.senders_),
                                   std::make_tuple(std::move(sender)))) {}
 
@@ -132,37 +132,37 @@ private:
     std::tuple<Senders...> senders_;
 
     template <typename, template <typename...> class, typename...>
-    friend class ParallelSender;
+    friend class ParallelSenderBase;
 };
 
 template <typename... Senders>
 using ParallelAllSender =
-    ParallelSender<std::pair<std::array<size_t, sizeof...(Senders)>,
-                             std::tuple<typename Senders::ReturnType...>>,
-                   detail::ParallelAllOperationState, Senders...>;
+    ParallelSenderBase<std::pair<std::array<size_t, sizeof...(Senders)>,
+                                 std::tuple<typename Senders::ReturnType...>>,
+                       detail::ParallelAllOperationState, Senders...>;
 
 template <typename... Senders>
 using ParallelAnySender =
-    ParallelSender<std::pair<std::array<size_t, sizeof...(Senders)>,
-                             std::tuple<typename Senders::ReturnType...>>,
-                   detail::ParallelAnyOperationState, Senders...>;
+    ParallelSenderBase<std::pair<std::array<size_t, sizeof...(Senders)>,
+                                 std::tuple<typename Senders::ReturnType...>>,
+                       detail::ParallelAnyOperationState, Senders...>;
 
 template <typename... Senders>
 using WhenAllSender =
-    ParallelSender<std::tuple<typename Senders::ReturnType...>,
-                   detail::WhenAllOperationState, Senders...>;
+    ParallelSenderBase<std::tuple<typename Senders::ReturnType...>,
+                       detail::WhenAllOperationState, Senders...>;
 
 template <typename... Senders>
 using WhenAnySender =
-    ParallelSender<std::variant<typename Senders::ReturnType...>,
-                   detail::WhenAnyOperationState, Senders...>;
+    ParallelSenderBase<std::variant<typename Senders::ReturnType...>,
+                       detail::WhenAnyOperationState, Senders...>;
 
 template <unsigned int Flags, typename... Senders>
 using LinkSenderBase =
-    ParallelSender<std::tuple<typename Senders::ReturnType...>,
-                   detail::link_sender_helper<detail::LinkOperationState,
-                                              Flags>::template apply,
-                   Senders...>;
+    ParallelSenderBase<std::tuple<typename Senders::ReturnType...>,
+                       detail::link_sender_helper<detail::LinkOperationState,
+                                                  Flags>::template apply,
+                       Senders...>;
 
 template <typename... Senders>
 using LinkSender = LinkSenderBase<IOSQE_IO_LINK, Senders...>;
@@ -172,11 +172,11 @@ using HardLinkSender = LinkSenderBase<IOSQE_IO_HARDLINK, Senders...>;
 
 template <typename Return, template <typename...> class OperationState,
           typename Sender>
-class [[nodiscard]] RangedParallelSender {
+class [[nodiscard]] RangedParallelSenderBase {
 public:
     using ReturnType = Return;
 
-    RangedParallelSender(std::vector<Sender> senders)
+    RangedParallelSenderBase(std::vector<Sender> senders)
         : senders_(std::move(senders)) {}
 
     template <typename Receiver> auto connect(Receiver receiver) noexcept {
@@ -189,27 +189,27 @@ private:
 };
 
 template <typename Sender>
-using RangedParallelAllSender = RangedParallelSender<
+using RangedParallelAllSender = RangedParallelSenderBase<
     std::pair<std::vector<size_t>, std::vector<typename Sender::ReturnType>>,
     detail::RangedParallelAllOperationState, Sender>;
 
 template <typename Sender>
-using RangedParallelAnySender = RangedParallelSender<
+using RangedParallelAnySender = RangedParallelSenderBase<
     std::pair<std::vector<size_t>, std::vector<typename Sender::ReturnType>>,
     detail::RangedParallelAnyOperationState, Sender>;
 
 template <typename Sender>
 using RangedWhenAllSender =
-    RangedParallelSender<std::vector<typename Sender::ReturnType>,
-                         detail::RangedWhenAllOperationState, Sender>;
+    RangedParallelSenderBase<std::vector<typename Sender::ReturnType>,
+                             detail::RangedWhenAllOperationState, Sender>;
 
 template <typename Sender>
 using RangedWhenAnySender =
-    RangedParallelSender<std::pair<size_t, typename Sender::ReturnType>,
-                         detail::RangedWhenAnyOperationState, Sender>;
+    RangedParallelSenderBase<std::pair<size_t, typename Sender::ReturnType>,
+                             detail::RangedWhenAnyOperationState, Sender>;
 
 template <unsigned int Flags, typename Sender>
-using RangedLinkSenderBase = RangedParallelSender<
+using RangedLinkSenderBase = RangedParallelSenderBase<
     std::vector<typename Sender::ReturnType>,
     detail::link_sender_helper<detail::RangedLinkOperationState,
                                Flags>::template apply,
