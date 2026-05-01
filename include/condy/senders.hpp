@@ -168,93 +168,57 @@ using LinkSender = LinkSenderBase<IOSQE_IO_LINK, Senders...>;
 template <typename... Senders>
 using HardLinkSender = LinkSenderBase<IOSQE_IO_HARDLINK, Senders...>;
 
-template <typename Sender> class [[nodiscard]] RangedParallelAllSender {
+template <typename Return, template <typename...> class OperationState,
+          typename Sender>
+class [[nodiscard]] RangedParallelSender {
 public:
-    using ReturnType = std::pair<std::vector<size_t>,
-                                 std::vector<typename Sender::ReturnType>>;
+    using ReturnType = Return;
 
-    RangedParallelAllSender(std::vector<Sender> senders)
+    RangedParallelSender(std::vector<Sender> senders)
         : senders_(std::move(senders)) {}
 
     template <typename Receiver> auto connect(Receiver receiver) noexcept {
-        return detail::RangedParallelAllOperationState<Receiver, Sender>(
-            std::move(senders_), std::move(receiver));
+        return OperationState<Receiver, Sender>(std::move(senders_),
+                                                std::move(receiver));
     }
 
 private:
     std::vector<Sender> senders_;
 };
 
-template <typename Sender> class [[nodiscard]] RangedParallelAnySender {
-public:
-    using ReturnType = std::pair<std::vector<size_t>,
-                                 std::vector<typename Sender::ReturnType>>;
+template <typename Sender>
+using RangedParallelAllSender = RangedParallelSender<
+    std::pair<std::vector<size_t>, std::vector<typename Sender::ReturnType>>,
+    detail::RangedParallelAllOperationState, Sender>;
 
-    RangedParallelAnySender(std::vector<Sender> senders)
-        : senders_(std::move(senders)) {}
+template <typename Sender>
+using RangedParallelAnySender = RangedParallelSender<
+    std::pair<std::vector<size_t>, std::vector<typename Sender::ReturnType>>,
+    detail::RangedParallelAnyOperationState, Sender>;
 
-    template <typename Receiver> auto connect(Receiver receiver) noexcept {
-        return detail::RangedParallelAnyOperationState<Receiver, Sender>(
-            std::move(senders_), std::move(receiver));
-    }
+template <typename Sender>
+using RangedWhenAllSender =
+    RangedParallelSender<std::vector<typename Sender::ReturnType>,
+                         detail::WhenAllRangeOperationState, Sender>;
 
-private:
-    std::vector<Sender> senders_;
+template <typename Sender>
+using RangedWhenAnySender =
+    RangedParallelSender<std::pair<size_t, typename Sender::ReturnType>,
+                         detail::WhenAnyRangeOperationState, Sender>;
+
+namespace detail {
+
+template <unsigned int Flags> struct ranged_link_sender_helper {
+    template <typename Receiver, typename Sender>
+    using apply = RangedLinkOperationState<Receiver, Flags, Sender>;
 };
 
-template <typename Sender> class [[nodiscard]] RangedWhenAllSender {
-public:
-    using ReturnType = std::vector<typename Sender::ReturnType>;
-
-    RangedWhenAllSender(std::vector<Sender> senders)
-        : senders_(std::move(senders)) {}
-
-    template <typename Receiver> auto connect(Receiver receiver) noexcept {
-        return detail::WhenAllRangeOperationState<Receiver, Sender>(
-            std::move(senders_), std::move(receiver));
-    }
-
-private:
-    std::vector<Sender> senders_;
-};
-
-template <typename Sender> class [[nodiscard]] RangedWhenAnySender {
-public:
-    using ReturnType = std::pair<size_t, typename Sender::ReturnType>;
-
-    RangedWhenAnySender(std::vector<Sender> senders)
-        : senders_(std::move(senders)) {
-        if (senders_.empty()) {
-            throw std::invalid_argument(
-                "when_any requires at least one sender");
-        }
-    }
-
-    template <typename Receiver> auto connect(Receiver receiver) noexcept {
-        return detail::WhenAnyRangeOperationState<Receiver, Sender>(
-            std::move(senders_), std::move(receiver));
-    }
-
-private:
-    std::vector<Sender> senders_;
-};
+} // namespace detail
 
 template <unsigned int Flags, typename Sender>
-class [[nodiscard]] RangedLinkSenderBase {
-public:
-    using ReturnType = std::vector<typename Sender::ReturnType>;
-
-    RangedLinkSenderBase(std::vector<Sender> senders)
-        : senders_(std::move(senders)) {}
-
-    template <typename Receiver> auto connect(Receiver receiver) noexcept {
-        return detail::RangedLinkOperationState<Receiver, Flags, Sender>(
-            std::move(senders_), std::move(receiver));
-    }
-
-private:
-    std::vector<Sender> senders_;
-};
+using RangedLinkSenderBase = RangedParallelSender<
+    std::vector<typename Sender::ReturnType>,
+    detail::ranged_link_sender_helper<Flags>::template apply, Sender>;
 
 template <typename Sender>
 using RangedLinkSender = RangedLinkSenderBase<IOSQE_IO_LINK, Sender>;

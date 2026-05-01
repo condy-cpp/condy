@@ -8,6 +8,7 @@
 #include "condy/concepts.hpp"
 #include "condy/senders.hpp"
 #include <coroutine>
+#include <stdexcept>
 
 namespace condy {
 
@@ -204,6 +205,9 @@ template <typename... Senders> auto when_any(Senders &&...senders) {
  * @param range The range of operations to compose.
  */
 template <std::ranges::range Range> auto when_any(Range &&range) {
+    if (std::ranges::empty(range)) {
+        throw std::invalid_argument("when_any requires at least one sender");
+    }
     return parallel<RangedWhenAnySender>(std::forward<Range>(range));
 }
 
