@@ -13,7 +13,7 @@ on:
       - "**.md"
 
 env:
-  KERNEL_VERSION: "7.0"
+  KERNEL_ARCHIVE_URL: "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.0.3.tar.xz"
 
 jobs:
   build-and-test:
@@ -34,12 +34,17 @@ jobs:
           sudo apt-get install -y qemu-system-x86
           qemu-system-x86_64 --version # Verify installation
 
+      - name: Hash Kernel Archive URL
+        id: kernel-url-hash
+        run: |
+          echo "value=$(printf '%s' \"$KERNEL_ARCHIVE_URL\" | sha256sum | cut -d ' ' -f1)" >> "$GITHUB_OUTPUT"
+
       - name: Cache Kernel bzImage
         id: cache-kernel
         uses: actions/cache@v4
         with:
           path: .cache/bzImage
-          key: bzImage-${{ env.KERNEL_VERSION }}-${{ hashFiles('scripts/light-kernel.sh') }}-${{ runner.os }}
+          key: bzImage-${{ steps.kernel-url-hash.outputs.value }}-${{ hashFiles('scripts/light-kernel.sh') }}-${{ runner.os }}
 
       - name: Build Linux Kernel
         timeout-minutes: 20
@@ -59,8 +64,6 @@ jobs:
             wget
 
           mkdir -p .cache
-          KERNEL_MAJOR=${KERNEL_VERSION%%.*}
-          KERNEL_ARCHIVE_URL=https://cdn.kernel.org/pub/linux/kernel/v${KERNEL_MAJOR}.x/linux-${KERNEL_VERSION}.tar.xz
           bash ./scripts/light-kernel.sh -o .cache/bzImage "$KERNEL_ARCHIVE_URL"
 
       - name: Configure CMake
