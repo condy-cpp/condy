@@ -99,6 +99,17 @@ private:
     Sender sender_;
 };
 
+namespace detail {
+
+template <template <typename, unsigned int, typename...> class OperationState,
+          unsigned int Flags>
+struct link_sender_helper {
+    template <typename Receiver, typename... Senders>
+    using apply = OperationState<Receiver, Flags, Senders...>;
+};
+
+} // namespace detail
+
 template <typename Return, template <typename...> class OperationState,
           typename... Senders>
 class [[nodiscard]] ParallelSender {
@@ -147,19 +158,11 @@ using WhenAnySender =
     ParallelSender<std::variant<typename Senders::ReturnType...>,
                    detail::WhenAnyOperationState, Senders...>;
 
-namespace detail {
-
-template <unsigned int Flags> struct link_sender_helper {
-    template <typename Receiver, typename... Senders>
-    using apply = LinkOperationState<Receiver, Flags, Senders...>;
-};
-
-} // namespace detail
-
 template <unsigned int Flags, typename... Senders>
 using LinkSenderBase =
     ParallelSender<std::tuple<typename Senders::ReturnType...>,
-                   detail::link_sender_helper<Flags>::template apply,
+                   detail::link_sender_helper<detail::LinkOperationState,
+                                              Flags>::template apply,
                    Senders...>;
 
 template <typename... Senders>
@@ -206,19 +209,12 @@ using RangedWhenAnySender =
     RangedParallelSender<std::pair<size_t, typename Sender::ReturnType>,
                          detail::WhenAnyRangeOperationState, Sender>;
 
-namespace detail {
-
-template <unsigned int Flags> struct ranged_link_sender_helper {
-    template <typename Receiver, typename Sender>
-    using apply = RangedLinkOperationState<Receiver, Flags, Sender>;
-};
-
-} // namespace detail
-
 template <unsigned int Flags, typename Sender>
 using RangedLinkSenderBase = RangedParallelSender<
     std::vector<typename Sender::ReturnType>,
-    detail::ranged_link_sender_helper<Flags>::template apply, Sender>;
+    detail::link_sender_helper<detail::RangedLinkOperationState,
+                               Flags>::template apply,
+    Sender>;
 
 template <typename Sender>
 using RangedLinkSender = RangedLinkSenderBase<IOSQE_IO_LINK, Sender>;
