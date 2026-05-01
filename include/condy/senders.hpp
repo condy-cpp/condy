@@ -147,28 +147,20 @@ using WhenAnySender =
     ParallelSender<std::variant<typename Senders::ReturnType...>,
                    detail::WhenAnyOperationState, Senders...>;
 
-template <unsigned int Flags, typename... Senders>
-class [[nodiscard]] LinkSenderBase {
-public:
-    using ReturnType = std::tuple<typename Senders::ReturnType...>;
+namespace detail {
 
-    LinkSenderBase(Senders... senders) : senders_(std::move(senders)...) {}
-
-    template <typename S, typename... Ss>
-    LinkSenderBase(LinkSenderBase<Flags, Ss...> other, S sender)
-        : senders_(std::tuple_cat(std::move(other.senders_),
-                                  std::make_tuple(std::move(sender)))) {}
-
-    template <typename Receiver> auto connect(Receiver receiver) noexcept {
-        return detail::LinkOperationState<Receiver, Flags, Senders...>(
-            std::move(senders_), std::move(receiver));
-    }
-
-private:
-    std::tuple<Senders...> senders_;
-
-    template <unsigned int, typename...> friend class LinkSenderBase;
+template <unsigned int Flags> struct link_sender_helper {
+    template <typename Receiver, typename... Senders>
+    using apply = LinkOperationState<Receiver, Flags, Senders...>;
 };
+
+} // namespace detail
+
+template <unsigned int Flags, typename... Senders>
+using LinkSenderBase =
+    ParallelSender<std::tuple<typename Senders::ReturnType...>,
+                   detail::link_sender_helper<Flags>::template apply,
+                   Senders...>;
 
 template <typename... Senders>
 using LinkSender = LinkSenderBase<IOSQE_IO_LINK, Senders...>;
