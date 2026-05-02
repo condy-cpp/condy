@@ -357,18 +357,18 @@ template <typename Receiver> struct ReceiverRangedAnyWrapper {
 };
 
 template <typename Receiver, typename Sender>
-using WhenAllRangeOperationState =
+using RangedWhenAllOperationState =
     RangedParallelAllOperationState<ReceiverRangedAllWrapper<Receiver>, Sender>;
 
 template <typename Receiver, typename Sender>
-using WhenAnyRangeOperationState =
+using RangedWhenAnyOperationState =
     RangedParallelAnyOperationState<ReceiverRangedAnyWrapper<Receiver>, Sender>;
 
 template <typename Receiver, unsigned int Flags, typename Sender>
 class RangedLinkOperationState
-    : public WhenAllRangeOperationState<Receiver, Sender> {
+    : public RangedWhenAllOperationState<Receiver, Sender> {
 public:
-    using Base = WhenAllRangeOperationState<Receiver, Sender>;
+    using Base = RangedWhenAllOperationState<Receiver, Sender>;
     using Base::Base;
 
     void start(unsigned int flags) noexcept {
