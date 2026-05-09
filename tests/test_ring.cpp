@@ -30,7 +30,6 @@ TEST_CASE("test ring - init and destroy") {
     io_uring_params params{};
     std::memset(&params, 0, sizeof(params));
     ring.init(8, &params);
-    ring.destroy();
 }
 
 TEST_CASE("test ring - register and complete ops") {
@@ -69,8 +68,6 @@ TEST_CASE("test ring - register and complete ops") {
 
     REQUIRE(count == num_ops);
     REQUIRE(invoke_count == num_ops);
-
-    ring.destroy();
 }
 
 TEST_CASE("test ring - cancel ops") {
@@ -135,6 +132,4 @@ TEST_CASE("test ring - cancel ops") {
     REQUIRE(total_count == num_ops);
     REQUIRE(invoke_count == num_ops);
     REQUIRE(canceled_count == num_ops / 2);
-
-    ring.destroy();
 }

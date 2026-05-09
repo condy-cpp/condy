@@ -291,7 +291,11 @@ private:
 class Ring {
 public:
     Ring() = default;
-    ~Ring() { destroy(); }
+    ~Ring() {
+        if (initialized_) {
+            io_uring_queue_exit(&ring_);
+        }
+    }
 
     Ring(const Ring &) = delete;
     Ring &operator=(const Ring &) = delete;
@@ -319,13 +323,6 @@ public:
         sqpoll_mode_ = (params->flags & IORING_SETUP_SQPOLL) != 0;
         initialized_ = true;
         return r;
-    }
-
-    void destroy() noexcept {
-        if (initialized_) {
-            io_uring_queue_exit(&ring_);
-            initialized_ = false;
-        }
     }
 
     void submit() noexcept { io_uring_submit(&ring_); }
