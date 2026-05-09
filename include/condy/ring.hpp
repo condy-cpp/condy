@@ -103,12 +103,7 @@ public:
      * @return int Returns 0 on success or a negative error code on failure
      */
     int init(size_t capacity) noexcept {
-        int r = io_uring_register_buffers_sparse(&ring_, capacity);
-        if (r < 0) {
-            return r;
-        }
-        initialized_ = true;
-        return r;
+        return io_uring_register_buffers_sparse(&ring_, capacity);
     }
 
     /**
@@ -119,22 +114,14 @@ public:
      * @return int Returns 0 on success or a negative error code on failure
      */
     int init(const iovec *vecs, unsigned nr_vecs) {
-        int r = io_uring_register_buffers(&ring_, vecs, nr_vecs);
-        if (r < 0) {
-            return r;
-        }
-        initialized_ = true;
-        return r;
+        return io_uring_register_buffers(&ring_, vecs, nr_vecs);
     }
 
     /**
      * @brief Destroy the buffer table
      * @return int Returns 0 on success or a negative error code on failure
      */
-    int destroy() noexcept {
-        initialized_ = false;
-        return io_uring_unregister_buffers(&ring_);
-    }
+    int destroy() noexcept { return io_uring_unregister_buffers(&ring_); }
 
     /**
      * @brief Update the buffer table starting from the given index
@@ -164,23 +151,14 @@ public:
                       unsigned int src_off = 0, unsigned int nr = 0) noexcept {
         auto *src_ring = &src.ring_;
         auto *dst_ring = &ring_;
-        unsigned int flags = 0;
-        if (initialized_) {
-            flags |= IORING_REGISTER_DST_REPLACE;
-        }
-        int r = __io_uring_clone_buffers_offset(dst_ring, src_ring, dst_off,
-                                                src_off, nr, flags);
-        if (r < 0) {
-            return r;
-        }
-        initialized_ = true;
-        return r;
+        return __io_uring_clone_buffers_offset(dst_ring, src_ring, dst_off,
+                                               src_off, nr,
+                                               IORING_REGISTER_DST_REPLACE);
     }
 #endif
 
 private:
     io_uring &ring_;
-    bool initialized_ = false;
 };
 
 /**
