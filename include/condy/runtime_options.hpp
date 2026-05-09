@@ -48,22 +48,6 @@ public:
 
     /**
      * @brief See IORING_SETUP_IOPOLL
-     * @param hybrid See IORING_SETUP_HYBRID_IOPOLL
-     * @deprecated Use enable_iopoll() and enable_hybrid_iopoll() instead
-     */
-    [[deprecated("Use enable_iopoll() and enable_hybrid_iopoll() instead")]]
-    Self &enable_iopoll([[maybe_unused]] bool hybrid) {
-        enable_iopoll();
-#if !IO_URING_CHECK_VERSION(2, 9) // >= 2.9
-        if (hybrid) {
-            enable_hybrid_iopoll();
-        }
-#endif
-        return *this;
-    }
-
-    /**
-     * @brief See IORING_SETUP_IOPOLL
      */
     Self &enable_iopoll() {
         enable_iopoll_ = true;
@@ -168,18 +152,6 @@ public:
                 "coop_taskrun cannot be enabled with defer_taskrun");
         }
         enable_coop_taskrun_ = true;
-        return *this;
-    }
-
-    /**
-     * @brief See IORING_SETUP_COOP_TASKRUN
-     * @param taskrun_flag See IORING_SETUP_TASKRUN_FLAG
-     * @return Self&
-     * @deprecated Use enable_coop_taskrun() without parameters instead
-     */
-    [[deprecated("Use enable_coop_taskrun() without parameters instead")]]
-    Self &enable_coop_taskrun([[maybe_unused]] bool taskrun_flag) {
-        enable_coop_taskrun();
         return *this;
     }
 
