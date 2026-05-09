@@ -207,8 +207,6 @@ public:
         disable_register_ring_fd_ = options.disable_register_ring_fd_;
     }
 
-    ~Runtime() { ring_.destroy(); }
-
     Runtime(const Runtime &) = delete;
     Runtime &operator=(const Runtime &) = delete;
     Runtime(Runtime &&) = delete;
