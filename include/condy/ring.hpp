@@ -8,6 +8,7 @@
 #pragma once
 
 #include "condy/condy_uring.hpp"
+#include "condy/utils.hpp"
 #include <cassert>
 #include <cerrno>
 #include <cstddef>
@@ -290,12 +291,27 @@ private:
 
 class Ring {
 public:
-    Ring() = default;
-    ~Ring() {
-        if (initialized_) {
-            io_uring_queue_exit(&ring_);
+    Ring(unsigned int entries, io_uring_params *params,
+         [[maybe_unused]] void *buf = nullptr,
+         [[maybe_unused]] size_t buf_size = 0) {
+        int r;
+#if !IO_URING_CHECK_VERSION(2, 5) // >= 2.5
+        if (params->flags & IORING_SETUP_NO_MMAP) {
+            r = io_uring_queue_init_mem(entries, &ring_, params, buf, buf_size);
+        } else {
+            r = io_uring_queue_init_params(entries, &ring_, params);
         }
+#else
+        r = io_uring_queue_init_params(entries, &ring_, params);
+#endif
+        if (r < 0) {
+            throw make_system_error("io_uring_queue_init_params", -r);
+        }
+        settings_.features_ = params->features;
+        sqpoll_mode_ = (params->flags & IORING_SETUP_SQPOLL) != 0;
     }
+
+    ~Ring() { io_uring_queue_exit(&ring_); }
 
     Ring(const Ring &) = delete;
     Ring &operator=(const Ring &) = delete;
@@ -303,28 +319,6 @@ public:
     Ring &operator=(Ring &&) = delete;
 
 public:
-    int init(unsigned int entries, io_uring_params *params,
-             [[maybe_unused]] void *buf = nullptr,
-             [[maybe_unused]] size_t buf_size = 0) noexcept {
-        int r;
-        if (initialized_) {
-            return -EBUSY;
-        }
-#if !IO_URING_CHECK_VERSION(2, 5) // >= 2.5
-        if (params->flags & IORING_SETUP_NO_MMAP) {
-            r = io_uring_queue_init_mem(entries, &ring_, params, buf, buf_size);
-        } else
-#endif
-            r = io_uring_queue_init_params(entries, &ring_, params);
-        if (r < 0) {
-            return r;
-        }
-        settings_.features_ = params->features;
-        sqpoll_mode_ = (params->flags & IORING_SETUP_SQPOLL) != 0;
-        initialized_ = true;
-        return r;
-    }
-
     void submit() noexcept { io_uring_submit(&ring_); }
 
     template <typename Func>
@@ -431,7 +425,6 @@ private:
     }
 
 private:
-    bool initialized_ = false;
     io_uring ring_;
     bool sqpoll_mode_ = false;
 

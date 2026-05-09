@@ -121,10 +121,9 @@ TEST_CASE("test buffer_table - use registered buffer") {
 
 #if !IO_URING_CHECK_VERSION(2, 10) // >= 2.10
 TEST_CASE("test buffer_table - clone buffer table") {
-    condy::Ring ring1, ring2;
     io_uring_params params = {};
-    ring1.init(128, &params);
-    ring2.init(128, &params);
+    condy::Ring ring1(128, &params);
+    condy::Ring ring2(128, &params);
 
     auto &table1 = ring1.buffer_table();
     auto &table2 = ring2.buffer_table();
