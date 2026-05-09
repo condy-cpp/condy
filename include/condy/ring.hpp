@@ -80,8 +80,6 @@ public:
 
 private:
     io_uring &ring_;
-
-    friend class Runtime;
 };
 
 /**
