@@ -1,5 +1,10 @@
 # Condy🍬
 
+![C++](https://img.shields.io/badge/C++-20-blue)
+![License](https://img.shields.io/github/license/wokron/condy)
+![Release](https://img.shields.io/github/v/release/wokron/condy)
+![Stars](https://img.shields.io/github/stars/wokron/condy?style=social)
+
 ***C++ Asynchronous System Call Layer for Linux, Powered by io_uring and C++20 Coroutines***
 
 Condy is designed to provide an intuitive, high-performance coroutine runtime on top of io_uring:
