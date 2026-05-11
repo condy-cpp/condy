@@ -32,6 +32,7 @@ public:
     ThreadLocalRing() : ring_(create_ring_()) {}
 
 private:
+    // NOLINTNEXTLINE(bugprone-exception-escape)
     static Ring create_ring_() noexcept {
         io_uring_params params = {};
         params.flags |= IORING_SETUP_CLAMP;
