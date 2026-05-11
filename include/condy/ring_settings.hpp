@@ -281,8 +281,6 @@ public:
 private:
     io_uring &ring_;
     io_uring_probe *probe_ = nullptr;
-
-    friend class Ring;
 };
 
 } // namespace condy
