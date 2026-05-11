@@ -35,7 +35,6 @@ public:
         if (r < 0) {
             throw make_system_error("io_uring_queue_init_params", -r);
         }
-        sqpoll_mode_ = (params->flags & IORING_SETUP_SQPOLL) != 0;
     }
 
     ~Ring() { io_uring_queue_exit(&ring_); }
@@ -137,7 +136,7 @@ private:
             }
             r = io_uring_submit(&ring_);
             assert(r >= 0);
-            if (sqpoll_mode_) {
+            if (ring_.flags & IORING_SETUP_SQPOLL) {
                 r = io_uring_sqring_wait(&ring_);
                 assert(r >= 0);
             }
@@ -147,7 +146,6 @@ private:
 
 private:
     io_uring ring_;
-    bool sqpoll_mode_ = false;
 };
 
 } // namespace condy
