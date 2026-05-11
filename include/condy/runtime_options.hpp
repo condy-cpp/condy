@@ -40,7 +40,11 @@ public:
      * @details By default, the runtime registers the ring file descriptor with
      * the kernel for performance optimization. This option disables that
      * behavior.
+     * @deprecated This option is deprecated and will be removed in future
+     * versions.
      */
+    [[deprecated(
+        "This option is deprecated and will be removed in future versions")]]
     Self &disable_register_ring_fd() {
         disable_register_ring_fd_ = true;
         return *this;
