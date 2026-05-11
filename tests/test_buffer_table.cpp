@@ -10,7 +10,7 @@ TEST_CASE("test buffer_table - init/destroy") {
         char buf[32];
         iovec vec{.iov_base = buf, .iov_len = sizeof(buf)};
         auto &buffer_table =
-            condy::detail::Context::current().ring()->buffer_table();
+            condy::detail::Context::current().runtime()->buffer_table();
 
         REQUIRE(buffer_table.update(0, &vec, 1) < 0);
 
@@ -30,7 +30,7 @@ TEST_CASE("test buffer_table - init/destroy") {
 TEST_CASE("test buffer_table - register/unregister buffer") {
     auto func = []() -> condy::Coro<void> {
         auto &buffer_table =
-            condy::detail::Context::current().ring()->buffer_table();
+            condy::detail::Context::current().runtime()->buffer_table();
         buffer_table.init(8);
 
         char buffer1[16];
@@ -57,7 +57,7 @@ TEST_CASE("test buffer_table - register/unregister buffer") {
 TEST_CASE("test buffer_table - init with array of iovec") {
     auto func = []() -> condy::Coro<void> {
         auto &buffer_table =
-            condy::detail::Context::current().ring()->buffer_table();
+            condy::detail::Context::current().runtime()->buffer_table();
 
         char buffer1[16];
         char buffer2[32];
@@ -83,7 +83,7 @@ TEST_CASE("test buffer_table - init with array of iovec") {
 TEST_CASE("test buffer_table - use registered buffer") {
     auto func = []() -> condy::Coro<void> {
         auto &buffer_table =
-            condy::detail::Context::current().ring()->buffer_table();
+            condy::detail::Context::current().runtime()->buffer_table();
         buffer_table.init(8);
 
         int pipes[2];
@@ -125,8 +125,8 @@ TEST_CASE("test buffer_table - clone buffer table") {
     condy::Ring ring1(128, &params);
     condy::Ring ring2(128, &params);
 
-    auto &table1 = ring1.buffer_table();
-    auto &table2 = ring2.buffer_table();
+    auto table1 = condy::BufferTable(*ring1.ring());
+    auto table2 = condy::BufferTable(*ring2.ring());
 
     REQUIRE(table2.clone_buffers(table1) != 0);
 

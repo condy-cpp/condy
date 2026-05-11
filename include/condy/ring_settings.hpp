@@ -225,7 +225,7 @@ public:
      * @brief Get the supported features of the ring.
      * @return uint32_t Supported features bitmask.
      */
-    uint32_t get_features() const noexcept { return features_; }
+    uint32_t get_features() const noexcept { return ring_.features; }
 
 #if !IO_URING_CHECK_VERSION(2, 6) // >= 2.6
     /**
@@ -281,7 +281,6 @@ public:
 private:
     io_uring &ring_;
     io_uring_probe *probe_ = nullptr;
-    uint32_t features_ = 0;
 
     friend class Ring;
 };

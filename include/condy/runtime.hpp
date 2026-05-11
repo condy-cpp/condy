@@ -120,7 +120,9 @@ public:
     Runtime(const RuntimeOptions &options = {})
         : ring_(create_ring_(options)),
           event_interval_(options.event_interval_),
-          disable_register_ring_fd_(options.disable_register_ring_fd_) {}
+          disable_register_ring_fd_(options.disable_register_ring_fd_),
+          fd_table_(*ring_.ring()), buffer_table_(*ring_.ring()),
+          settings_(*ring_.ring()) {}
 
     Runtime(const Runtime &) = delete;
     Runtime &operator=(const Runtime &) = delete;
@@ -263,19 +265,19 @@ public:
      * @brief Get the file descriptor table of the runtime.
      * @return FdTable& Reference to the fd table of the runtime.
      */
-    auto &fd_table() noexcept { return ring_.fd_table(); }
+    auto &fd_table() noexcept { return fd_table_; }
 
     /**
      * @brief Get the buffer table of the runtime.
      * @return BufferTable& Reference to the buffer table of the runtime.
      */
-    auto &buffer_table() noexcept { return ring_.buffer_table(); }
+    auto &buffer_table() noexcept { return buffer_table_; }
 
     /**
      * @brief Get the ring settings of the runtime.
      * @return RingSettings& Reference to the ring settings of the runtime.
      */
-    auto &settings() noexcept { return ring_.settings(); }
+    auto &settings() noexcept { return settings_; }
 
 private:
     static Ring create_ring_(const RuntimeOptions &options) {
@@ -493,6 +495,10 @@ private:
     // Configurable parameters
     size_t event_interval_ = 61;
     bool disable_register_ring_fd_ = false;
+
+    FdTable fd_table_;
+    BufferTable buffer_table_;
+    RingSettings settings_;
 };
 
 /**

@@ -35,7 +35,6 @@ public:
         if (r < 0) {
             throw make_system_error("io_uring_queue_init_params", -r);
         }
-        settings_.features_ = params->features;
         sqpoll_mode_ = (params->flags & IORING_SETUP_SQPOLL) != 0;
     }
 
@@ -114,12 +113,6 @@ public:
 
     io_uring *ring() noexcept { return &ring_; }
 
-    FdTable &fd_table() noexcept { return fd_table_; }
-
-    BufferTable &buffer_table() noexcept { return buffer_table_; }
-
-    RingSettings &settings() noexcept { return settings_; }
-
     io_uring_sqe *get_sqe() noexcept { return get_sqe_<io_uring_get_sqe>(); }
 
 #if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
@@ -155,10 +148,6 @@ private:
 private:
     io_uring ring_;
     bool sqpoll_mode_ = false;
-
-    FdTable fd_table_{ring_};
-    BufferTable buffer_table_{ring_};
-    RingSettings settings_{ring_};
 };
 
 } // namespace condy
