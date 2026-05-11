@@ -29,15 +29,18 @@ class ThreadLocalRing : public ThreadLocalSingleton<ThreadLocalRing> {
 public:
     Ring *ring() { return &ring_; }
 
-    ThreadLocalRing() {
+    ThreadLocalRing() : ring_(create_ring_()) {}
+
+private:
+    // NOLINTNEXTLINE(bugprone-exception-escape)
+    static Ring create_ring_() noexcept {
         io_uring_params params = {};
         params.flags |= IORING_SETUP_CLAMP;
         params.flags |= IORING_SETUP_SINGLE_ISSUER;
         params.flags |= IORING_SETUP_SUBMIT_ALL;
-        [[maybe_unused]] int r = ring_.init(8, &params);
         // If we can construct Runtime, we should be able to construct this
-        // thread-local ring.
-        assert(r == 0);
+        // thread-local ring. So we ignore errors here.
+        return Ring(8, &params);
     }
 
 private:
@@ -114,100 +117,12 @@ public:
      * @brief Construct a new Runtime object
      * @param options Options for configuring the runtime.
      */
-    Runtime(const RuntimeOptions &options = {}) {
-        io_uring_params params;
-        std::memset(&params, 0, sizeof(params));
-
-        params.flags |= IORING_SETUP_CLAMP;
-        params.flags |= IORING_SETUP_SINGLE_ISSUER;
-        params.flags |= IORING_SETUP_SUBMIT_ALL;
-        params.flags |= IORING_SETUP_R_DISABLED;
-
-        size_t ring_entries = options.sq_size_;
-        if (options.cq_size_ != 0) { // 0 means default
-            params.flags |= IORING_SETUP_CQSIZE;
-            params.cq_entries = options.cq_size_;
-        }
-
-        if (options.enable_iopoll_) {
-            params.flags |= IORING_SETUP_IOPOLL;
-#if !IO_URING_CHECK_VERSION(2, 9) // >= 2.9
-            if (options.enable_hybrid_iopoll_) {
-                params.flags |= IORING_SETUP_HYBRID_IOPOLL;
-            }
-#endif
-        }
-
-        if (options.enable_sqpoll_) {
-            params.flags |= IORING_SETUP_SQPOLL;
-            params.sq_thread_idle = options.sqpoll_idle_time_ms_;
-            if (options.sqpoll_thread_cpu_.has_value()) {
-                params.flags |= IORING_SETUP_SQ_AFF;
-                params.sq_thread_cpu = *options.sqpoll_thread_cpu_;
-            }
-        }
-
-        if (options.attach_wq_target_ != nullptr) {
-            params.flags |= IORING_SETUP_ATTACH_WQ;
-            params.wq_fd = options.attach_wq_target_->ring_.ring()->ring_fd;
-        }
-
-        if (options.enable_defer_taskrun_) {
-            params.flags |= IORING_SETUP_DEFER_TASKRUN;
-            params.flags |= IORING_SETUP_TASKRUN_FLAG;
-        }
-
-        if (options.enable_coop_taskrun_) {
-            params.flags |= IORING_SETUP_COOP_TASKRUN;
-            params.flags |= IORING_SETUP_TASKRUN_FLAG;
-        }
-
-        if (options.enable_sqe128_) {
-            params.flags |= IORING_SETUP_SQE128;
-        }
-
-        if (options.enable_cqe32_) {
-            params.flags |= IORING_SETUP_CQE32;
-        }
-
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
-        if (options.enable_sqe_mixed_) {
-            params.flags |= IORING_SETUP_SQE_MIXED;
-        }
-#endif
-
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
-        if (options.enable_cqe_mixed_) {
-            params.flags |= IORING_SETUP_CQE_MIXED;
-        }
-#endif
-
-        void *buf = nullptr;
-        size_t buf_size = 0;
-#if !IO_URING_CHECK_VERSION(2, 5) // >= 2.5
-        if (options.enable_no_mmap_) {
-            params.flags |= IORING_SETUP_NO_MMAP;
-            buf = options.no_mmap_buf_;
-            buf_size = options.no_mmap_buf_size_;
-        }
-#endif
-
-#if !IO_URING_CHECK_VERSION(2, 14) // >= 2.14
-        if (options.enable_sq_rewind_) {
-            params.flags |= IORING_SETUP_SQ_REWIND;
-        }
-#endif
-
-        int r = ring_.init(ring_entries, &params, buf, buf_size);
-        if (r < 0) {
-            throw make_system_error("io_uring_queue_init_params", -r);
-        }
-
-        event_interval_ = options.event_interval_;
-        disable_register_ring_fd_ = options.disable_register_ring_fd_;
-    }
-
-    ~Runtime() { ring_.destroy(); }
+    Runtime(const RuntimeOptions &options = {})
+        : ring_(create_ring_(options)),
+          event_interval_(options.event_interval_),
+          disable_register_ring_fd_(options.disable_register_ring_fd_),
+          fd_table_(*ring_.ring()), buffer_table_(*ring_.ring()),
+          settings_(*ring_.ring()) {}
 
     Runtime(const Runtime &) = delete;
     Runtime &operator=(const Runtime &) = delete;
@@ -350,21 +265,108 @@ public:
      * @brief Get the file descriptor table of the runtime.
      * @return FdTable& Reference to the fd table of the runtime.
      */
-    auto &fd_table() noexcept { return ring_.fd_table(); }
+    auto &fd_table() noexcept { return fd_table_; }
 
     /**
      * @brief Get the buffer table of the runtime.
      * @return BufferTable& Reference to the buffer table of the runtime.
      */
-    auto &buffer_table() noexcept { return ring_.buffer_table(); }
+    auto &buffer_table() noexcept { return buffer_table_; }
 
     /**
      * @brief Get the ring settings of the runtime.
      * @return RingSettings& Reference to the ring settings of the runtime.
      */
-    auto &settings() noexcept { return ring_.settings(); }
+    auto &settings() noexcept { return settings_; }
 
 private:
+    static Ring create_ring_(const RuntimeOptions &options) {
+        io_uring_params params;
+        std::memset(&params, 0, sizeof(params));
+
+        params.flags |= IORING_SETUP_CLAMP;
+        params.flags |= IORING_SETUP_SINGLE_ISSUER;
+        params.flags |= IORING_SETUP_SUBMIT_ALL;
+        params.flags |= IORING_SETUP_R_DISABLED;
+
+        size_t ring_entries = options.sq_size_;
+        if (options.cq_size_ != 0) { // 0 means default
+            params.flags |= IORING_SETUP_CQSIZE;
+            params.cq_entries = options.cq_size_;
+        }
+
+        if (options.enable_iopoll_) {
+            params.flags |= IORING_SETUP_IOPOLL;
+#if !IO_URING_CHECK_VERSION(2, 9) // >= 2.9
+            if (options.enable_hybrid_iopoll_) {
+                params.flags |= IORING_SETUP_HYBRID_IOPOLL;
+            }
+#endif
+        }
+
+        if (options.enable_sqpoll_) {
+            params.flags |= IORING_SETUP_SQPOLL;
+            params.sq_thread_idle = options.sqpoll_idle_time_ms_;
+            if (options.sqpoll_thread_cpu_.has_value()) {
+                params.flags |= IORING_SETUP_SQ_AFF;
+                params.sq_thread_cpu = *options.sqpoll_thread_cpu_;
+            }
+        }
+
+        if (options.attach_wq_target_ != nullptr) {
+            params.flags |= IORING_SETUP_ATTACH_WQ;
+            params.wq_fd = options.attach_wq_target_->ring_.ring()->ring_fd;
+        }
+
+        if (options.enable_defer_taskrun_) {
+            params.flags |= IORING_SETUP_DEFER_TASKRUN;
+            params.flags |= IORING_SETUP_TASKRUN_FLAG;
+        }
+
+        if (options.enable_coop_taskrun_) {
+            params.flags |= IORING_SETUP_COOP_TASKRUN;
+            params.flags |= IORING_SETUP_TASKRUN_FLAG;
+        }
+
+        if (options.enable_sqe128_) {
+            params.flags |= IORING_SETUP_SQE128;
+        }
+
+        if (options.enable_cqe32_) {
+            params.flags |= IORING_SETUP_CQE32;
+        }
+
+#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+        if (options.enable_sqe_mixed_) {
+            params.flags |= IORING_SETUP_SQE_MIXED;
+        }
+#endif
+
+#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+        if (options.enable_cqe_mixed_) {
+            params.flags |= IORING_SETUP_CQE_MIXED;
+        }
+#endif
+
+        void *buf = nullptr;
+        size_t buf_size = 0;
+#if !IO_URING_CHECK_VERSION(2, 5) // >= 2.5
+        if (options.enable_no_mmap_) {
+            params.flags |= IORING_SETUP_NO_MMAP;
+            buf = options.no_mmap_buf_;
+            buf_size = options.no_mmap_buf_size_;
+        }
+#endif
+
+#if !IO_URING_CHECK_VERSION(2, 14) // >= 2.14
+        if (options.enable_sq_rewind_) {
+            params.flags |= IORING_SETUP_SQ_REWIND;
+        }
+#endif
+
+        return Ring(ring_entries, &params, buf, buf_size);
+    }
+
     void schedule_msg_ring_(Runtime *curr_runtime, uintptr_t data) noexcept {
         int ring_fd = this->ring_.ring()->ring_fd;
         if (curr_runtime != nullptr) {
@@ -493,6 +495,10 @@ private:
     // Configurable parameters
     size_t event_interval_ = 61;
     bool disable_register_ring_fd_ = false;
+
+    FdTable fd_table_;
+    BufferTable buffer_table_;
+    RingSettings settings_;
 };
 
 /**

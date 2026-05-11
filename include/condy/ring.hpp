@@ -8,6 +8,8 @@
 #pragma once
 
 #include "condy/condy_uring.hpp"
+#include "condy/ring_settings.hpp"
+#include "condy/utils.hpp"
 #include <cassert>
 #include <cerrno>
 #include <cstddef>
@@ -15,307 +17,27 @@
 
 namespace condy {
 
-/**
- * @brief File descriptor table for io_uring.
- * @details This class makes an abstraction over the io_uring file registration
- * interface.
- */
-class FdTable {
-public:
-    FdTable(io_uring &ring) : ring_(ring) {}
-
-    FdTable(const FdTable &) = delete;
-    FdTable &operator=(const FdTable &) = delete;
-    FdTable(FdTable &&) = delete;
-    FdTable &operator=(FdTable &&) = delete;
-
-public:
-    /**
-     * @brief Initialize the file descriptor table with the given capacity
-     * @param capacity The number of file descriptors to allocate in the table
-     * @return int Returns 0 on success or a negative error code on failure
-     */
-    int init(size_t capacity) noexcept {
-        return io_uring_register_files_sparse(&ring_, capacity);
-    }
-
-    /**
-     * @brief Initialize the file descriptor table with the given array of file
-     * descriptors
-     * @param fds Pointer to the array of file descriptors to register
-     * @param nr_fds Number of file descriptors in the array
-     * @return int Returns 0 on success or a negative error code on failure
-     */
-    int init(const int *fds, unsigned nr_fds) {
-        return io_uring_register_files(&ring_, fds, nr_fds);
-    }
-
-    /**
-     * @brief Destroy the file descriptor table
-     * @return int Returns 0 on success or a negative error code on failure
-     */
-    int destroy() noexcept { return io_uring_unregister_files(&ring_); }
-
-    /**
-     * @brief Update the file descriptor table starting from the given index
-     * @param index_base The starting index to update
-     * @param fds Pointer to the array of file descriptors
-     * @param nr_fds Number of file descriptors to update
-     * @return int Return number of file descriptors updated on success or a
-     * negative error code on failure
-     */
-    int update(unsigned index_base, const int *fds, unsigned nr_fds) noexcept {
-        return io_uring_register_files_update(&ring_, index_base, fds, nr_fds);
-    }
-
-    /**
-     * @brief Set the file allocation range for the fd table
-     * @param offset The starting offset of the file allocation range
-     * @param size The size of the file allocation range
-     * @return int Returns 0 on success or a negative error code on failure
-     */
-    int set_file_alloc_range(unsigned offset, unsigned size) noexcept {
-        return io_uring_register_file_alloc_range(&ring_, offset, size);
-    }
-
-private:
-    io_uring &ring_;
-
-    friend class Runtime;
-};
-
-/**
- * @brief Buffer table for io_uring.
- * @details This class makes an abstraction over the io_uring buffer
- * registration interface.
- */
-class BufferTable {
-public:
-    BufferTable(io_uring &ring) : ring_(ring) {}
-
-    BufferTable(const BufferTable &) = delete;
-    BufferTable &operator=(const BufferTable &) = delete;
-    BufferTable(BufferTable &&) = delete;
-    BufferTable &operator=(BufferTable &&) = delete;
-
-public:
-    /**
-     * @brief Initialize the buffer table with the given capacity
-     * @param capacity The number of buffers to allocate in the table
-     * @return int Returns 0 on success or a negative error code on failure
-     */
-    int init(size_t capacity) noexcept {
-        int r = io_uring_register_buffers_sparse(&ring_, capacity);
-        if (r < 0) {
-            return r;
-        }
-        initialized_ = true;
-        return r;
-    }
-
-    /**
-     * @brief Initialize the buffer table with the given array of iovec
-     * structures
-     * @param vecs Pointer to the array of iovec structures representing buffers
-     * @param nr_vecs Number of buffers in the array
-     * @return int Returns 0 on success or a negative error code on failure
-     */
-    int init(const iovec *vecs, unsigned nr_vecs) {
-        int r = io_uring_register_buffers(&ring_, vecs, nr_vecs);
-        if (r < 0) {
-            return r;
-        }
-        initialized_ = true;
-        return r;
-    }
-
-    /**
-     * @brief Destroy the buffer table
-     * @return int Returns 0 on success or a negative error code on failure
-     */
-    int destroy() noexcept {
-        initialized_ = false;
-        return io_uring_unregister_buffers(&ring_);
-    }
-
-    /**
-     * @brief Update the buffer table starting from the given index
-     * @param index_base The starting index to update
-     * @param vecs Pointer to the array of iovec structures representing buffers
-     * @param nr_vecs Number of buffers to update
-     * @return int Returns number of buffers updated on success or a negative
-     * error code on failure
-     */
-    int update(unsigned index_base, const iovec *vecs,
-               unsigned nr_vecs) noexcept {
-        return io_uring_register_buffers_update_tag(&ring_, index_base, vecs,
-                                                    nullptr, nr_vecs);
-    }
-
-#if !IO_URING_CHECK_VERSION(2, 10) // >= 2.10
-
-    /**
-     * @brief Clone buffers from another BufferTable into this one
-     * @param src The source BufferTable to clone from
-     * @param dst_off The starting offset in the destination buffer table
-     * @param src_off The starting offset in the source buffer table
-     * @param nr The number of buffers to clone
-     * @return int Returns 0 on success or a negative error code on failure
-     */
-    int clone_buffers(BufferTable &src, unsigned int dst_off = 0,
-                      unsigned int src_off = 0, unsigned int nr = 0) noexcept {
-        auto *src_ring = &src.ring_;
-        auto *dst_ring = &ring_;
-        unsigned int flags = 0;
-        if (initialized_) {
-            flags |= IORING_REGISTER_DST_REPLACE;
-        }
-        int r = __io_uring_clone_buffers_offset(dst_ring, src_ring, dst_off,
-                                                src_off, nr, flags);
-        if (r < 0) {
-            return r;
-        }
-        initialized_ = true;
-        return r;
-    }
-#endif
-
-private:
-    io_uring &ring_;
-    bool initialized_ = false;
-};
-
-/**
- * @brief Settings manager for io_uring.
- * @details This class provides an interface to manage various runtime settings
- * for an io_uring instance, including NAPI, clock, and other features.
- */
-class RingSettings {
-public:
-    RingSettings(io_uring &ring) : ring_(ring) {}
-
-    ~RingSettings() {
-        if (probe_) {
-            io_uring_free_probe(probe_);
-            probe_ = nullptr;
-        }
-    }
-
-    RingSettings(const RingSettings &) = delete;
-    RingSettings &operator=(const RingSettings &) = delete;
-    RingSettings(RingSettings &&) = delete;
-    RingSettings &operator=(RingSettings &&) = delete;
-
-public:
-    /**
-     * @brief Apply I/O worker queue affinity settings.
-     * @details See io_uring_register_iowq_aff for more details.
-     * @param cpusz Number of CPUs in the affinity mask.
-     * @param mask Pointer to the CPU affinity mask.
-     */
-    int apply_iowq_aff(size_t cpusz, const cpu_set_t *mask) noexcept {
-        return io_uring_register_iowq_aff(&ring_, cpusz, mask);
-    }
-    /**
-     * @brief Remove I/O worker queue affinity settings.
-     * @return int Returns 0 on success or a negative error code on failure
-     */
-    int remove_iowq_aff() noexcept {
-        return io_uring_unregister_iowq_aff(&ring_);
-    }
-
-    /**
-     * @brief Set the maximum number of I/O workers.
-     * @details See io_uring_register_iowq_max_workers for more details.
-     * @param values Pointer to an array with 2 elements representing the
-     * max_workers
-     */
-    int set_iowq_max_workers(unsigned int *values) noexcept {
-        return io_uring_register_iowq_max_workers(&ring_, values);
-    }
-
-    /**
-     * @brief Get the io_uring probe for the ring.
-     * @return io_uring_probe* Pointer to the io_uring probe structure. User
-     * shall not free the returned pointer.
-     */
-    io_uring_probe *get_probe() noexcept {
-        if (probe_) {
-            return probe_;
-        }
-        probe_ = io_uring_get_probe_ring(&ring_);
-        return probe_;
-    }
-
-    /**
-     * @brief Get the supported features of the ring.
-     * @return uint32_t Supported features bitmask.
-     */
-    uint32_t get_features() const noexcept { return features_; }
-
-#if !IO_URING_CHECK_VERSION(2, 6) // >= 2.6
-    /**
-     * @brief Apply NAPI settings to the io_uring instance.
-     * @details See io_uring_register_napi for more details.
-     * @param napi Pointer to the io_uring_napi structure.
-     */
-    int apply_napi(io_uring_napi *napi) noexcept {
-        return io_uring_register_napi(&ring_, napi);
-    }
-    /**
-     * @brief Remove NAPI settings from the io_uring instance.
-     * @param napi Pointer to the io_uring_napi structure. Can be nullptr.
-     */
-    int remove_napi(io_uring_napi *napi = nullptr) noexcept {
-        return io_uring_unregister_napi(&ring_, napi);
-    }
-#endif
-
-#if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
-    /**
-     * @brief Set the clock registration for the io_uring instance.
-     * @details See io_uring_register_clock for more details.
-     * @param clock_reg Pointer to the io_uring_clock_register structure.
-     */
-    int set_clock(io_uring_clock_register *clock_reg) noexcept {
-        return io_uring_register_clock(&ring_, clock_reg);
-    }
-#endif
-
-#if !IO_URING_CHECK_VERSION(2, 9) // >= 2.9
-    /**
-     * @brief Resize the rings of the io_uring instance.
-     * @details See io_uring_resize_rings for more details.
-     * @param params Pointer to the io_uring_params structure.
-     */
-    int set_rings_size(io_uring_params *params) noexcept {
-        return io_uring_resize_rings(&ring_, params);
-    }
-#endif
-
-#if !IO_URING_CHECK_VERSION(2, 10) // >= 2.10
-    /**
-     * @brief Enable or disable iowait for the io_uring instance.
-     * @details See io_uring_set_iowait for more details.
-     * @param enable_iowait Boolean flag to enable or disable iowait mode.
-     */
-    int set_iowait(bool enable_iowait) noexcept {
-        return io_uring_set_iowait(&ring_, enable_iowait);
-    }
-#endif
-
-private:
-    io_uring &ring_;
-    io_uring_probe *probe_ = nullptr;
-    uint32_t features_ = 0;
-
-    friend class Ring;
-};
-
 class Ring {
 public:
-    Ring() = default;
-    ~Ring() { destroy(); }
+    Ring(unsigned int entries, io_uring_params *params,
+         [[maybe_unused]] void *buf = nullptr,
+         [[maybe_unused]] size_t buf_size = 0) {
+        int r;
+#if !IO_URING_CHECK_VERSION(2, 5) // >= 2.5
+        if (params->flags & IORING_SETUP_NO_MMAP) {
+            r = io_uring_queue_init_mem(entries, &ring_, params, buf, buf_size);
+        } else {
+            r = io_uring_queue_init_params(entries, &ring_, params);
+        }
+#else
+        r = io_uring_queue_init_params(entries, &ring_, params);
+#endif
+        if (r < 0) {
+            throw make_system_error("io_uring_queue_init_params", -r);
+        }
+    }
+
+    ~Ring() { io_uring_queue_exit(&ring_); }
 
     Ring(const Ring &) = delete;
     Ring &operator=(const Ring &) = delete;
@@ -323,35 +45,6 @@ public:
     Ring &operator=(Ring &&) = delete;
 
 public:
-    int init(unsigned int entries, io_uring_params *params,
-             [[maybe_unused]] void *buf = nullptr,
-             [[maybe_unused]] size_t buf_size = 0) noexcept {
-        int r;
-        if (initialized_) {
-            return -EBUSY;
-        }
-#if !IO_URING_CHECK_VERSION(2, 5) // >= 2.5
-        if (params->flags & IORING_SETUP_NO_MMAP) {
-            r = io_uring_queue_init_mem(entries, &ring_, params, buf, buf_size);
-        } else
-#endif
-            r = io_uring_queue_init_params(entries, &ring_, params);
-        if (r < 0) {
-            return r;
-        }
-        settings_.features_ = params->features;
-        sqpoll_mode_ = (params->flags & IORING_SETUP_SQPOLL) != 0;
-        initialized_ = true;
-        return r;
-    }
-
-    void destroy() noexcept {
-        if (initialized_) {
-            io_uring_queue_exit(&ring_);
-            initialized_ = false;
-        }
-    }
-
     void submit() noexcept { io_uring_submit(&ring_); }
 
     template <typename Func>
@@ -419,12 +112,6 @@ public:
 
     io_uring *ring() noexcept { return &ring_; }
 
-    FdTable &fd_table() noexcept { return fd_table_; }
-
-    BufferTable &buffer_table() noexcept { return buffer_table_; }
-
-    RingSettings &settings() noexcept { return settings_; }
-
     io_uring_sqe *get_sqe() noexcept { return get_sqe_<io_uring_get_sqe>(); }
 
 #if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
@@ -449,7 +136,7 @@ private:
             }
             r = io_uring_submit(&ring_);
             assert(r >= 0);
-            if (sqpoll_mode_) {
+            if (ring_.flags & IORING_SETUP_SQPOLL) {
                 r = io_uring_sqring_wait(&ring_);
                 assert(r >= 0);
             }
@@ -458,13 +145,7 @@ private:
     }
 
 private:
-    bool initialized_ = false;
     io_uring ring_;
-    bool sqpoll_mode_ = false;
-
-    FdTable fd_table_{ring_};
-    BufferTable buffer_table_{ring_};
-    RingSettings settings_{ring_};
 };
 
 } // namespace condy

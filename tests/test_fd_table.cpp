@@ -13,7 +13,8 @@
 
 TEST_CASE("test fd_table - init") {
     auto func = []() -> condy::Coro<void> {
-        auto &fd_table = condy::detail::Context::current().ring()->fd_table();
+        auto &fd_table =
+            condy::detail::Context::current().runtime()->fd_table();
         fd_table.init(4);
         co_return;
     };
@@ -23,7 +24,8 @@ TEST_CASE("test fd_table - init") {
 
 TEST_CASE("test fd_table - register/unregister fd") {
     auto func = []() -> condy::Coro<void> {
-        auto &fd_table = condy::detail::Context::current().ring()->fd_table();
+        auto &fd_table =
+            condy::detail::Context::current().runtime()->fd_table();
         fd_table.init(4);
 
         int pipes[2];
@@ -50,7 +52,8 @@ TEST_CASE("test fd_table - register/unregister fd") {
 
 TEST_CASE("test fd_table - init with fd array") {
     auto func = []() -> condy::Coro<void> {
-        auto &fd_table = condy::detail::Context::current().ring()->fd_table();
+        auto &fd_table =
+            condy::detail::Context::current().runtime()->fd_table();
 
         int pipes[2];
         int ret = pipe(pipes);
@@ -76,7 +79,8 @@ TEST_CASE("test fd_table - init with fd array") {
 
 TEST_CASE("test fd_table - use fixed fd") {
     auto func = []() -> condy::Coro<void> {
-        auto &fd_table = condy::detail::Context::current().ring()->fd_table();
+        auto &fd_table =
+            condy::detail::Context::current().runtime()->fd_table();
         fd_table.init(4);
 
         int pipes[2];

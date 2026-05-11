@@ -40,10 +40,9 @@ condy::Runtime runtime;
 } // namespace
 
 TEST_CASE("test op_finish_handle - basic usage") {
-    condy::Ring ring;
     io_uring_params params{};
     std::memset(&params, 0, sizeof(params));
-    ring.init(8, &params);
+    condy::Ring ring(8, &params);
     auto &context = condy::detail::Context::current();
 
     context.init(&ring, &runtime);
@@ -74,10 +73,9 @@ TEST_CASE("test op_finish_handle - basic usage") {
 }
 
 TEST_CASE("test op_finish_handle - concurrent ops") {
-    condy::Ring ring;
     io_uring_params params{};
     std::memset(&params, 0, sizeof(params));
-    ring.init(8, &params);
+    condy::Ring ring(8, &params);
     auto &context = condy::detail::Context::current();
     context.init(&ring, &runtime);
 
