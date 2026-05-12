@@ -10,6 +10,7 @@
 #include "condy/intrusive.hpp"
 #include "condy/invoker.hpp"
 #include "condy/ring.hpp"
+#include "condy/ring_settings.hpp"
 #include "condy/runtime_options.hpp"
 #include "condy/singleton.hpp"
 #include "condy/utils.hpp"
