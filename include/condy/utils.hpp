@@ -25,6 +25,7 @@
 #include <utility>
 #include <variant>
 
+// NOLINTBEGIN(bugprone-macro-parentheses)
 #define CONDY_DELETE_COPY(cls)                                                 \
     cls(const cls &) = delete;                                                 \
     cls &operator=(const cls &) = delete
@@ -32,6 +33,7 @@
 #define CONDY_DELETE_MOVE(cls)                                                 \
     cls(cls &&) = delete;                                                      \
     cls &operator=(cls &&) = delete
+// NOLINTEND(bugprone-macro-parentheses)
 
 #define CONDY_DELETE_COPY_MOVE(cls)                                            \
     CONDY_DELETE_COPY(cls);                                                    \
