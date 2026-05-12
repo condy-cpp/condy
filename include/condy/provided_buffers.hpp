@@ -89,12 +89,7 @@ public:
         }
     }
 
-    BundledProvidedBufferQueue(const BundledProvidedBufferQueue &) = delete;
-    BundledProvidedBufferQueue &
-    operator=(const BundledProvidedBufferQueue &) = delete;
-    BundledProvidedBufferQueue(BundledProvidedBufferQueue &&) = delete;
-    BundledProvidedBufferQueue &
-    operator=(BundledProvidedBufferQueue &&) = delete;
+    CONDY_DELETE_COPY_MOVE(BundledProvidedBufferQueue);
 
 public:
     /**
@@ -249,8 +244,7 @@ public:
 
     ~ProvidedBuffer() { reset(); }
 
-    ProvidedBuffer(const ProvidedBuffer &) = delete;
-    ProvidedBuffer &operator=(const ProvidedBuffer &) = delete;
+    CONDY_DELETE_COPY(ProvidedBuffer);
 
 public:
     /**
@@ -337,11 +331,7 @@ public:
         }
     }
 
-    BundledProvidedBufferPool(const BundledProvidedBufferPool &) = delete;
-    BundledProvidedBufferPool &
-    operator=(const BundledProvidedBufferPool &) = delete;
-    BundledProvidedBufferPool(BundledProvidedBufferPool &&) = delete;
-    BundledProvidedBufferPool &operator=(BundledProvidedBufferPool &&) = delete;
+    CONDY_DELETE_COPY_MOVE(BundledProvidedBufferPool);
 
 public:
     /**

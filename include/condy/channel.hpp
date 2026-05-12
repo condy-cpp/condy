@@ -50,10 +50,7 @@ public:
         destruct_all_();
     }
 
-    Channel(const Channel &) = delete;
-    Channel &operator=(const Channel &) = delete;
-    Channel(Channel &&) = delete;
-    Channel &operator=(Channel &&) = delete;
+    CONDY_DELETE_COPY_MOVE(Channel);
 
 public:
     /**

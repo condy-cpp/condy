@@ -27,10 +27,7 @@ public:
         : prep_func_(std::move(prep_func)),
           finish_handle_(std::forward<HandleArgs>(handle_args)...) {}
 
-    OpSenderOperationState(OpSenderOperationState &&) = delete;
-    OpSenderOperationState &operator=(OpSenderOperationState &&) = delete;
-    OpSenderOperationState(const OpSenderOperationState &) = delete;
-    OpSenderOperationState &operator=(const OpSenderOperationState &) = delete;
+    CONDY_DELETE_COPY_MOVE(OpSenderOperationState);
 
 public:
     void start(unsigned int flags) noexcept {
@@ -57,10 +54,7 @@ public:
     FlaggedOpState(Sender sender, Receiver receiver)
         : op_state_(sender.connect(std::move(receiver))) {}
 
-    FlaggedOpState(FlaggedOpState &&) = delete;
-    FlaggedOpState &operator=(FlaggedOpState &&) = delete;
-    FlaggedOpState(const FlaggedOpState &) = delete;
-    FlaggedOpState &operator=(const FlaggedOpState &) = delete;
+    CONDY_DELETE_COPY_MOVE(FlaggedOpState);
 
     void start(unsigned int flags) noexcept { op_state_.start(flags | Flags); }
 
@@ -113,10 +107,7 @@ public:
         connect_senders_(senders, next_token);
     }
 
-    ParallelOperationState(ParallelOperationState &&) = delete;
-    ParallelOperationState &operator=(ParallelOperationState &&) = delete;
-    ParallelOperationState(const ParallelOperationState &) = delete;
-    ParallelOperationState &operator=(const ParallelOperationState &) = delete;
+    CONDY_DELETE_COPY_MOVE(ParallelOperationState);
 
     ~ParallelOperationState() {
         std::apply([](auto &&...states) { (states.destroy(), ...); },
@@ -271,12 +262,7 @@ public:
         }
     }
 
-    RangedParallelOperationState(RangedParallelOperationState &&) = delete;
-    RangedParallelOperationState &
-    operator=(RangedParallelOperationState &&) = delete;
-    RangedParallelOperationState(const RangedParallelOperationState &) = delete;
-    RangedParallelOperationState &
-    operator=(const RangedParallelOperationState &) = delete;
+    CONDY_DELETE_COPY_MOVE(RangedParallelOperationState);
 
     ~RangedParallelOperationState() {
         for (auto &op_state : op_states_) {

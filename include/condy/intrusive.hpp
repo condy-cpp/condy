@@ -35,8 +35,7 @@ public:
         return *this;
     }
 
-    IntrusiveSingleList(const IntrusiveSingleList &) = delete;
-    IntrusiveSingleList &operator=(const IntrusiveSingleList &) = delete;
+    CONDY_DELETE_COPY(IntrusiveSingleList);
 
 public:
     void push_back(T *item) noexcept {
@@ -101,8 +100,7 @@ public:
         return *this;
     }
 
-    IntrusiveDoubleList(const IntrusiveDoubleList &) = delete;
-    IntrusiveDoubleList &operator=(const IntrusiveDoubleList &) = delete;
+    CONDY_DELETE_COPY(IntrusiveDoubleList);
 
 public:
     void push_back(T *item) noexcept {

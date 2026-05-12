@@ -11,6 +11,7 @@
 #include "condy/concepts.hpp"
 #include "condy/runtime.hpp"
 #include "condy/type_traits.hpp"
+#include "condy/utils.hpp"
 #include "condy/work_type.hpp"
 #include <cassert>
 #include <cerrno>
@@ -27,10 +28,7 @@ public:
         this->handle_func_ = handle_static_;
     }
 
-    OpFinishHandle(const OpFinishHandle &) = delete;
-    OpFinishHandle &operator=(const OpFinishHandle &) = delete;
-    OpFinishHandle(OpFinishHandle &&) = delete;
-    OpFinishHandle &operator=(OpFinishHandle &&) = delete;
+    CONDY_DELETE_COPY_MOVE(OpFinishHandle);
 
 public:
     void maybe_set_cancel(Runtime *runtime) noexcept {
@@ -156,10 +154,7 @@ public:
     template <typename... Args>
     HandleBox(Args &&...args) : handle_(std::forward<Args>(args)...) {}
 
-    HandleBox(const HandleBox &) = delete;
-    HandleBox &operator=(const HandleBox &) = delete;
-    HandleBox(HandleBox &&) = delete;
-    HandleBox &operator=(HandleBox &&) = delete;
+    CONDY_DELETE_COPY_MOVE(HandleBox);
 
 public:
     Handle &get() noexcept { return handle_; }
@@ -177,10 +172,7 @@ public:
     HandleBox(Args &&...args)
         : handle_ptr_(new Handle(std::forward<Args>(args)...)) {}
 
-    HandleBox(const HandleBox &) = delete;
-    HandleBox &operator=(const HandleBox &) = delete;
-    HandleBox(HandleBox &&) = delete;
-    HandleBox &operator=(HandleBox &&) = delete;
+    CONDY_DELETE_COPY_MOVE(HandleBox);
 
 public:
     Handle &get() noexcept { return *handle_ptr_; }

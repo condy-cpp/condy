@@ -10,6 +10,7 @@
 #include "condy/invoker.hpp"
 #include "condy/runtime.hpp"
 #include "condy/type_traits.hpp"
+#include "condy/utils.hpp"
 #include <atomic>
 #include <cerrno>
 #include <optional>
@@ -35,10 +36,7 @@ public:
 
     ~Futex() { notify_all_(-EIDRM); }
 
-    Futex(const Futex &) = delete;
-    Futex &operator=(const Futex &) = delete;
-    Futex(Futex &&) = delete;
-    Futex &operator=(Futex &&) = delete;
+    CONDY_DELETE_COPY_MOVE(Futex);
 
 public:
     struct [[nodiscard]] WaitSender;

@@ -11,6 +11,7 @@
 #include "condy/coro.hpp"
 #include "condy/invoker.hpp"
 #include "condy/runtime.hpp"
+#include "condy/utils.hpp"
 #include <coroutine>
 #include <exception>
 #include <future>
@@ -36,8 +37,7 @@ public:
         return *this;
     }
 
-    TaskBase(const TaskBase &) = delete;
-    TaskBase &operator=(const TaskBase &) = delete;
+    CONDY_DELETE_COPY(TaskBase);
 
     ~TaskBase() {
         if (handle_) {

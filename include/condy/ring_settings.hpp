@@ -6,6 +6,7 @@
 #pragma once
 
 #include "condy/condy_uring.hpp"
+#include "condy/utils.hpp"
 #include <cassert>
 #include <cerrno>
 #include <cstddef>
@@ -22,10 +23,7 @@ class FdTable {
 public:
     FdTable(io_uring &ring) : ring_(ring) {}
 
-    FdTable(const FdTable &) = delete;
-    FdTable &operator=(const FdTable &) = delete;
-    FdTable(FdTable &&) = delete;
-    FdTable &operator=(FdTable &&) = delete;
+    CONDY_DELETE_COPY_MOVE(FdTable);
 
 public:
     /**
@@ -89,10 +87,7 @@ class BufferTable {
 public:
     BufferTable(io_uring &ring) : ring_(ring) {}
 
-    BufferTable(const BufferTable &) = delete;
-    BufferTable &operator=(const BufferTable &) = delete;
-    BufferTable(BufferTable &&) = delete;
-    BufferTable &operator=(BufferTable &&) = delete;
+    CONDY_DELETE_COPY_MOVE(BufferTable);
 
 public:
     /**
@@ -175,10 +170,7 @@ public:
         }
     }
 
-    RingSettings(const RingSettings &) = delete;
-    RingSettings &operator=(const RingSettings &) = delete;
-    RingSettings(RingSettings &&) = delete;
-    RingSettings &operator=(RingSettings &&) = delete;
+    CONDY_DELETE_COPY_MOVE(RingSettings);
 
 public:
     /**
