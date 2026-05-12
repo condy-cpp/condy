@@ -8,7 +8,6 @@
 #pragma once
 
 #include "condy/condy_uring.hpp"
-#include "condy/ring_settings.hpp"
 #include "condy/utils.hpp"
 #include <cassert>
 #include <cerrno>
