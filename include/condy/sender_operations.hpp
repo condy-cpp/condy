@@ -7,6 +7,7 @@
 
 #include "condy/concepts.hpp"
 #include "condy/senders.hpp"
+#include "condy/utils.hpp"
 #include <coroutine>
 #include <stdexcept>
 
@@ -61,10 +62,7 @@ public:
     SenderAwaiter(Sender sender)
         : operation_state_(std::move(sender).connect(Receiver{this})) {}
 
-    SenderAwaiter(const SenderAwaiter &) = delete;
-    SenderAwaiter &operator=(const SenderAwaiter &) = delete;
-    SenderAwaiter(SenderAwaiter &&) = delete;
-    SenderAwaiter &operator=(SenderAwaiter &&) = delete;
+    CONDY_DELETE_COPY_MOVE(SenderAwaiter);
 
 public:
     bool await_ready() const noexcept { return false; }

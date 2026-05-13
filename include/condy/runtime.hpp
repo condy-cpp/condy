@@ -125,10 +125,7 @@ public:
           fd_table_(*ring_.ring()), buffer_table_(*ring_.ring()),
           settings_(*ring_.ring()) {}
 
-    Runtime(const Runtime &) = delete;
-    Runtime &operator=(const Runtime &) = delete;
-    Runtime(Runtime &&) = delete;
-    Runtime &operator=(Runtime &&) = delete;
+    CONDY_DELETE_COPY_MOVE(Runtime);
 
 public:
     /**

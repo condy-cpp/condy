@@ -38,10 +38,7 @@ public:
 
     ~Ring() { io_uring_queue_exit(&ring_); }
 
-    Ring(const Ring &) = delete;
-    Ring &operator=(const Ring &) = delete;
-    Ring(Ring &&) = delete;
-    Ring &operator=(Ring &&) = delete;
+    CONDY_DELETE_COPY_MOVE(Ring);
 
 public:
     void submit() noexcept { io_uring_submit(&ring_); }

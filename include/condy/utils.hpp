@@ -25,6 +25,20 @@
 #include <utility>
 #include <variant>
 
+// NOLINTBEGIN(bugprone-macro-parentheses)
+#define CONDY_DELETE_COPY(cls)                                                 \
+    cls(const cls &) = delete;                                                 \
+    cls &operator=(const cls &) = delete
+
+#define CONDY_DELETE_MOVE(cls)                                                 \
+    cls(cls &&) = delete;                                                      \
+    cls &operator=(cls &&) = delete
+// NOLINTEND(bugprone-macro-parentheses)
+
+#define CONDY_DELETE_COPY_MOVE(cls)                                            \
+    CONDY_DELETE_COPY(cls);                                                    \
+    CONDY_DELETE_MOVE(cls)
+
 #if defined(__has_feature)
 #if __has_feature(thread_sanitizer)
 #define CONDY_DETAIL_HAS_TSAN
@@ -70,10 +84,7 @@ public:
             func_();
     }
 
-    Defer(const Defer &) = delete;
-    Defer &operator=(const Defer &) = delete;
-    Defer(Defer &&) = delete;
-    Defer &operator=(Defer &&) = delete;
+    CONDY_DELETE_COPY_MOVE(Defer);
 
 public:
     void dismiss() noexcept { active_ = false; }

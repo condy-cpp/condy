@@ -4,15 +4,15 @@
 
 #pragma once
 
+#include "condy/utils.hpp"
+
 namespace condy {
 
 template <typename T> class ThreadLocalSingleton {
 public:
     ThreadLocalSingleton() = default;
-    ThreadLocalSingleton(const ThreadLocalSingleton &) = delete;
-    ThreadLocalSingleton &operator=(const ThreadLocalSingleton &) = delete;
-    ThreadLocalSingleton(ThreadLocalSingleton &&) = delete;
-    ThreadLocalSingleton &operator=(ThreadLocalSingleton &&) = delete;
+
+    CONDY_DELETE_COPY_MOVE(ThreadLocalSingleton);
 
     static T &current() noexcept {
         static thread_local T instance;
