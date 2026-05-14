@@ -41,7 +41,7 @@ private:
         params.flags |= IORING_SETUP_SUBMIT_ALL;
         // If we can construct Runtime, we should be able to construct this
         // thread-local ring. So we ignore errors here.
-        return Ring(8, &params);
+        return Ring(8, &params, nullptr, 0);
     }
 
 private:

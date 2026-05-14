@@ -19,8 +19,8 @@ namespace condy {
 class Ring {
 public:
     Ring(unsigned int entries, io_uring_params *params,
-         [[maybe_unused]] void *buf = nullptr,
-         [[maybe_unused]] size_t buf_size = 0) {
+     [[maybe_unused]] void *buf,
+     [[maybe_unused]] size_t buf_size) {
         int r;
 #if !IO_URING_CHECK_VERSION(2, 5) // >= 2.5
         if (params->flags & IORING_SETUP_NO_MMAP) {

@@ -28,13 +28,13 @@ using Handle = OpFinishHandle<SimpleCQEHandler, MockReceiver>;
 TEST_CASE("test ring - init and destroy") {
     io_uring_params params{};
     std::memset(&params, 0, sizeof(params));
-    Ring ring(8, &params);
+    Ring ring(8, &params, nullptr, 0);
 }
 
 TEST_CASE("test ring - register and complete ops") {
     io_uring_params params{};
     std::memset(&params, 0, sizeof(params));
-    Ring ring(8, &params);
+    Ring ring(8, &params, nullptr, 0);
 
     size_t invoke_count = 0;
     MockReceiver receiver{invoke_count};
@@ -71,7 +71,7 @@ TEST_CASE("test ring - register and complete ops") {
 TEST_CASE("test ring - cancel ops") {
     io_uring_params params{};
     std::memset(&params, 0, sizeof(params));
-    Ring ring(8, &params);
+    Ring ring(8, &params, nullptr, 0);
 
     size_t invoke_count = 0;
     MockReceiver receiver{invoke_count};
