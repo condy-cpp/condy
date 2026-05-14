@@ -11,11 +11,12 @@ size_t sq_entries = 256;
 size_t task_count = 256;
 size_t nops_per_task = 10'000;
 bool enable_sqpoll = false;
+size_t submit_batch = 0;
 
 void usage(const char *prog_name) {
-    std::cerr << std::format(
-        "Usage: {} [-hq] [-s sq_entries] [-t task_count] [-p nops_per_task]\n",
-        prog_name);
+    std::cerr << std::format("Usage: {} [-hq] [-s sq_entries] [-t task_count] "
+                             "[-p nops_per_task] [-b submit_batch]\n",
+                             prog_name);
 }
 
 condy::Coro<void> nop_task() {
@@ -39,7 +40,7 @@ condy::Coro<void> run_batched_nop() {
 
 int main(int argc, char **argv) noexcept(false) {
     int opt;
-    while ((opt = getopt(argc, argv, "hs:t:p:q")) != -1) {
+    while ((opt = getopt(argc, argv, "hs:t:p:qb:")) != -1) {
         switch (opt) {
         case 's':
             sq_entries = std::stoul(optarg);
@@ -52,6 +53,9 @@ int main(int argc, char **argv) noexcept(false) {
             break;
         case 'q':
             enable_sqpoll = true;
+            break;
+        case 'b':
+            submit_batch = std::stoul(optarg);
             break;
         case 'h':
             usage(argv[0]);
@@ -71,6 +75,7 @@ int main(int argc, char **argv) noexcept(false) {
 
     condy::RuntimeOptions options;
     options.sq_size(sq_entries).cq_size(sq_entries * 2);
+    options.submit_batch(submit_batch);
     if (enable_sqpoll) {
         options.enable_sqpoll();
     }
@@ -88,8 +93,8 @@ int main(int argc, char **argv) noexcept(false) {
 
     std::cout << std::format(
         "overhead_batch config: sq_entries={}, "
-        "task_count={}, nops_per_task={}, enable_sqpoll={}\n",
-        sq_entries, task_count, nops_per_task, enable_sqpoll);
+        "task_count={}, nops_per_task={}, enable_sqpoll={}, submit_batch={}\n",
+        sq_entries, task_count, nops_per_task, enable_sqpoll, submit_batch);
     std::cout << std::format("Total operations: {}\n", total_operations);
     std::cout << std::format("Total time: {} ns\n", duration_ns);
     std::cout << std::format("ns per op: {:.2f}\n", ns_per_op);
