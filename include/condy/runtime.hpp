@@ -15,6 +15,7 @@
 #include "condy/singleton.hpp"
 #include "condy/utils.hpp"
 #include "condy/work_type.hpp"
+#include <algorithm>
 #include <atomic>
 #include <cerrno>
 #include <cstddef>
@@ -363,8 +364,17 @@ private:
         }
 #endif
 
-        return Ring(ring_entries, &params, buf, buf_size,
-                    options.submit_batch_);
+        size_t submit_batch = options.submit_batch_;
+        if (submit_batch == 0) {
+            if (options.enable_sqpoll_) {
+                submit_batch = std::min<size_t>(32, ring_entries);
+            } else {
+                submit_batch = std::numeric_limits<size_t>::max();
+            }
+        }
+        assert(submit_batch > 0);
+
+        return Ring(ring_entries, &params, buf, buf_size, submit_batch);
     }
 
     void schedule_msg_ring_(Runtime *curr_runtime, uintptr_t data) noexcept {

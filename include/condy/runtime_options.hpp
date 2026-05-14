@@ -252,8 +252,8 @@ protected:
     std::optional<uint32_t> sqpoll_thread_cpu_ = std::nullopt;
     bool enable_defer_taskrun_ = false;
     size_t sq_size_ = 128;
-    size_t cq_size_ = 0; // 0 means default
-    size_t submit_batch_ = std::numeric_limits<size_t>::max();
+    size_t cq_size_ = 0;      // 0 means default
+    size_t submit_batch_ = 0; // 0 means default
     Runtime *attach_wq_target_ = nullptr;
     bool enable_coop_taskrun_ = false;
     bool enable_sqe128_ = false;

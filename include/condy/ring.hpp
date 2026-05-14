@@ -13,7 +13,6 @@
 #include <cerrno>
 #include <cstddef>
 #include <cstring>
-#include <limits>
 
 namespace condy {
 
