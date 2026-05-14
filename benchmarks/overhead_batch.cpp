@@ -10,10 +10,11 @@
 size_t sq_entries = 256;
 size_t task_count = 256;
 size_t nops_per_task = 10'000;
+bool enable_sqpoll = false;
 
 void usage(const char *prog_name) {
     std::cerr << std::format(
-        "Usage: {} [-h] [-s sq_entries] [-t task_count] [-p nops_per_task]\n",
+        "Usage: {} [-hq] [-s sq_entries] [-t task_count] [-p nops_per_task]\n",
         prog_name);
 }
 
@@ -38,7 +39,7 @@ condy::Coro<void> run_batched_nop() {
 
 int main(int argc, char **argv) noexcept(false) {
     int opt;
-    while ((opt = getopt(argc, argv, "hs:t:p:")) != -1) {
+    while ((opt = getopt(argc, argv, "hs:t:p:q")) != -1) {
         switch (opt) {
         case 's':
             sq_entries = std::stoul(optarg);
@@ -48,6 +49,9 @@ int main(int argc, char **argv) noexcept(false) {
             break;
         case 'p':
             nops_per_task = std::stoul(optarg);
+            break;
+        case 'q':
+            enable_sqpoll = true;
             break;
         case 'h':
             usage(argv[0]);
@@ -65,7 +69,12 @@ int main(int argc, char **argv) noexcept(false) {
 
     const size_t total_operations = task_count * nops_per_task;
 
-    condy::Runtime runtime(condy::RuntimeOptions{}.sq_size(sq_entries));
+    condy::RuntimeOptions options;
+    options.sq_size(sq_entries).cq_size(sq_entries * 2);
+    if (enable_sqpoll) {
+        options.enable_sqpoll();
+    }
+    condy::Runtime runtime(options);
 
     const auto start = std::chrono::high_resolution_clock::now();
     condy::sync_wait(runtime, run_batched_nop());
@@ -77,9 +86,10 @@ int main(int argc, char **argv) noexcept(false) {
     const double ns_per_op = static_cast<double>(duration_ns) /
                              static_cast<double>(total_operations);
 
-    std::cout << std::format("overhead_batch config: sq_entries={}, "
-                             "task_count={}, nops_per_task={}\n",
-                             sq_entries, task_count, nops_per_task);
+    std::cout << std::format(
+        "overhead_batch config: sq_entries={}, "
+        "task_count={}, nops_per_task={}, enable_sqpoll={}\n",
+        sq_entries, task_count, nops_per_task, enable_sqpoll);
     std::cout << std::format("Total operations: {}\n", total_operations);
     std::cout << std::format("Total time: {} ns\n", duration_ns);
     std::cout << std::format("ns per op: {:.2f}\n", ns_per_op);
