@@ -132,6 +132,14 @@ public:
     }
 
     /**
+     * @brief Set batch size for operation submission
+     */
+    Self &submit_batch(size_t v) {
+        submit_batch_ = v;
+        return *this;
+    }
+
+    /**
      * @brief See IORING_SETUP_ATTACH_WQ
      * @details This option allows the current runtime to share the async
      * worker thread backend with another runtime.
@@ -245,6 +253,7 @@ protected:
     bool enable_defer_taskrun_ = false;
     size_t sq_size_ = 128;
     size_t cq_size_ = 0; // 0 means default
+    size_t submit_batch_ = std::numeric_limits<size_t>::max();
     Runtime *attach_wq_target_ = nullptr;
     bool enable_coop_taskrun_ = false;
     bool enable_sqe128_ = false;

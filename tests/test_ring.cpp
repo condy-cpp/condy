@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstring>
 #include <doctest/doctest.h>
+#include <limits>
 #include <memory>
 #include <vector>
 
@@ -28,7 +29,7 @@ using Handle = OpFinishHandle<SimpleCQEHandler, MockReceiver>;
 TEST_CASE("test ring - init and destroy") {
     io_uring_params params{};
     std::memset(&params, 0, sizeof(params));
-    Ring ring(8, &params, nullptr, 0, 0);
+    Ring ring(8, &params, nullptr, 0, std::numeric_limits<size_t>::max());
 }
 
 TEST_CASE("test ring - maybe submit") {
@@ -59,7 +60,7 @@ TEST_CASE("test ring - maybe submit") {
 TEST_CASE("test ring - register and complete ops") {
     io_uring_params params{};
     std::memset(&params, 0, sizeof(params));
-    Ring ring(8, &params, nullptr, 0, 0);
+    Ring ring(8, &params, nullptr, 0, std::numeric_limits<size_t>::max());
 
     size_t invoke_count = 0;
     MockReceiver receiver{invoke_count};
@@ -96,7 +97,7 @@ TEST_CASE("test ring - register and complete ops") {
 TEST_CASE("test ring - cancel ops") {
     io_uring_params params{};
     std::memset(&params, 0, sizeof(params));
-    Ring ring(8, &params, nullptr, 0, 0);
+    Ring ring(8, &params, nullptr, 0, std::numeric_limits<size_t>::max());
 
     size_t invoke_count = 0;
     MockReceiver receiver{invoke_count};

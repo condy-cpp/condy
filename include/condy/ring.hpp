@@ -13,6 +13,7 @@
 #include <cerrno>
 #include <cstddef>
 #include <cstring>
+#include <limits>
 
 namespace condy {
 
@@ -48,10 +49,6 @@ public:
     }
 
     void maybe_submit() noexcept {
-        if (submit_batch_ == 0) {
-            return;
-        }
-
         maybe_submit_count_++;
         if (maybe_submit_count_ >= submit_batch_) {
             submit();
@@ -157,7 +154,7 @@ private:
 
 private:
     io_uring ring_;
-    size_t submit_batch_ = 0;
+    size_t submit_batch_;
     size_t maybe_submit_count_ = 0;
 };
 

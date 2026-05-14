@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstring>
 #include <doctest/doctest.h>
+#include <limits>
 
 namespace {
 
@@ -42,7 +43,8 @@ condy::Runtime runtime;
 TEST_CASE("test op_finish_handle - basic usage") {
     io_uring_params params{};
     std::memset(&params, 0, sizeof(params));
-    condy::Ring ring(8, &params, nullptr, 0, 0);
+    condy::Ring ring(8, &params, nullptr, 0,
+                     std::numeric_limits<size_t>::max());
     auto &context = condy::detail::Context::current();
 
     context.init(&ring, &runtime);
@@ -75,7 +77,8 @@ TEST_CASE("test op_finish_handle - basic usage") {
 TEST_CASE("test op_finish_handle - concurrent ops") {
     io_uring_params params{};
     std::memset(&params, 0, sizeof(params));
-    condy::Ring ring(8, &params, nullptr, 0, 0);
+    condy::Ring ring(8, &params, nullptr, 0,
+                     std::numeric_limits<size_t>::max());
     auto &context = condy::detail::Context::current();
     context.init(&ring, &runtime);
 
