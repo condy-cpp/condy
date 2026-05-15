@@ -245,7 +245,8 @@ public:
         while (true) {
             tick_count_++;
 
-            if (tick_count_ % event_interval_ == 0) {
+            if (tick_count_ >= event_interval_) {
+                tick_count_ = 0;
                 flush_ring_();
             }
 
