@@ -397,6 +397,15 @@ TEST_CASE("test async_operations - provided buffer queue check - bundle incr") {
         REQUIRE(n2 == 21);
         REQUIRE(bufs2.bid == 0);
         REQUIRE(bufs2.num_buffers == 2);
+
+        auto msg3 = generate_data(10);
+        r = ::send(sv[1], msg3.data(), msg3.size(), 0);
+        REQUIRE(r == 10);
+        auto [n3, bufs3] =
+            co_await condy::async_recv(sv[0], condy::bundled(buf_queue), 0);
+        REQUIRE(n3 == 10);
+        REQUIRE(bufs3.bid == 2);
+        REQUIRE(bufs3.num_buffers == 1);
     };
     condy::sync_wait(func());
 
@@ -536,10 +545,24 @@ TEST_CASE("test async_operations - provided buffer pool check - bundle incr") {
         REQUIRE(bufs2[0].size() == 7);
         REQUIRE(bufs2[1].owns_buffer() == true);
         REQUIRE(bufs2[1].size() == 16);
-        std::string result;
-        result.append(static_cast<const char *>(bufs2[0].data()), 7);
-        result.append(static_cast<const char *>(bufs2[1].data()), 14);
-        REQUIRE(result == msg2);
+
+        std::string result2;
+        result2.append(static_cast<const char *>(bufs2[0].data()), 7);
+        result2.append(static_cast<const char *>(bufs2[1].data()), 14);
+        REQUIRE(result2 == msg2);
+
+        auto msg3 = generate_data(10);
+        r = ::send(sv[1], msg3.data(), msg3.size(), 0);
+        REQUIRE(r == 10);
+        auto [n3, bufs3] =
+            co_await condy::async_recv(sv[0], condy::bundled(buf_pool), 0);
+        REQUIRE(n3 == 10);
+        REQUIRE(bufs3.size() == 1);
+        REQUIRE(bufs3[0].owns_buffer() == false);
+        REQUIRE(bufs3[0].size() == 10);
+
+        std::string result3(static_cast<const char *>(bufs3[0].data()), 10);
+        REQUIRE(result3 == msg3);
     };
     condy::sync_wait(func());
 
