@@ -297,7 +297,8 @@ class BundledProvidedBufferPool {
 public:
     BundledProvidedBufferPool(uint32_t num_buffers, size_t buffer_size,
                               unsigned int flags)
-        : num_buffers_(std::bit_ceil(num_buffers)), buffer_size_(buffer_size) {
+        : num_buffers_(std::bit_ceil(num_buffers)), buffer_size_(buffer_size),
+          curr_buf_len_(buffer_size), br_flags_(flags) {
         auto &context = detail::Context::current();
 
         size_t data_size = num_buffers_ * (sizeof(io_uring_buf) + buffer_size);
@@ -318,7 +319,8 @@ public:
         reg.ring_addr = reinterpret_cast<uint64_t>(br_);
         reg.ring_entries = num_buffers_;
         reg.bgid = bgid_;
-        int r = io_uring_register_buf_ring(context.ring()->ring(), &reg, flags);
+        int r =
+            io_uring_register_buf_ring(context.ring()->ring(), &reg, br_flags_);
         if (r != 0) [[unlikely]] {
             throw make_system_error("io_uring_register_buf_ring", -r);
         }
@@ -381,25 +383,43 @@ public:
 
 #if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
         if (flags & IORING_CQE_F_BUF_MORE) {
-            char *data = get_buffer_(bid) + partial_size_;
+            char *data = get_buffer_(bid) + (buffer_size_ - curr_buf_len_);
             buffers.emplace_back(data, res, nullptr);
-            partial_size_ += res;
-            assert(partial_size_ < buffer_size_);
+            assert(static_cast<uint32_t>(res) < curr_buf_len_);
+            curr_buf_len_ -= res;
             return buffers;
         }
 #endif
         assert(bid == curr_io_uring_buf_()->bid);
 
-        int32_t bytes = res;
+        bool is_incr = false;
+#if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
+        if (br_flags_ & IOU_PBUF_RING_INC) {
+            is_incr = true;
+        }
+#endif
+
+        int64_t bytes = res;
         while (bytes > 0) {
             auto *buf_ptr = curr_io_uring_buf_();
             bid = buf_ptr->bid;
-            uint32_t curr_buffer_size = buffer_size_ - partial_size_;
-            char *data = get_buffer_(bid) + partial_size_;
-            buffers.emplace_back(data, curr_buffer_size, this);
-            bytes -= static_cast<int32_t>(curr_buffer_size);
-            partial_size_ = 0;
-            advance_io_uring_buf_();
+
+            char *data = get_buffer_(bid) + (buffer_size_ - curr_buf_len_);
+            uint32_t buf_len;
+            if (is_incr) {
+                buf_len = std::min<uint32_t>(bytes, curr_buf_len_);
+                curr_buf_len_ -= buf_len;
+            } else {
+                buf_len = std::exchange(curr_buf_len_, 0);
+            }
+            bytes -= buf_len;
+            if (curr_buf_len_ == 0) {
+                buffers.emplace_back(data, buf_len, this);
+                advance_io_uring_buf_();
+                curr_buf_len_ = buffer_size_;
+            } else {
+                buffers.emplace_back(data, buf_len, nullptr);
+            }
         }
 
         return buffers;
@@ -438,9 +458,10 @@ private:
     io_uring_buf_ring *br_ = nullptr;
     uint32_t num_buffers_;
     uint32_t buffer_size_;
-    uint32_t partial_size_ = 0;
+    uint32_t curr_buf_len_;
     uint16_t bgid_;
     uint16_t br_head_ = 0;
+    unsigned int br_flags_;
 };
 
 } // namespace detail

@@ -494,8 +494,8 @@ TEST_CASE("test buffers - provided buffer pool usage bundle incr") {
     REQUIRE(ret2[0].owns_buffer() == true);
     REQUIRE(ret2[0].size() == 7);
     REQUIRE(static_cast<char *>(ret[0].data()) + 9 == ret2[0].data());
-    REQUIRE(ret2[1].owns_buffer() == true);
-    REQUIRE(ret2[1].size() == 16);
+    REQUIRE(ret2[1].owns_buffer() == false);
+    REQUIRE(ret2[1].size() == 14);
 }
 #endif
 
