@@ -302,8 +302,8 @@ TEST_CASE("test buffers - provided buffer queue usage bundle incr") {
     cqe.flags |= 0 << IORING_CQE_BUFFER_SHIFT; // bid = 0
     auto ret2 = queue.handle_finish(&cqe);
     REQUIRE(ret2.bid == 0);
-    REQUIRE(ret2.num_buffers == 2);
-    REQUIRE(queue.size() == 2);
+    REQUIRE(ret2.num_buffers == 1);
+    REQUIRE(queue.size() == 3);
 }
 #endif
 

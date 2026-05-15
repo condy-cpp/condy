@@ -396,7 +396,7 @@ TEST_CASE("test async_operations - provided buffer queue check - bundle incr") {
             co_await condy::async_recv(sv[0], condy::bundled(buf_queue), 0);
         REQUIRE(n2 == 21);
         REQUIRE(bufs2.bid == 0);
-        REQUIRE(bufs2.num_buffers == 2);
+        REQUIRE(bufs2.num_buffers == 1);
 
         auto msg3 = generate_data(10);
         r = ::send(sv[1], msg3.data(), msg3.size(), 0);
@@ -404,7 +404,7 @@ TEST_CASE("test async_operations - provided buffer queue check - bundle incr") {
         auto [n3, bufs3] =
             co_await condy::async_recv(sv[0], condy::bundled(buf_queue), 0);
         REQUIRE(n3 == 10);
-        REQUIRE(bufs3.bid == 2);
+        REQUIRE(bufs3.bid == 1);
         REQUIRE(bufs3.num_buffers == 1);
     };
     condy::sync_wait(func());

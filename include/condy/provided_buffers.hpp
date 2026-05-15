@@ -13,6 +13,7 @@
 #include "condy/context.hpp"
 #include "condy/ring.hpp"
 #include "condy/utils.hpp"
+#include <algorithm>
 #include <bit>
 #include <cstddef>
 #include <cstdint>
@@ -47,7 +48,8 @@ namespace detail {
 class BundledProvidedBufferQueue {
 public:
     BundledProvidedBufferQueue(uint32_t capacity, unsigned int flags)
-        : capacity_(std::bit_ceil(capacity)), buf_lens_(capacity_, 0) {
+        : capacity_(std::bit_ceil(capacity)), buf_lens_(capacity_, 0),
+          br_flags_(flags) {
         auto &context = detail::Context::current();
 
         size_t data_size = capacity_ * sizeof(io_uring_buf);
@@ -68,7 +70,8 @@ public:
         reg.ring_addr = reinterpret_cast<uint64_t>(br_);
         reg.ring_entries = capacity_;
         reg.bgid = bgid_;
-        int r = io_uring_register_buf_ring(context.ring()->ring(), &reg, flags);
+        int r =
+            io_uring_register_buf_ring(context.ring()->ring(), &reg, br_flags_);
         if (r != 0) [[unlikely]] {
             throw make_system_error("io_uring_register_buf_ring", -r);
         }
@@ -154,14 +157,28 @@ public:
         }
 #endif
 
+        bool is_incr = false;
+#if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
+        if (br_flags_ & IOU_PBUF_RING_INC) {
+            is_incr = true;
+        }
+#endif
+
         auto mask = io_uring_buf_ring_mask(capacity_);
         uint16_t curr_bid = result.bid;
         int64_t bytes = res;
         while (bytes > 0) {
-            uint32_t buf_len = std::exchange(buf_lens_[curr_bid], 0);
-            assert(buf_len > 0);
+            uint32_t buf_len;
+            if (is_incr) {
+                buf_len = std::min<uint32_t>(bytes, buf_lens_[curr_bid]);
+                buf_lens_[curr_bid] -= buf_len;
+            } else {
+                buf_len = std::exchange(buf_lens_[curr_bid], 0);
+            }
             bytes -= buf_len;
-            result.num_buffers++;
+            if (buf_lens_[curr_bid] == 0) {
+                result.num_buffers++;
+            }
             curr_bid = (curr_bid + 1) & mask;
         }
         assert(size_ >= result.num_buffers);
@@ -176,6 +193,7 @@ private:
     uint32_t capacity_;
     uint16_t bgid_;
     std::vector<uint32_t> buf_lens_;
+    unsigned int br_flags_;
 };
 
 } // namespace detail
