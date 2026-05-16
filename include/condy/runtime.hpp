@@ -15,11 +15,13 @@
 #include "condy/singleton.hpp"
 #include "condy/utils.hpp"
 #include "condy/work_type.hpp"
+#include <algorithm>
 #include <atomic>
 #include <cerrno>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <mutex>
 
 namespace condy {
@@ -41,7 +43,7 @@ private:
         params.flags |= IORING_SETUP_SUBMIT_ALL;
         // If we can construct Runtime, we should be able to construct this
         // thread-local ring. So we ignore errors here.
-        return Ring(8, &params);
+        return Ring(8, &params, nullptr, 0, std::numeric_limits<size_t>::max());
     }
 
 private:
@@ -243,7 +245,8 @@ public:
         while (true) {
             tick_count_++;
 
-            if (tick_count_ % event_interval_ == 0) {
+            if (tick_count_ >= event_interval_) {
+                tick_count_ = 0;
                 flush_ring_();
             }
 
@@ -362,7 +365,17 @@ private:
         }
 #endif
 
-        return Ring(ring_entries, &params, buf, buf_size);
+        size_t submit_batch = options.submit_batch_;
+        if (submit_batch == 0) {
+            if (options.enable_sqpoll_) {
+                submit_batch = std::min<size_t>(32, ring_entries);
+            } else {
+                submit_batch = std::numeric_limits<size_t>::max();
+            }
+        }
+        assert(submit_batch > 0);
+
+        return Ring(ring_entries, &params, buf, buf_size, submit_batch);
     }
 
     void schedule_msg_ring_(Runtime *curr_runtime, uintptr_t data) noexcept {

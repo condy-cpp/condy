@@ -39,6 +39,7 @@ public:
         io_uring_sqe_set_flags(sqe, sqe->flags | flags);
         auto work = encode_work(&finish_handle_.get(), WorkType::Common);
         io_uring_sqe_set_data64(sqe, work);
+        ring->maybe_submit();
 
         finish_handle_.get().maybe_set_cancel(context.runtime());
     }

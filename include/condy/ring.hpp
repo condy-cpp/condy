@@ -19,8 +19,9 @@ namespace condy {
 class Ring {
 public:
     Ring(unsigned int entries, io_uring_params *params,
-         [[maybe_unused]] void *buf = nullptr,
-         [[maybe_unused]] size_t buf_size = 0) {
+         [[maybe_unused]] void *buf, [[maybe_unused]] size_t buf_size,
+         size_t submit_batch)
+        : submit_batch_(submit_batch) {
         int r;
 #if !IO_URING_CHECK_VERSION(2, 5) // >= 2.5
         if (params->flags & IORING_SETUP_NO_MMAP) {
@@ -41,7 +42,17 @@ public:
     CONDY_DELETE_COPY_MOVE(Ring);
 
 public:
-    void submit() noexcept { io_uring_submit(&ring_); }
+    void submit() noexcept {
+        maybe_submit_count_ = 0;
+        io_uring_submit(&ring_);
+    }
+
+    void maybe_submit() noexcept {
+        maybe_submit_count_++;
+        if (maybe_submit_count_ >= submit_batch_) {
+            submit();
+        }
+    }
 
     template <typename Func>
     ssize_t reap_completions_wait(Func &&process_func) noexcept {
@@ -51,6 +62,7 @@ public:
         do {
             int r = io_uring_submit_and_wait(&ring_, 1);
             if (r >= 0) [[likely]] {
+                maybe_submit_count_ = 0;
                 break;
             } else if (r == -EINTR) {
                 continue;
@@ -130,8 +142,7 @@ private:
             if (sqe) {
                 break;
             }
-            r = io_uring_submit(&ring_);
-            assert(r >= 0);
+            submit();
             if (ring_.flags & IORING_SETUP_SQPOLL) {
                 r = io_uring_sqring_wait(&ring_);
                 assert(r >= 0);
@@ -142,6 +153,8 @@ private:
 
 private:
     io_uring ring_;
+    size_t submit_batch_;
+    size_t maybe_submit_count_ = 0;
 };
 
 } // namespace condy

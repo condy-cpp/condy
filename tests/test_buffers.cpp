@@ -9,6 +9,7 @@
 #include <cerrno>
 #include <cstddef>
 #include <doctest/doctest.h>
+#include <limits>
 
 TEST_CASE("test buffers - buffer mutable/const") {
     char data[16] = {};
@@ -110,7 +111,8 @@ TEST_CASE("test buffers - provided buffer queue init") {
 TEST_CASE("test buffers - provided buffer queue usage") {
     condy::Runtime runtime;
     io_uring_params params = {};
-    condy::Ring ring(8, &params);
+    condy::Ring ring(8, &params, nullptr, 0,
+                     std::numeric_limits<size_t>::max());
 
     condy::detail::Context::current().init(&ring, &runtime);
     auto d = condy::defer([]() { condy::detail::Context::current().reset(); });
@@ -165,7 +167,8 @@ TEST_CASE("test buffers - provided buffer queue usage") {
 TEST_CASE("test buffers - provided buffer queue usage incr") {
     condy::Runtime runtime;
     io_uring_params params = {};
-    condy::Ring ring(8, &params);
+    condy::Ring ring(8, &params, nullptr, 0,
+                     std::numeric_limits<size_t>::max());
 
     condy::detail::Context::current().init(&ring, &runtime);
     auto d = condy::defer([]() { condy::detail::Context::current().reset(); });
@@ -229,7 +232,8 @@ TEST_CASE("test buffers - provided buffer queue usage incr") {
 TEST_CASE("test buffers - provided buffer queue usage bundle") {
     condy::Runtime runtime;
     io_uring_params params = {};
-    condy::Ring ring(8, &params);
+    condy::Ring ring(8, &params, nullptr, 0,
+                     std::numeric_limits<size_t>::max());
 
     condy::detail::Context::current().init(&ring, &runtime);
     auto d = condy::defer([]() { condy::detail::Context::current().reset(); });
@@ -271,7 +275,8 @@ TEST_CASE("test buffers - provided buffer queue usage bundle") {
 TEST_CASE("test buffers - provided buffer queue usage bundle incr") {
     condy::Runtime runtime;
     io_uring_params params = {};
-    condy::Ring ring(8, &params);
+    condy::Ring ring(8, &params, nullptr, 0,
+                     std::numeric_limits<size_t>::max());
     condy::detail::Context::current().init(&ring, &runtime);
     auto d = condy::defer([]() { condy::detail::Context::current().reset(); });
 
@@ -319,7 +324,8 @@ TEST_CASE("test buffers - provided buffer pool init") {
 TEST_CASE("test buffers - provided buffer pool usage") {
     condy::Runtime runtime;
     io_uring_params params = {};
-    condy::Ring ring(8, &params);
+    condy::Ring ring(8, &params, nullptr, 0,
+                     std::numeric_limits<size_t>::max());
     auto d = condy::defer([]() { condy::detail::Context::current().reset(); });
 
     condy::detail::Context::current().init(&ring, &runtime);
@@ -367,7 +373,8 @@ TEST_CASE("test buffers - provided buffer pool usage") {
 TEST_CASE("test buffers - provided buffer pool usage incr") {
     condy::Runtime runtime;
     io_uring_params params = {};
-    condy::Ring ring(8, &params);
+    condy::Ring ring(8, &params, nullptr, 0,
+                     std::numeric_limits<size_t>::max());
 
     condy::detail::Context::current().init(&ring, &runtime);
     auto d = condy::defer([]() { condy::detail::Context::current().reset(); });
@@ -422,7 +429,8 @@ TEST_CASE("test buffers - provided buffer pool usage incr") {
 TEST_CASE("test buffers - provided buffer pool usage bundle") {
     condy::Runtime runtime;
     io_uring_params params = {};
-    condy::Ring ring(8, &params);
+    condy::Ring ring(8, &params, nullptr, 0,
+                     std::numeric_limits<size_t>::max());
 
     condy::detail::Context::current().init(&ring, &runtime);
     auto d = condy::defer([]() { condy::detail::Context::current().reset(); });
@@ -462,7 +470,8 @@ TEST_CASE("test buffers - provided buffer pool usage bundle") {
 TEST_CASE("test buffers - provided buffer pool usage bundle incr") {
     condy::Runtime runtime;
     io_uring_params params = {};
-    condy::Ring ring(8, &params);
+    condy::Ring ring(8, &params, nullptr, 0,
+                     std::numeric_limits<size_t>::max());
 
     condy::detail::Context::current().init(&ring, &runtime);
     auto d = condy::defer([]() { condy::detail::Context::current().reset(); });
