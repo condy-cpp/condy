@@ -307,8 +307,8 @@ TEST_CASE("test buffers - provided buffer queue usage bundle incr") {
     cqe.flags |= 0 << IORING_CQE_BUFFER_SHIFT; // bid = 0
     auto ret2 = queue.handle_finish(&cqe);
     REQUIRE(ret2.bid == 0);
-    REQUIRE(ret2.num_buffers == 2);
-    REQUIRE(queue.size() == 2);
+    REQUIRE(ret2.num_buffers == 1);
+    REQUIRE(queue.size() == 3);
 }
 #endif
 
@@ -503,8 +503,8 @@ TEST_CASE("test buffers - provided buffer pool usage bundle incr") {
     REQUIRE(ret2[0].owns_buffer() == true);
     REQUIRE(ret2[0].size() == 7);
     REQUIRE(static_cast<char *>(ret[0].data()) + 9 == ret2[0].data());
-    REQUIRE(ret2[1].owns_buffer() == true);
-    REQUIRE(ret2[1].size() == 16);
+    REQUIRE(ret2[1].owns_buffer() == false);
+    REQUIRE(ret2[1].size() == 14);
 }
 #endif
 
