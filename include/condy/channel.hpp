@@ -528,6 +528,7 @@ private:
 
 template <typename T, size_t N> class Channel<T, N>::MovePushSender {
 public:
+    using CondySender = void;
     using ReturnType = int32_t;
 
     MovePushSender(Channel &channel, T &&item)
@@ -560,6 +561,7 @@ private:
 
 template <typename T, size_t N> class Channel<T, N>::CopyPushSender {
 public:
+    using CondySender = void;
     using ReturnType = int32_t;
 
     CopyPushSender(Channel &channel, const T &item)
@@ -595,6 +597,7 @@ private:
 
 template <typename T, size_t N> class Channel<T, N>::PopSender {
 public:
+    using CondySender = void;
     using ReturnType = std::pair<int32_t, T>;
 
     PopSender(Channel &channel) : channel_(channel) {}

@@ -20,6 +20,7 @@ template <PrepFuncLike PrepFunc, CQEHandlerLike CQEHandler,
           template <typename...> class FinishHandle, typename... Args>
 class [[nodiscard]] OpSenderBase {
 public:
+    using CondySender = void;
     using ReturnType = std::invoke_result_t<CQEHandler &, io_uring_cqe *>;
 
     OpSenderBase(PrepFunc func, CQEHandler cqe_handler, Args... args)
@@ -58,6 +59,7 @@ using ZeroCopyOpSender =
 template <unsigned int Flags, typename Sender>
 class [[nodiscard]] FlaggedOpSender {
 public:
+    using CondySender = void;
     using ReturnType = typename Sender::ReturnType;
 
     FlaggedOpSender(Sender sender) : sender_(std::move(sender)) {}
@@ -86,6 +88,7 @@ template <typename Return, template <typename...> class OperationState,
           typename... Senders>
 class [[nodiscard]] ParallelSenderBase {
 public:
+    using CondySender = void;
     using ReturnType = Return;
 
     ParallelSenderBase(Senders... senders) : senders_(std::move(senders)...) {}
@@ -147,6 +150,7 @@ template <typename Return, template <typename...> class OperationState,
           typename Sender>
 class [[nodiscard]] RangedParallelSenderBase {
 public:
+    using CondySender = void;
     using ReturnType = Return;
 
     RangedParallelSenderBase(std::vector<Sender> senders)

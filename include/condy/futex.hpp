@@ -191,6 +191,7 @@ private:
 
 template <typename T> struct Futex<T>::WaitSender {
 public:
+    using CondySender = void;
     using ReturnType = int32_t;
 
     WaitSender(Futex &futex, T old) : futex_(futex), old_(old) {}

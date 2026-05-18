@@ -11,8 +11,6 @@
 namespace {
 
 struct SimpleFinishHandle {
-    using ReturnType = int;
-
     void cancel(condy::Runtime *) { cancelled_++; }
 
     void invoke(int res) {
@@ -34,6 +32,7 @@ struct SimpleFinishHandle {
 };
 
 struct SimpleSender {
+    using CondySender = void;
     using ReturnType = int;
 
     template <typename Receiver> auto connect_impl(Receiver receiver) noexcept {
