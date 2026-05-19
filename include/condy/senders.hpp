@@ -20,13 +20,14 @@ template <PrepFuncLike PrepFunc, CQEHandlerLike CQEHandler,
           template <typename...> class FinishHandle, typename... Args>
 class [[nodiscard]] OpSenderBase {
 public:
+    using CondySender = void;
     using ReturnType = std::invoke_result_t<CQEHandler &, io_uring_cqe *>;
 
     OpSenderBase(PrepFunc func, CQEHandler cqe_handler, Args... args)
         : prep_func_(std::move(func)), cqe_handler_(std::move(cqe_handler)),
           args_(std::make_tuple(std::move(args)...)) {}
 
-    template <typename Receiver> auto connect(Receiver receiver) noexcept {
+    template <typename Receiver> auto connect_impl(Receiver receiver) noexcept {
         return std::apply(
             [&](auto &&...args) {
                 return detail::OpSenderOperationState<
@@ -58,11 +59,12 @@ using ZeroCopyOpSender =
 template <unsigned int Flags, typename Sender>
 class [[nodiscard]] FlaggedOpSender {
 public:
+    using CondySender = void;
     using ReturnType = typename Sender::ReturnType;
 
     FlaggedOpSender(Sender sender) : sender_(std::move(sender)) {}
 
-    template <typename Receiver> auto connect(Receiver receiver) noexcept {
+    template <typename Receiver> auto connect_impl(Receiver receiver) noexcept {
         return detail::FlaggedOpState<Flags, Sender, Receiver>(
             std::move(sender_), std::move(receiver));
     }
@@ -86,6 +88,7 @@ template <typename Return, template <typename...> class OperationState,
           typename... Senders>
 class [[nodiscard]] ParallelSenderBase {
 public:
+    using CondySender = void;
     using ReturnType = Return;
 
     ParallelSenderBase(Senders... senders) : senders_(std::move(senders)...) {}
@@ -96,7 +99,7 @@ public:
         : senders_(std::tuple_cat(std::move(other.senders_),
                                   std::make_tuple(std::move(sender)))) {}
 
-    template <typename Receiver> auto connect(Receiver receiver) noexcept {
+    template <typename Receiver> auto connect_impl(Receiver receiver) noexcept {
         return OperationState<Receiver, Senders...>(std::move(senders_),
                                                     std::move(receiver));
     }
@@ -147,12 +150,13 @@ template <typename Return, template <typename...> class OperationState,
           typename Sender>
 class [[nodiscard]] RangedParallelSenderBase {
 public:
+    using CondySender = void;
     using ReturnType = Return;
 
     RangedParallelSenderBase(std::vector<Sender> senders)
         : senders_(std::move(senders)) {}
 
-    template <typename Receiver> auto connect(Receiver receiver) noexcept {
+    template <typename Receiver> auto connect_impl(Receiver receiver) noexcept {
         return OperationState<Receiver, Sender>(std::move(senders_),
                                                 std::move(receiver));
     }

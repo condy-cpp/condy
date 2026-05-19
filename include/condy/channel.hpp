@@ -528,12 +528,13 @@ private:
 
 template <typename T, size_t N> class Channel<T, N>::MovePushSender {
 public:
+    using CondySender = void;
     using ReturnType = int32_t;
 
     MovePushSender(Channel &channel, T &&item)
         : channel_(channel), item_(std::move(item)) {}
 
-    template <typename Receiver> auto connect(Receiver receiver) noexcept {
+    template <typename Receiver> auto connect_impl(Receiver receiver) noexcept {
         return OperationState<Receiver>(channel_, std::move(item_),
                                         std::move(receiver));
     }
@@ -560,12 +561,13 @@ private:
 
 template <typename T, size_t N> class Channel<T, N>::CopyPushSender {
 public:
+    using CondySender = void;
     using ReturnType = int32_t;
 
     CopyPushSender(Channel &channel, const T &item)
         : channel_(channel), item_(item) {}
 
-    template <typename Receiver> auto connect(Receiver receiver) noexcept {
+    template <typename Receiver> auto connect_impl(Receiver receiver) noexcept {
         return OperationState<Receiver>(channel_, item_, std::move(receiver));
     }
 
@@ -595,11 +597,12 @@ private:
 
 template <typename T, size_t N> class Channel<T, N>::PopSender {
 public:
+    using CondySender = void;
     using ReturnType = std::pair<int32_t, T>;
 
     PopSender(Channel &channel) : channel_(channel) {}
 
-    template <typename Receiver> auto connect(Receiver receiver) noexcept {
+    template <typename Receiver> auto connect_impl(Receiver receiver) noexcept {
         return OperationState<Receiver>(channel_, std::move(receiver));
     }
 
