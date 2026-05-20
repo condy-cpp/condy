@@ -1,4 +1,4 @@
-name: Build and Test Condy Against liburing Versions
+name: CI (Versions)
 
 on:
   push:
