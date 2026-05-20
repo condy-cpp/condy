@@ -1,4 +1,4 @@
-name: Build and Test Condy
+name: CI (Main)
 
 on:
   push:

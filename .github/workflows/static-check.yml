@@ -1,4 +1,4 @@
-name: Static Check
+name: CI (Static Check)
 
 on:
   push:

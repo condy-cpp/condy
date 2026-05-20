@@ -1,4 +1,4 @@
-name: Build and Test Condy on Latest Kernel
+name: CI (Latest Kernel)
 
 on:
   push:
