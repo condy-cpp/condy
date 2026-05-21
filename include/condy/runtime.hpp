@@ -138,7 +138,7 @@ public:
      * @note This function is thread-safe and can be called from any thread.
      */
     void allow_exit() noexcept {
-        exit_allowed_.store(true);
+        exit_allowed_.store(true, std::memory_order_release);
         wakeup_();
     }
 
@@ -261,7 +261,8 @@ public:
                 continue;
             }
 
-            if (pending_works_ == 0 && exit_allowed_.load()) {
+            if (pending_works_ == 0 &&
+                exit_allowed_.load(std::memory_order_acquire)) {
                 break;
             }
             flush_ring_wait_();
