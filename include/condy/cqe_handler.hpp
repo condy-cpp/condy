@@ -9,7 +9,7 @@
 
 #include "condy/concepts.hpp"
 #include "condy/context.hpp"
-#include "condy/ring.hpp"
+#include "condy/runtime.hpp"
 #include <cassert>
 #include <cerrno>
 #include <cstdint>
@@ -21,9 +21,8 @@ namespace detail {
 
 // Just for debugging, check if the CQE is big as expected
 inline bool check_cqe32([[maybe_unused]] io_uring_cqe *cqe) {
-    auto *ring = detail::Context::current().ring();
-    assert(ring != nullptr);
-    auto ring_flags = ring->ring()->flags;
+    auto &ring = detail::Context::current().runtime()->ring();
+    auto ring_flags = ring.ring()->flags;
     if (ring_flags & IORING_SETUP_CQE32) {
         return true;
     }
