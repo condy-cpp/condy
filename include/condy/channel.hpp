@@ -212,7 +212,6 @@ private:
         }
         assert(pop_awaiters_.empty());
         push_awaiters_.push_back(finish_handle);
-        detail::Context::current().runtime()->pend_work();
         return -EAGAIN;
     }
 
@@ -233,7 +232,6 @@ private:
             return {-EPIPE, T()};
         }
         pop_awaiters_.push_back(finish_handle);
-        detail::Context::current().runtime()->pend_work();
         return {-EAGAIN, T()};
     }
 
@@ -401,6 +399,7 @@ public:
             std::move(receiver_)(r);
             return;
         }
+        runtime->pend_work();
 
         auto stop_token = receiver_.get_stop_token();
         if (stop_token.stop_possible()) {
@@ -487,6 +486,7 @@ public:
             std::move(receiver_)(std::move(item));
             return;
         }
+        runtime->pend_work();
 
         auto stop_token = receiver_.get_stop_token();
         if (stop_token.stop_possible()) {

@@ -90,7 +90,6 @@ private:
             return 0; // No need to wait
         }
         wait_awaiters_.push_back(handle);
-        detail::Context::current().runtime()->pend_work();
         return -EAGAIN; // Need to wait
     }
 
@@ -151,6 +150,7 @@ public:
             std::move(receiver_)(r);
             return;
         }
+        runtime->pend_work();
 
         auto stop_token = receiver_.get_stop_token();
         if (stop_token.stop_possible()) {
