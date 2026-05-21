@@ -200,9 +200,15 @@ public:
         request.wait();
     }
 
-    void pend_work() noexcept { pending_works_++; }
+    void pend_work() noexcept {
+        assert(detail::Context::current().runtime() == this);
+        pending_works_++;
+    }
 
-    void resume_work() noexcept { pending_works_--; }
+    void resume_work() noexcept {
+        assert(detail::Context::current().runtime() == this);
+        pending_works_--;
+    }
 
     /**
      * @brief Run the runtime event loop in the current thread.
