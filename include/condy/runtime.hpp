@@ -138,7 +138,7 @@ public:
      * @note This function is thread-safe and can be called from any thread.
      */
     void allow_exit() noexcept {
-        pending_works_--;
+        exit_allowed_.store(true);
         wakeup_();
     }
 
@@ -261,7 +261,7 @@ public:
                 continue;
             }
 
-            if (pending_works_ == 0) {
+            if (pending_works_ == 0 && exit_allowed_.load()) {
                 break;
             }
             flush_ring_wait_();
@@ -501,7 +501,8 @@ private:
     // Global state
     std::mutex mutex_;
     WorkListQueue global_queue_;
-    std::atomic_size_t pending_works_ = 1;
+    size_t pending_works_ = 0;
+    std::atomic_bool exit_allowed_ = false;
     std::atomic<State> state_ = State::Idle;
 
     // Local state
