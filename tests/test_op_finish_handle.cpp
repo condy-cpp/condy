@@ -42,7 +42,8 @@ TEST_CASE("test op_finish_handle - basic usage") {
     REQUIRE(enable_r == 0);
     auto &context = condy::detail::Context::current();
 
-    context.init(&ring, &runtime);
+    context.init(&runtime);
+    auto d = condy::defer([&] { context.reset(); });
 
     size_t invoke_count = 0;
     int r = 0;
@@ -75,7 +76,8 @@ TEST_CASE("test op_finish_handle - concurrent ops") {
     int enable_r = io_uring_enable_rings(ring.ring());
     REQUIRE(enable_r == 0);
     auto &context = condy::detail::Context::current();
-    context.init(&ring, &runtime);
+    context.init(&runtime);
+    auto d = condy::defer([&] { context.reset(); });
 
     size_t invoke_count = 0;
     int r = 0;

@@ -239,7 +239,7 @@ public:
             assert(r == 1); // 1 indicates success for this call
         }
 
-        detail::Context::current().init(&ring_, this);
+        detail::Context::current().init(this);
         auto d2 = defer([]() { detail::Context::current().reset(); });
 
         while (true) {
