@@ -463,7 +463,7 @@ private:
                     panic_on(std::format("io_uring_prep_msg_ring: {}",
                                          std::strerror(-cqe->res)));
                 }
-                pending_works_--;
+                resume_work();
             } else {
                 auto *work = static_cast<WorkInvoker *>(data);
                 tsan_acquire(work);
@@ -480,7 +480,7 @@ private:
             auto *handle = static_cast<OpFinishHandleBase *>(data);
             auto op_finish = handle->handle(cqe);
             if (op_finish) {
-                pending_works_--;
+                resume_work();
             }
         } else {
             unreachable();
