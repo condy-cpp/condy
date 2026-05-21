@@ -262,6 +262,8 @@ public:
         }
     }
 
+    auto &ring() noexcept { return ring_; }
+
     /**
      * @brief Get the file descriptor table of the runtime.
      * @return FdTable& Reference to the fd table of the runtime.
