@@ -138,7 +138,7 @@ public:
      * @note This function is thread-safe and can be called from any thread.
      */
     void allow_exit() noexcept {
-        pending_works_--;
+        exit_allowed_.store(true, std::memory_order_release);
         wakeup_();
     }
 
@@ -200,9 +200,15 @@ public:
         request.wait();
     }
 
-    void pend_work() noexcept { pending_works_++; }
+    void pend_work() noexcept {
+        assert(detail::Context::current().runtime() == this);
+        pending_works_++;
+    }
 
-    void resume_work() noexcept { pending_works_--; }
+    void resume_work() noexcept {
+        assert(detail::Context::current().runtime() == this);
+        pending_works_--;
+    }
 
     /**
      * @brief Run the runtime event loop in the current thread.
@@ -255,7 +261,8 @@ public:
                 continue;
             }
 
-            if (pending_works_ == 0) {
+            if (pending_works_ == 0 &&
+                exit_allowed_.load(std::memory_order_acquire)) {
                 break;
             }
             flush_ring_wait_();
@@ -456,7 +463,7 @@ private:
                     panic_on(std::format("io_uring_prep_msg_ring: {}",
                                          std::strerror(-cqe->res)));
                 }
-                pending_works_--;
+                resume_work();
             } else {
                 auto *work = static_cast<WorkInvoker *>(data);
                 tsan_acquire(work);
@@ -473,7 +480,7 @@ private:
             auto *handle = static_cast<OpFinishHandleBase *>(data);
             auto op_finish = handle->handle(cqe);
             if (op_finish) {
-                pending_works_--;
+                resume_work();
             }
         } else {
             unreachable();
@@ -495,7 +502,8 @@ private:
     // Global state
     std::mutex mutex_;
     WorkListQueue global_queue_;
-    std::atomic_size_t pending_works_ = 1;
+    size_t pending_works_ = 0;
+    std::atomic_bool exit_allowed_ = false;
     std::atomic<State> state_ = State::Idle;
 
     // Local state
