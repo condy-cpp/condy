@@ -3,9 +3,7 @@
 #include "condy/finish_handles.hpp"
 #include "condy/runtime.hpp"
 #include <cstddef>
-#include <cstring>
 #include <doctest/doctest.h>
-#include <limits>
 
 namespace {
 
@@ -20,10 +18,10 @@ struct MockReceiver {
 };
 
 void event_loop(size_t &count, size_t expected) {
-    auto *ring = condy::detail::Context::current().ring();
+    auto &ring = condy::detail::Context::current().runtime()->ring();
     while (count != expected) {
-        ring->submit();
-        ring->reap_completions([&](io_uring_cqe *cqe) {
+        ring.submit();
+        ring.reap_completions([&](io_uring_cqe *cqe) {
             auto [data, type] =
                 condy::decode_work(io_uring_cqe_get_data64(cqe));
             if (type == condy::WorkType::Ignore) {
@@ -35,19 +33,17 @@ void event_loop(size_t &count, size_t expected) {
     }
 }
 
-// Just placeholder
-condy::Runtime runtime;
-
 } // namespace
 
 TEST_CASE("test op_finish_handle - basic usage") {
-    io_uring_params params{};
-    std::memset(&params, 0, sizeof(params));
-    condy::Ring ring(8, &params, nullptr, 0,
-                     std::numeric_limits<size_t>::max());
+    condy::Runtime runtime;
+    auto &ring = runtime.ring();
+    int enable_r = io_uring_enable_rings(ring.ring());
+    REQUIRE(enable_r == 0);
     auto &context = condy::detail::Context::current();
 
-    context.init(&ring, &runtime);
+    context.init(&runtime);
+    auto d = condy::defer([&] { context.reset(); });
 
     size_t invoke_count = 0;
     int r = 0;
@@ -75,12 +71,13 @@ TEST_CASE("test op_finish_handle - basic usage") {
 }
 
 TEST_CASE("test op_finish_handle - concurrent ops") {
-    io_uring_params params{};
-    std::memset(&params, 0, sizeof(params));
-    condy::Ring ring(8, &params, nullptr, 0,
-                     std::numeric_limits<size_t>::max());
+    condy::Runtime runtime;
+    auto &ring = runtime.ring();
+    int enable_r = io_uring_enable_rings(ring.ring());
+    REQUIRE(enable_r == 0);
     auto &context = condy::detail::Context::current();
-    context.init(&ring, &runtime);
+    context.init(&runtime);
+    auto d = condy::defer([&] { context.reset(); });
 
     size_t invoke_count = 0;
     int r = 0;

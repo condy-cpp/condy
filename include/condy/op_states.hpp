@@ -32,14 +32,14 @@ public:
 public:
     void start(unsigned int flags) noexcept {
         auto &context = detail::Context::current();
-        auto *ring = context.ring();
+        auto &ring = context.runtime()->ring();
         context.runtime()->pend_work();
-        io_uring_sqe *sqe = prep_func_(ring);
+        io_uring_sqe *sqe = prep_func_(&ring);
         assert(sqe && "prep_func must return a valid sqe");
         io_uring_sqe_set_flags(sqe, sqe->flags | flags);
         auto work = encode_work(&finish_handle_.get(), WorkType::Common);
         io_uring_sqe_set_data64(sqe, work);
-        ring->maybe_submit();
+        ring.maybe_submit();
 
         finish_handle_.get().maybe_set_cancel(context.runtime());
     }
@@ -230,8 +230,8 @@ public:
     using Base::Base;
 
     void start(unsigned int flags) noexcept {
-        auto *ring = detail::Context::current().ring();
-        ring->reserve_space(sizeof...(Senders));
+        auto &ring = detail::Context::current().runtime()->ring();
+        ring.reserve_space(sizeof...(Senders));
         start_linked_operations_(flags);
     }
 
@@ -361,8 +361,8 @@ public:
     using Base::Base;
 
     void start(unsigned int flags) noexcept {
-        auto *ring = detail::Context::current().ring();
-        ring->reserve_space(Base::op_states_.size());
+        auto &ring = detail::Context::current().runtime()->ring();
+        ring.reserve_space(Base::op_states_.size());
         for (size_t i = 0; i < Base::op_states_.size(); ++i) {
             auto &op_state = Base::op_states_[i];
             if (i < Base::op_states_.size() - 1) {

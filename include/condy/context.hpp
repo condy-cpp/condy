@@ -18,18 +18,14 @@ namespace detail {
 
 class Context : public ThreadLocalSingleton<Context> {
 public:
-    void init(Ring *ring, Runtime *runtime) noexcept {
-        ring_ = ring;
+    void init(Runtime *runtime) noexcept {
         runtime_ = runtime;
         bgid_pool_.reset();
     }
     void reset() noexcept {
-        ring_ = nullptr;
         runtime_ = nullptr;
         bgid_pool_.reset();
     }
-
-    Ring *ring() noexcept { return ring_; }
 
     Runtime *runtime() noexcept { return runtime_; }
 
@@ -38,7 +34,6 @@ public:
     void recycle_bgid(uint16_t bgid) noexcept { bgid_pool_.recycle(bgid); }
 
 private:
-    Ring *ring_ = nullptr;
     Runtime *runtime_ = nullptr;
     IdPool<uint16_t> bgid_pool_;
 };

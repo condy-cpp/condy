@@ -12,6 +12,7 @@
 #include "condy/condy_uring.hpp"
 #include "condy/context.hpp"
 #include "condy/ring.hpp"
+#include "condy/runtime.hpp"
 #include "condy/utils.hpp"
 #include <algorithm>
 #include <bit>
@@ -70,8 +71,8 @@ public:
         reg.ring_addr = reinterpret_cast<uint64_t>(br_);
         reg.ring_entries = capacity_;
         reg.bgid = bgid_;
-        int r =
-            io_uring_register_buf_ring(context.ring()->ring(), &reg, br_flags_);
+        int r = io_uring_register_buf_ring(context.runtime()->ring().ring(),
+                                           &reg, br_flags_);
         if (r != 0) [[unlikely]] {
             throw make_system_error("io_uring_register_buf_ring", -r);
         }
@@ -85,7 +86,7 @@ public:
         size_t data_size = capacity_ * sizeof(io_uring_buf);
         munmap(br_, data_size);
         [[maybe_unused]] int r = io_uring_unregister_buf_ring(
-            detail::Context::current().ring()->ring(), bgid_);
+            detail::Context::current().runtime()->ring().ring(), bgid_);
         assert(r == 0);
         if (r == 0) {
             detail::Context::current().recycle_bgid(bgid_);
@@ -319,8 +320,8 @@ public:
         reg.ring_addr = reinterpret_cast<uint64_t>(br_);
         reg.ring_entries = num_buffers_;
         reg.bgid = bgid_;
-        int r =
-            io_uring_register_buf_ring(context.ring()->ring(), &reg, br_flags_);
+        int r = io_uring_register_buf_ring(context.runtime()->ring().ring(),
+                                           &reg, br_flags_);
         if (r != 0) [[unlikely]] {
             throw make_system_error("io_uring_register_buf_ring", -r);
         }
@@ -344,7 +345,7 @@ public:
         size_t data_size = num_buffers_ * (sizeof(io_uring_buf) + buffer_size_);
         munmap(br_, data_size);
         [[maybe_unused]] int r = io_uring_unregister_buf_ring(
-            detail::Context::current().ring()->ring(), bgid_);
+            detail::Context::current().runtime()->ring().ring(), bgid_);
         assert(r == 0);
         if (r == 0) {
             detail::Context::current().recycle_bgid(bgid_);

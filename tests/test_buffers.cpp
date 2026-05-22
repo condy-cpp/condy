@@ -9,7 +9,17 @@
 #include <cerrno>
 #include <cstddef>
 #include <doctest/doctest.h>
-#include <limits>
+
+namespace {
+
+condy::Ring &enable_runtime_ring(condy::Runtime &runtime) {
+    auto &ring = runtime.ring();
+    int r = io_uring_enable_rings(ring.ring());
+    REQUIRE(r == 0);
+    return ring;
+}
+
+} // namespace
 
 TEST_CASE("test buffers - buffer mutable/const") {
     char data[16] = {};
@@ -110,11 +120,9 @@ TEST_CASE("test buffers - provided buffer queue init") {
 
 TEST_CASE("test buffers - provided buffer queue usage") {
     condy::Runtime runtime;
-    io_uring_params params = {};
-    condy::Ring ring(8, &params, nullptr, 0,
-                     std::numeric_limits<size_t>::max());
+    auto &ring = enable_runtime_ring(runtime);
 
-    condy::detail::Context::current().init(&ring, &runtime);
+    condy::detail::Context::current().init(&runtime);
     auto d = condy::defer([]() { condy::detail::Context::current().reset(); });
 
     condy::ProvidedBufferQueue queue(4);
@@ -166,11 +174,9 @@ TEST_CASE("test buffers - provided buffer queue usage") {
 #if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
 TEST_CASE("test buffers - provided buffer queue usage incr") {
     condy::Runtime runtime;
-    io_uring_params params = {};
-    condy::Ring ring(8, &params, nullptr, 0,
-                     std::numeric_limits<size_t>::max());
+    enable_runtime_ring(runtime);
 
-    condy::detail::Context::current().init(&ring, &runtime);
+    condy::detail::Context::current().init(&runtime);
     auto d = condy::defer([]() { condy::detail::Context::current().reset(); });
 
     condy::ProvidedBufferQueue queue(4, IOU_PBUF_RING_INC);
@@ -231,11 +237,9 @@ TEST_CASE("test buffers - provided buffer queue usage incr") {
 
 TEST_CASE("test buffers - provided buffer queue usage bundle") {
     condy::Runtime runtime;
-    io_uring_params params = {};
-    condy::Ring ring(8, &params, nullptr, 0,
-                     std::numeric_limits<size_t>::max());
+    enable_runtime_ring(runtime);
 
-    condy::detail::Context::current().init(&ring, &runtime);
+    condy::detail::Context::current().init(&runtime);
     auto d = condy::defer([]() { condy::detail::Context::current().reset(); });
 
     condy::detail::BundledProvidedBufferQueue queue(4, 0);
@@ -274,10 +278,8 @@ TEST_CASE("test buffers - provided buffer queue usage bundle") {
 #if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
 TEST_CASE("test buffers - provided buffer queue usage bundle incr") {
     condy::Runtime runtime;
-    io_uring_params params = {};
-    condy::Ring ring(8, &params, nullptr, 0,
-                     std::numeric_limits<size_t>::max());
-    condy::detail::Context::current().init(&ring, &runtime);
+    enable_runtime_ring(runtime);
+    condy::detail::Context::current().init(&runtime);
     auto d = condy::defer([]() { condy::detail::Context::current().reset(); });
 
     condy::detail::BundledProvidedBufferQueue queue(4, IOU_PBUF_RING_INC);
@@ -323,12 +325,10 @@ TEST_CASE("test buffers - provided buffer pool init") {
 
 TEST_CASE("test buffers - provided buffer pool usage") {
     condy::Runtime runtime;
-    io_uring_params params = {};
-    condy::Ring ring(8, &params, nullptr, 0,
-                     std::numeric_limits<size_t>::max());
+    auto &ring = enable_runtime_ring(runtime);
     auto d = condy::defer([]() { condy::detail::Context::current().reset(); });
 
-    condy::detail::Context::current().init(&ring, &runtime);
+    condy::detail::Context::current().init(&runtime);
 
     condy::ProvidedBufferPool pool(4, 16);
     REQUIRE(pool.capacity() == (1 << 2));
@@ -372,11 +372,9 @@ TEST_CASE("test buffers - provided buffer pool usage") {
 #if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
 TEST_CASE("test buffers - provided buffer pool usage incr") {
     condy::Runtime runtime;
-    io_uring_params params = {};
-    condy::Ring ring(8, &params, nullptr, 0,
-                     std::numeric_limits<size_t>::max());
+    enable_runtime_ring(runtime);
 
-    condy::detail::Context::current().init(&ring, &runtime);
+    condy::detail::Context::current().init(&runtime);
     auto d = condy::defer([]() { condy::detail::Context::current().reset(); });
 
     condy::ProvidedBufferPool pool(4, 16, IOU_PBUF_RING_INC);
@@ -428,11 +426,9 @@ TEST_CASE("test buffers - provided buffer pool usage incr") {
 
 TEST_CASE("test buffers - provided buffer pool usage bundle") {
     condy::Runtime runtime;
-    io_uring_params params = {};
-    condy::Ring ring(8, &params, nullptr, 0,
-                     std::numeric_limits<size_t>::max());
+    enable_runtime_ring(runtime);
 
-    condy::detail::Context::current().init(&ring, &runtime);
+    condy::detail::Context::current().init(&runtime);
     auto d = condy::defer([]() { condy::detail::Context::current().reset(); });
 
     condy::detail::BundledProvidedBufferPool pool(4, 16, 0);
@@ -469,11 +465,9 @@ TEST_CASE("test buffers - provided buffer pool usage bundle") {
 #if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
 TEST_CASE("test buffers - provided buffer pool usage bundle incr") {
     condy::Runtime runtime;
-    io_uring_params params = {};
-    condy::Ring ring(8, &params, nullptr, 0,
-                     std::numeric_limits<size_t>::max());
+    enable_runtime_ring(runtime);
 
-    condy::detail::Context::current().init(&ring, &runtime);
+    condy::detail::Context::current().init(&runtime);
     auto d = condy::defer([]() { condy::detail::Context::current().reset(); });
 
     condy::detail::BundledProvidedBufferPool pool(4, 16, IOU_PBUF_RING_INC);

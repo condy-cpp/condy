@@ -245,7 +245,7 @@ public:
             assert(r == 1); // 1 indicates success for this call
         }
 
-        detail::Context::current().init(&ring_, this);
+        detail::Context::current().init(this);
         auto d2 = defer([]() { detail::Context::current().reset(); });
 
         while (true) {
@@ -268,6 +268,8 @@ public:
             flush_ring_wait_();
         }
     }
+
+    auto &ring() noexcept { return ring_; }
 
     /**
      * @brief Get the file descriptor table of the runtime.
