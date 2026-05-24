@@ -57,7 +57,7 @@ public:
     constexpr bool operator==(NeverStopToken const &) const noexcept = default;
 };
 
-template <typename Sender> class SenderAwaiter {
+template <typename Sender> class [[nodiscard]] SenderAwaiter {
 public:
     SenderAwaiter(Sender sender)
         : operation_state_(std::move(sender).connect_impl(Receiver{this})) {}
