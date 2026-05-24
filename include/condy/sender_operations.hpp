@@ -68,15 +68,10 @@ public:
     bool await_ready() const noexcept { return false; }
 
     template <typename Promise>
-    bool await_suspend(std::coroutine_handle<Promise> h) noexcept {
+    bool await_suspend(std::coroutine_handle<Promise> handle) noexcept {
         operation_state_.start(0);
-        if (handle_ == std::noop_coroutine()) {
-            // The operation completed synchronously, no need to suspend
-            return false;
-        } else {
-            handle_ = h;
-            return true;
-        }
+        auto h = std::exchange(handle_, handle);
+        return h == std::noop_coroutine();
     }
 
     auto await_resume() noexcept { return std::move(result_); }
@@ -90,18 +85,15 @@ private:
         NeverStopToken get_stop_token() const noexcept { return {}; }
     };
 
-    template <typename R> void handle_result_(R &&result) {
+    template <typename R> void handle_result_(R &&result) noexcept {
         result_ = std::forward<R>(result);
-        if (handle_) {
-            handle_.resume();
-        } else {
-            handle_ = std::noop_coroutine();
-        }
+        auto h = std::exchange(handle_, nullptr);
+        h.resume();
     }
 
     using OperationState = operation_state_t<Sender, Receiver>;
     // Await/complete path is serialized, so atomic is not needed here.
-    std::coroutine_handle<> handle_ = nullptr;
+    std::coroutine_handle<> handle_ = std::noop_coroutine();
     OperationState operation_state_;
     typename Sender::ReturnType result_;
 };
