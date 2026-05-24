@@ -12,3 +12,6 @@ target_link_libraries(overhead_batch PRIVATE condy uring)
 
 add_executable(post post.cpp)
 target_link_libraries(post PRIVATE condy uring)
+
+add_executable(recv recv.cpp)
+target_link_libraries(recv PRIVATE condy uring)
