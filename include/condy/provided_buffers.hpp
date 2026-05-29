@@ -7,10 +7,9 @@
 
 #pragma once
 
-#include "condy/buffers.hpp"
 #include "condy/concepts.hpp"
 #include "condy/condy_uring.hpp"
-#include "condy/context.hpp"
+#include "condy/detail/context.hpp"
 #include "condy/ring.hpp"
 #include "condy/runtime.hpp"
 #include "condy/utils.hpp"
@@ -21,6 +20,7 @@
 #include <stdexcept>
 #include <sys/mman.h>
 #include <sys/types.h>
+#include <vector>
 
 namespace condy {
 

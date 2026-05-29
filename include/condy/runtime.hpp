@@ -6,7 +6,7 @@
 #pragma once
 
 #include "condy/condy_uring.hpp"
-#include "condy/context.hpp"
+#include "condy/detail/context.hpp"
 #include "condy/intrusive.hpp"
 #include "condy/invoker.hpp"
 #include "condy/ring.hpp"

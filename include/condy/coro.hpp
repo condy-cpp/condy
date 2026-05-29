@@ -64,4 +64,4 @@ private:
 
 } // namespace condy
 
-#include "condy/coro.inl"
+#include "condy/detail/coro.inl"

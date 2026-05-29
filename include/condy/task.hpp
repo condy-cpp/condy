@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "condy/context.hpp"
 #include "condy/coro.hpp"
+#include "condy/detail/context.hpp"
 #include "condy/invoker.hpp"
 #include "condy/runtime.hpp"
 #include "condy/utils.hpp"

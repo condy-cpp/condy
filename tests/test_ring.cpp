@@ -1,5 +1,5 @@
 #include "condy/cqe_handler.hpp"
-#include "condy/finish_handles.hpp"
+#include "condy/detail/finish_handles.hpp"
 #include "condy/ring.hpp"
 #include <cerrno>
 #include <cstddef>

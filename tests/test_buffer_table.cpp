@@ -1,6 +1,6 @@
 #include "condy/awaiter_operations.hpp"
-#include "condy/context.hpp"
 #include "condy/coro.hpp"
+#include "condy/detail/context.hpp"
 #include "condy/ring.hpp"
 #include "condy/sync_wait.hpp"
 #include <doctest/doctest.h>

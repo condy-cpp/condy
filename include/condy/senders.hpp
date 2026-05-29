@@ -6,7 +6,7 @@
 #pragma once
 
 #include "condy/concepts.hpp"
-#include "condy/op_states.hpp"
+#include "condy/detail/op_states.hpp"
 #include <array>
 #include <tuple>
 #include <type_traits>

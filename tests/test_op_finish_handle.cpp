@@ -1,6 +1,6 @@
-#include "condy/context.hpp"
 #include "condy/cqe_handler.hpp"
-#include "condy/finish_handles.hpp"
+#include "condy/detail/context.hpp"
+#include "condy/detail/finish_handles.hpp"
 #include "condy/runtime.hpp"
 #include <cstddef>
 #include <doctest/doctest.h>
