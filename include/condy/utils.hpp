@@ -145,33 +145,4 @@ private:
     std::stack<T> recycled_ids_;
 };
 
-template <size_t Idx = 0, typename... Ts>
-std::variant<Ts...> tuple_at(std::tuple<Ts...> &results, size_t idx) {
-    if constexpr (Idx < sizeof...(Ts)) {
-        if (idx == Idx) {
-            return std::variant<Ts...>{std::in_place_index<Idx>,
-                                       std::move(std::get<Idx>(results))};
-        } else {
-            return tuple_at<Idx + 1, Ts...>(results, idx);
-        }
-    } else {
-#ifdef __clang__
-        // Should not reach here, but clang can misoptimize this path if we
-        // mark it as unreachable. Confirmed fixed in clang 20.1.8, but the
-        // exact cause was not investigated.
-        assert(false && "Index out of bounds");
-        return std::variant<Ts...>{std::in_place_index<0>,
-                                   std::move(std::get<0>(results))};
-#else
-        detail::panic_on("Index out of bounds in tuple_at");
-#endif
-    }
-}
-
-template <typename T> inline T align_up(T value, T alignment) noexcept {
-    // alignment must be a power of two
-    assert(alignment > 0 && (alignment & (alignment - 1)) == 0);
-    return (value + alignment - 1) & ~(alignment - 1);
-}
-
 } // namespace condy

@@ -208,7 +208,7 @@ template <typename Receiver> struct ReceiverAnyWrapper {
     template <typename R> void operator()(R &&result) noexcept {
         auto &[order, results] = result;
         size_t index = order[0];
-        std::move(receiver)(tuple_at(results, index));
+        std::move(receiver)(detail::tuple_at(results, index));
     }
     auto get_stop_token() const noexcept { return receiver.get_stop_token(); }
 };

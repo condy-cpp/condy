@@ -50,7 +50,7 @@ public:
 
     template <typename... Args>
     static void *operator new(size_t size, Allocator &alloc, const Args &...) {
-        size_t allocator_offset = align_up(size, alignof(Allocator));
+        size_t allocator_offset = detail::align_up(size, alignof(Allocator));
         size_t total_size = allocator_offset + sizeof(Allocator);
 
         Pointer mem = alloc.allocate(total_size);
@@ -64,7 +64,7 @@ public:
     }
 
     void operator delete(void *ptr, size_t size) noexcept {
-        size_t allocator_offset = align_up(size, alignof(Allocator));
+        size_t allocator_offset = detail::align_up(size, alignof(Allocator));
         size_t total_size = allocator_offset + sizeof(Allocator);
         Pointer mem = static_cast<Pointer>(ptr);
         Allocator &alloc = *std::launder(
