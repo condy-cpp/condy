@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "condy/singleton.hpp"
+#include "condy/detail/singleton.hpp"
 #include "condy/utils.hpp"
 #include <cassert>
 #include <cstdint>

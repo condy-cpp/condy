@@ -1,4 +1,4 @@
-#include "condy/singleton.hpp"
+#include "condy/detail/singleton.hpp"
 #include <doctest/doctest.h>
 #include <thread>
 

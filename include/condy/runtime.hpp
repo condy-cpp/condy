@@ -7,12 +7,12 @@
 
 #include "condy/condy_uring.hpp"
 #include "condy/detail/context.hpp"
+#include "condy/detail/singleton.hpp"
 #include "condy/intrusive.hpp"
 #include "condy/invoker.hpp"
 #include "condy/ring.hpp"
 #include "condy/ring_settings.hpp"
 #include "condy/runtime_options.hpp"
-#include "condy/singleton.hpp"
 #include "condy/utils.hpp"
 #include "condy/work_type.hpp"
 #include <algorithm>
