@@ -8,8 +8,8 @@
 
 #include "condy/detail/intrusive.hpp"
 #include "condy/detail/invoker.hpp"
+#include "condy/detail/type_traits.hpp"
 #include "condy/runtime.hpp"
-#include "condy/type_traits.hpp"
 #include "condy/utils.hpp"
 #include <atomic>
 #include <cerrno>

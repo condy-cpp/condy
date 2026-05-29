@@ -1,6 +1,6 @@
 #include "condy/detail/invoker.hpp"
+#include "condy/detail/type_traits.hpp"
 #include "condy/runtime.hpp"
-#include "condy/type_traits.hpp"
 #include <condy/awaiters.hpp>
 #include <condy/coro.hpp>
 #include <cstddef>

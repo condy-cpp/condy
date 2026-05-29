@@ -9,8 +9,8 @@
 #pragma once
 
 #include "condy/concepts.hpp"
+#include "condy/detail/type_traits.hpp"
 #include "condy/runtime.hpp"
-#include "condy/type_traits.hpp"
 #include "condy/utils.hpp"
 #include "condy/work_type.hpp"
 #include <cassert>

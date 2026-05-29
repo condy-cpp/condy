@@ -8,7 +8,7 @@
 #include "condy/concepts.hpp"
 #include "condy/condy_uring.hpp"
 #include "condy/detail/finish_handles.hpp"
-#include "condy/type_traits.hpp"
+#include "condy/detail/type_traits.hpp"
 #include "condy/utils.hpp"
 #include <array>
 #include <cstddef>
@@ -169,8 +169,8 @@ private:
     template <typename T> struct operation_state_traits;
     template <size_t... Is>
     struct operation_state_traits<std::index_sequence<Is...>> {
-        using type = std::tuple<
-            RawStorage<detail::operation_state_t<Senders, ChildReceiver<Is>>>...>;
+        using type = std::tuple<RawStorage<
+            detail::operation_state_t<Senders, ChildReceiver<Is>>>...>;
     };
     using OperationStates = typename operation_state_traits<
         std::make_index_sequence<sizeof...(Senders)>>::type;
@@ -185,14 +185,12 @@ protected:
 };
 
 template <typename Receiver, typename... Senders>
-using ParallelAnyOperationState =
-    ParallelOperationState<Receiver, WhenAnyCanceller<detail::stop_token_t<Receiver>>,
-                           Senders...>;
+using ParallelAnyOperationState = ParallelOperationState<
+    Receiver, WhenAnyCanceller<detail::stop_token_t<Receiver>>, Senders...>;
 
 template <typename Receiver, typename... Senders>
-using ParallelAllOperationState =
-    ParallelOperationState<Receiver, WhenAllCanceller<detail::stop_token_t<Receiver>>,
-                           Senders...>;
+using ParallelAllOperationState = ParallelOperationState<
+    Receiver, WhenAllCanceller<detail::stop_token_t<Receiver>>, Senders...>;
 
 template <typename Receiver> struct ReceiverAllWrapper {
     Receiver receiver;
@@ -310,8 +308,8 @@ private:
         auto get_stop_token() const noexcept { return stop_token; }
     };
 
-    using OperationStates =
-        std::vector<RawStorage<detail::operation_state_t<Sender, ChildReceiver>>>;
+    using OperationStates = std::vector<
+        RawStorage<detail::operation_state_t<Sender, ChildReceiver>>>;
 
 protected:
     OperationStates op_states_;
