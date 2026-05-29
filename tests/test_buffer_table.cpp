@@ -1,5 +1,5 @@
-#include "condy/awaiter_operations.hpp"
 #include "condy/coro.hpp"
+#include "condy/detail/async_operations.hpp"
 #include "condy/detail/context.hpp"
 #include "condy/detail/ring.hpp"
 #include "condy/sync_wait.hpp"

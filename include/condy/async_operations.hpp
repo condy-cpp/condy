@@ -19,6 +19,13 @@ namespace condy {
 class ProvidedBufferQueue;
 class ProvidedBufferPool;
 
+namespace detail {
+
+class BundledProvidedBufferQueue;
+class BundledProvidedBufferPool;
+
+} // namespace detail
+
 /**
  * @brief See io_uring_prep_splice
  */

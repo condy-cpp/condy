@@ -1,5 +1,6 @@
 #include "condy/awaiter_operations.hpp"
 #include "condy/channel.hpp"
+#include "condy/detail/async_operations.hpp"
 #include "condy/sender_operations.hpp"
 #include "condy/senders.hpp"
 #include "condy/sync_wait.hpp"
