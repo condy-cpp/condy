@@ -48,6 +48,7 @@ template <typename T, typename... Us>
 concept AnySameAs = (std::same_as<T, Us> || ...);
 
 template <typename T>
-concept SenderLike = requires(T sender) { typename T::CondySender; };
+concept SenderLike =
+    requires(T sender) { typename std::decay_t<T>::CondySender; };
 
 } // namespace condy
