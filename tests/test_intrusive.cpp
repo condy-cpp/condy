@@ -1,4 +1,4 @@
-#include "condy/intrusive.hpp"
+#include "condy/detail/intrusive.hpp"
 #include <doctest/doctest.h>
 #include <utility>
 

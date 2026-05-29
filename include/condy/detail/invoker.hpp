@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "condy/intrusive.hpp"
+#include "condy/detail/intrusive.hpp"
 
 namespace condy {
 namespace detail {
