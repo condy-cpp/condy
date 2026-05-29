@@ -1,6 +1,6 @@
 #include "condy/cqe_handler.hpp"
 #include "condy/detail/finish_handles.hpp"
-#include "condy/ring.hpp"
+#include "condy/detail/ring.hpp"
 #include <cerrno>
 #include <cstddef>
 #include <cstring>

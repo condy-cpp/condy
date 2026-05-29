@@ -3,7 +3,7 @@
 #include "condy/channel.hpp"
 #include "condy/coro.hpp"
 #include "condy/detail/context.hpp"
-#include "condy/ring.hpp"
+#include "condy/detail/ring.hpp"
 #include "condy/runtime.hpp"
 #include "condy/sync_wait.hpp"
 #include <cerrno>

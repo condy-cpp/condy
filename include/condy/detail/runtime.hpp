@@ -7,8 +7,8 @@
 
 #include "condy/condy_uring.hpp"
 #include "condy/detail/context.hpp"
+#include "condy/detail/ring.hpp"
 #include "condy/detail/singleton.hpp"
-#include "condy/ring.hpp"
 #include <atomic>
 #include <cerrno>
 #include <cstddef>

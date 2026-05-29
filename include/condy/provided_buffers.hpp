@@ -10,7 +10,7 @@
 #include "condy/concepts.hpp"
 #include "condy/condy_uring.hpp"
 #include "condy/detail/context.hpp"
-#include "condy/ring.hpp"
+#include "condy/detail/ring.hpp"
 #include "condy/runtime.hpp"
 #include "condy/utils.hpp"
 #include <algorithm>
