@@ -71,7 +71,7 @@ public:
         if (state == State::Enabled) {
             // Fast path: if the ring is enabled, we can directly schedule the
             // work
-            tsan_release(work);
+            detail::tsan_release(work);
             schedule_msg_ring_(
                 curr_runtime,
                 detail::encode_work(work, detail::WorkType::Schedule));
@@ -82,7 +82,7 @@ public:
             state = state_.load();
             if (state == State::Enabled) {
                 lock.unlock();
-                tsan_release(work);
+                detail::tsan_release(work);
                 schedule_msg_ring_(
                     curr_runtime,
                     detail::encode_work(work, detail::WorkType::Schedule));
@@ -107,7 +107,7 @@ public:
         }
 
         detail::CancelRequest request(data);
-        tsan_release(&request);
+        detail::tsan_release(&request);
         schedule_msg_ring_(
             curr_runtime,
             detail::encode_work(&request, detail::WorkType::Cancel));
@@ -392,13 +392,13 @@ private:
                 resume_work();
             } else {
                 auto *work = static_cast<detail::WorkInvoker *>(data);
-                tsan_acquire(work);
+                detail::tsan_acquire(work);
                 (*work)();
             }
         } else if (type == detail::WorkType::Cancel) {
             detail::CancelRequest *request =
                 static_cast<detail::CancelRequest *>(data);
-            tsan_acquire(request);
+            detail::tsan_acquire(request);
             io_uring_sqe *sqe = ring_.get_sqe();
             prep_cancel_(sqe, request->data());
             request->notify();
