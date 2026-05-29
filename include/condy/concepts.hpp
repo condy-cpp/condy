@@ -38,16 +38,17 @@ concept BufferRingLike = requires(T br, io_uring_cqe *cqe) {
 };
 
 template <typename T>
-concept BufferLike = requires { typename std::decay_t<T>::CondyBuffer; };
+concept BufferLike = requires { typename std::remove_cvref_t<T>::CondyBuffer; };
 
 template <typename T>
-concept FdLike = std::same_as<std::decay_t<T>, int> ||
-                 std::same_as<std::decay_t<T>, detail::FixedFd>;
+concept FdLike = std::same_as<std::remove_cvref_t<T>, int> ||
+                 std::same_as<std::remove_cvref_t<T>, detail::FixedFd>;
 
 template <typename T, typename... Us>
 concept AnySameAs = (std::same_as<T, Us> || ...);
 
 template <typename T>
-concept SenderLike = requires(T sender) { typename T::CondySender; };
+concept SenderLike =
+    requires(T sender) { typename std::remove_cvref_t<T>::CondySender; };
 
 } // namespace condy

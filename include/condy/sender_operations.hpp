@@ -153,7 +153,7 @@ auto parallel(Senders &&...senders) {
 template <template <typename Sender> typename RangedSenderType,
           std::ranges::range Range>
 auto parallel(Range &&range) {
-    using SenderType = typename std::decay_t<Range>::value_type;
+    using SenderType = typename std::remove_cvref_t<Range>::value_type;
     auto begin = std::make_move_iterator(std::begin(range));
     auto end = std::make_move_iterator(std::end(range));
     std::vector<SenderType> senders(begin, end);

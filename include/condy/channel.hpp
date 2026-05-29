@@ -60,7 +60,7 @@ public:
      * channel is closed; -EAGAIN if the channel is full.
      */
     template <typename U>
-        requires std::is_same_v<std::decay_t<U>, T>
+        requires std::is_same_v<std::remove_cvref_t<U>, T>
     int32_t try_push(U &&item) noexcept {
         std::lock_guard<std::mutex> lock(mutex_);
         if (closed_) {
@@ -242,7 +242,7 @@ private:
 
 private:
     template <typename U>
-        requires std::is_same_v<std::decay_t<U>, T>
+        requires std::is_same_v<std::remove_cvref_t<U>, T>
     bool try_push_inner_(U &&item) noexcept {
         if (!pop_awaiters_.empty()) {
             assert(empty_inner_());
@@ -285,7 +285,7 @@ private:
     }
 
     template <typename U>
-        requires std::is_same_v<std::decay_t<U>, T>
+        requires std::is_same_v<std::remove_cvref_t<U>, T>
     void push_inner_(U &&item) noexcept {
         assert(!full_inner_());
         auto mask = buffer_.capacity() - 1;

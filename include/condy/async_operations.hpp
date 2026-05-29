@@ -33,7 +33,7 @@ template <typename Awaiter> auto maybe_flag_fixed_fd(Awaiter &&op, int) {
 }
 
 template <typename Fd>
-constexpr bool is_fixed_fd_v = std::is_same_v<std::decay_t<Fd>, FixedFd>;
+constexpr bool is_fixed_fd_v = std::is_same_v<std::remove_cvref_t<Fd>, FixedFd>;
 
 } // namespace detail
 
