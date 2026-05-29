@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include "condy/coro.hpp"
 #include "condy/invoker.hpp"
 #include "condy/sender_operations.hpp"
 #include "condy/utils.hpp"
@@ -16,6 +15,8 @@
 #include <optional>
 
 namespace condy {
+
+template <typename T, typename Allocator> class Coro;
 
 namespace detail {
 
@@ -284,14 +285,6 @@ protected:
     std::exception_ptr exception_;
 };
 
-template <typename Allocator>
-class Promise<void, Allocator>
-    : public detail::BindAllocator<detail::PromiseBase<Coro<void, Allocator>>,
-                                   Allocator> {
-public:
-    void return_void() const noexcept {}
-};
-
 template <typename T, typename Allocator>
 class Promise
     : public detail::BindAllocator<detail::PromiseBase<Coro<T, Allocator>>,
@@ -303,6 +296,14 @@ public:
 
 private:
     std::optional<T> value_;
+};
+
+template <typename Allocator>
+class Promise<void, Allocator>
+    : public detail::BindAllocator<detail::PromiseBase<Coro<void, Allocator>>,
+                                   Allocator> {
+public:
+    void return_void() const noexcept {}
 };
 
 template <typename PromiseType> struct CoroAwaiterBase {
@@ -347,10 +348,5 @@ struct CoroAwaiter<void, Allocator>
 };
 
 } // namespace detail
-
-template <typename T, typename Allocator>
-inline auto Coro<T, Allocator>::operator co_await() noexcept {
-    return detail::CoroAwaiter<T, Allocator>{release()};
-}
 
 } // namespace condy
