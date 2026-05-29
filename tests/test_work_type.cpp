@@ -1,4 +1,4 @@
-#include "condy/work_type.hpp"
+#include "condy/detail/work_type.hpp"
 #include <doctest/doctest.h>
 
 namespace {
