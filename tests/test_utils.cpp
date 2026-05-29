@@ -64,7 +64,7 @@ TEST_CASE("test raw_storage - guaranteed return value optimization") {
 }
 
 TEST_CASE("test small_array - small") {
-    condy::SmallArray<int, 4> arr(3);
+    condy::detail::SmallArray<int, 4> arr(3);
     arr[0] = 10;
     arr[1] = 20;
     arr[2] = 30;
@@ -75,7 +75,7 @@ TEST_CASE("test small_array - small") {
 }
 
 TEST_CASE("test small_array - large") {
-    condy::SmallArray<int, 4> arr(10);
+    condy::detail::SmallArray<int, 4> arr(10);
     for (size_t i = 0; i < arr.capacity(); ++i) {
         arr[i] = static_cast<int>(i * 5);
     }
@@ -91,7 +91,7 @@ TEST_CASE("test small_array - large") {
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
 TEST_CASE("test small_array - small with raw_storage") {
-    condy::SmallArray<condy::RawStorage<std::string>, 2> arr(2);
+    condy::detail::SmallArray<condy::RawStorage<std::string>, 2> arr(2);
     arr[0].construct("Hello");
     arr[1].construct("World");
 
@@ -106,7 +106,7 @@ TEST_CASE("test small_array - small with raw_storage") {
 #endif
 
 TEST_CASE("test small_array - large with raw_storage") {
-    condy::SmallArray<condy::RawStorage<std::string>, 2> arr(3);
+    condy::detail::SmallArray<condy::RawStorage<std::string>, 2> arr(3);
     arr[0].construct("First");
     arr[1].construct("Second");
     arr[2].construct("Third");

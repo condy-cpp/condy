@@ -63,39 +63,4 @@ private:
     alignas(T) unsigned char storage_[sizeof(T)];
 };
 
-template <typename T, size_t N> class SmallArray {
-public:
-    SmallArray(size_t capacity) : capacity_(capacity) {
-        if (!is_small_()) {
-            large_ = new T[capacity];
-        }
-    }
-
-    ~SmallArray() {
-        if (!is_small_()) {
-            delete[] large_;
-        }
-    }
-
-    T &operator[](size_t index) noexcept {
-        return is_small_() ? small_[index] : large_[index];
-    }
-
-    const T &operator[](size_t index) const noexcept {
-        return is_small_() ? small_[index] : large_[index];
-    }
-
-    size_t capacity() const noexcept { return capacity_; }
-
-private:
-    bool is_small_() const noexcept { return capacity_ <= N; }
-
-private:
-    size_t capacity_;
-    union {
-        T small_[N];
-        T *large_;
-    };
-};
-
 } // namespace condy
