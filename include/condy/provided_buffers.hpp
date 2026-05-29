@@ -241,8 +241,10 @@ class BundledProvidedBufferPool;
  * @note The lifetime of the provided buffer must not exceed the lifetime of the
  * provided buffer pool it is associated with.
  */
-struct ProvidedBuffer : public BufferBase {
+struct ProvidedBuffer {
 public:
+    using CondyBuffer = void;
+
     ProvidedBuffer() = default;
     ProvidedBuffer(void *data, size_t size,
                    detail::BundledProvidedBufferPool *pool)

@@ -14,7 +14,6 @@ struct io_uring_sqe;
 namespace condy {
 
 class Ring;
-class BufferBase;
 
 namespace detail {
 
@@ -39,7 +38,7 @@ concept BufferRingLike = requires(T br, io_uring_cqe *cqe) {
 };
 
 template <typename T>
-concept BufferLike = std::derived_from<std::decay_t<T>, BufferBase>;
+concept BufferLike = requires { typename std::decay_t<T>::CondyBuffer; };
 
 template <typename T>
 concept FdLike = std::same_as<std::decay_t<T>, int> ||
