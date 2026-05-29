@@ -45,16 +45,17 @@ private:
 };
 
 template <PrepFuncLike PrepFunc, CQEHandlerLike CQEHandler>
-using OpSender = OpSenderBase<PrepFunc, CQEHandler, OpFinishHandle>;
+using OpSender = OpSenderBase<PrepFunc, CQEHandler, detail::OpFinishHandle>;
 
 template <PrepFuncLike PrepFunc, CQEHandlerLike CQEHandler,
           typename MultiShotFunc>
 using MultiShotOpSender =
-    OpSenderBase<PrepFunc, CQEHandler, MultiShotOpFinishHandle, MultiShotFunc>;
+    OpSenderBase<PrepFunc, CQEHandler, detail::MultiShotOpFinishHandle,
+                 MultiShotFunc>;
 
 template <PrepFuncLike PrepFunc, CQEHandlerLike CQEHandler, typename FreeFunc>
-using ZeroCopyOpSender =
-    OpSenderBase<PrepFunc, CQEHandler, ZeroCopyOpFinishHandle, FreeFunc>;
+using ZeroCopyOpSender = OpSenderBase<PrepFunc, CQEHandler,
+                                      detail::ZeroCopyOpFinishHandle, FreeFunc>;
 
 template <unsigned int Flags, typename Sender>
 class [[nodiscard]] FlaggedOpSender {

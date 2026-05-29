@@ -19,6 +19,7 @@
 #include <utility>
 
 namespace condy {
+namespace detail {
 
 template <CQEHandlerLike CQEHandler, typename Receiver>
 class OpFinishHandle : public OpFinishHandleBase {
@@ -181,4 +182,5 @@ private:
     Handle *handle_ptr_;
 };
 
+} // namespace detail
 } // namespace condy

@@ -22,7 +22,7 @@ struct MockReceiver {
     size_t &invoke_count;
 };
 
-using Handle = OpFinishHandle<SimpleCQEHandler, MockReceiver>;
+using Handle = detail::OpFinishHandle<SimpleCQEHandler, MockReceiver>;
 
 } // namespace
 
@@ -82,7 +82,7 @@ TEST_CASE("test ring - register and complete ops") {
     while (reaped < num_ops) {
         ring.submit();
         reaped += ring.reap_completions([&](io_uring_cqe *cqe) {
-            auto *handle = reinterpret_cast<OpFinishHandleBase *>(
+            auto *handle = reinterpret_cast<detail::OpFinishHandleBase *>(
                 io_uring_cqe_get_data(cqe));
             REQUIRE(handle != nullptr);
             handle->handle(cqe);
@@ -141,7 +141,7 @@ TEST_CASE("test ring - cancel ops") {
                 condy::encode_work(nullptr, condy::WorkType::Ignore)) {
                 return;
             }
-            auto *handle = reinterpret_cast<OpFinishHandleBase *>(
+            auto *handle = reinterpret_cast<detail::OpFinishHandleBase *>(
                 io_uring_cqe_get_data(cqe));
             REQUIRE(handle != nullptr);
             handle->handle(cqe);

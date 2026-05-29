@@ -90,8 +90,6 @@ private:
     std::atomic_bool finished_ = false;
 };
 
-} // namespace detail
-
 class OpFinishHandleBase {
 public:
     using HandleFunc = bool (*)(void *, io_uring_cqe *) noexcept;
@@ -107,6 +105,8 @@ protected:
 protected:
     HandleFunc handle_func_ = nullptr;
 };
+
+} // namespace detail
 
 /**
  * @brief The event loop runtime for executing asynchronous
@@ -479,7 +479,7 @@ private:
             prep_cancel_(sqe, request->data());
             request->notify();
         } else if (type == WorkType::Common) {
-            auto *handle = static_cast<OpFinishHandleBase *>(data);
+            auto *handle = static_cast<detail::OpFinishHandleBase *>(data);
             auto op_finish = handle->handle(cqe);
             if (op_finish) {
                 resume_work();
