@@ -169,7 +169,7 @@ private:
     template <typename T> struct operation_state_traits;
     template <size_t... Is>
     struct operation_state_traits<std::index_sequence<Is...>> {
-        using type = std::tuple<RawStorage<
+        using type = std::tuple<detail::RawStorage<
             detail::operation_state_t<Senders, ChildReceiver<Is>>>...>;
     };
     using OperationStates = typename operation_state_traits<
@@ -309,7 +309,7 @@ private:
     };
 
     using OperationStates = std::vector<
-        RawStorage<detail::operation_state_t<Sender, ChildReceiver>>>;
+        detail::RawStorage<detail::operation_state_t<Sender, ChildReceiver>>>;
 
 protected:
     OperationStates op_states_;

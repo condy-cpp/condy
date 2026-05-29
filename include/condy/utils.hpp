@@ -37,30 +37,4 @@ template <typename Func> auto defer(Func &&func) {
     return Defer<std::decay_t<Func>>(std::forward<Func>(func));
 }
 
-template <typename T> class RawStorage {
-public:
-    template <typename Factory>
-    void accept(Factory &&factory) noexcept(
-        noexcept(T(std::forward<Factory>(factory)()))) {
-        new (&storage_) T(std::forward<Factory>(factory)());
-    }
-
-    template <typename... Args>
-    void construct(Args &&...args) noexcept(
-        std::is_nothrow_constructible_v<T, Args...>) {
-        accept([&]() { return T(std::forward<Args>(args)...); });
-    }
-
-    T &get() noexcept { return *std::launder(reinterpret_cast<T *>(storage_)); }
-
-    const T &get() const noexcept {
-        return *std::launder(reinterpret_cast<const T *>(storage_));
-    }
-
-    void destroy() noexcept { get().~T(); }
-
-private:
-    alignas(T) unsigned char storage_[sizeof(T)];
-};
-
 } // namespace condy

@@ -19,14 +19,14 @@ struct int_deleter {
 } // namespace
 
 TEST_CASE("test raw_storage - int") {
-    condy::RawStorage<int> storage;
+    condy::detail::RawStorage<int> storage;
     storage.construct(77);
     REQUIRE(storage.get() == 77);
     storage.destroy();
 }
 
 TEST_CASE("test raw_storage - std::string") {
-    condy::RawStorage<std::string> storage;
+    condy::detail::RawStorage<std::string> storage;
     storage.construct("Raw Storage Test");
     REQUIRE(storage.get() == "Raw Storage Test");
     storage.destroy();
@@ -35,7 +35,7 @@ TEST_CASE("test raw_storage - std::string") {
 TEST_CASE("test raw_storage - std::unique_ptr") {
     int_deleter::called = false;
     auto ptr = std::unique_ptr<int, int_deleter>(new int(99));
-    condy::RawStorage<std::unique_ptr<int, int_deleter>> storage;
+    condy::detail::RawStorage<std::unique_ptr<int, int_deleter>> storage;
     storage.construct(std::move(ptr));
     REQUIRE(!int_deleter::called);
     REQUIRE(*(storage.get()) == 99);
@@ -57,7 +57,7 @@ TEST_CASE("test raw_storage - guaranteed return value optimization") {
 
     auto f2 = [&]() { return f1(42); };
 
-    condy::RawStorage<Fixed> storage;
+    condy::detail::RawStorage<Fixed> storage;
     storage.accept(f2);
     REQUIRE(storage.get().value == 42);
     storage.destroy();
@@ -91,7 +91,7 @@ TEST_CASE("test small_array - large") {
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
 TEST_CASE("test small_array - small with raw_storage") {
-    condy::detail::SmallArray<condy::RawStorage<std::string>, 2> arr(2);
+    condy::detail::SmallArray<condy::detail::RawStorage<std::string>, 2> arr(2);
     arr[0].construct("Hello");
     arr[1].construct("World");
 
@@ -106,7 +106,7 @@ TEST_CASE("test small_array - small with raw_storage") {
 #endif
 
 TEST_CASE("test small_array - large with raw_storage") {
-    condy::detail::SmallArray<condy::RawStorage<std::string>, 2> arr(3);
+    condy::detail::SmallArray<condy::detail::RawStorage<std::string>, 2> arr(3);
     arr[0].construct("First");
     arr[1].construct("Second");
     arr[2].construct("Third");

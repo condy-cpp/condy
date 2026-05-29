@@ -350,7 +350,7 @@ private:
     HandleList<PopFinishHandleBase> pop_awaiters_;
     size_t head_ = 0;
     size_t tail_ = 0;
-    detail::SmallArray<RawStorage<T>, N> buffer_;
+    detail::SmallArray<detail::RawStorage<T>, N> buffer_;
     bool closed_ = false;
 };
 
