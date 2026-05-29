@@ -145,12 +145,6 @@ private:
     std::stack<T> recycled_ids_;
 };
 
-#if __cplusplus >= 202302L
-[[noreturn]] inline void unreachable() { std::unreachable(); }
-#else
-[[noreturn]] inline void unreachable() { __builtin_unreachable(); }
-#endif
-
 template <size_t Idx = 0, typename... Ts>
 std::variant<Ts...> tuple_at(std::tuple<Ts...> &results, size_t idx) {
     if constexpr (Idx < sizeof...(Ts)) {

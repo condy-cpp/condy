@@ -89,6 +89,12 @@ inline auto make_system_error(std::string_view msg) {
     return make_system_error(msg, errno);
 }
 
+#if __cplusplus >= 202302L
+[[noreturn]] inline void unreachable() { std::unreachable(); }
+#else
+[[noreturn]] inline void unreachable() { __builtin_unreachable(); }
+#endif
+
 } // namespace detail
 } // namespace condy
 

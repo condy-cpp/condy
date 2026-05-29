@@ -410,7 +410,7 @@ private:
                 resume_work();
             }
         } else {
-            unreachable();
+            detail::unreachable();
         }
     }
 
