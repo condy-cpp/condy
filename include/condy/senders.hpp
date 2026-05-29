@@ -16,6 +16,8 @@
 
 namespace condy {
 
+namespace detail {
+
 template <PrepFuncLike PrepFunc, CQEHandlerLike CQEHandler,
           template <typename...> class FinishHandle, typename... Args>
 class [[nodiscard]] OpSenderBase {
@@ -74,16 +76,12 @@ private:
     Sender sender_;
 };
 
-namespace detail {
-
 template <template <typename, unsigned int, typename...> class OperationState,
           unsigned int Flags>
 struct link_sender_helper {
     template <typename Receiver, typename... Senders>
     using apply = OperationState<Receiver, Flags, Senders...>;
 };
-
-} // namespace detail
 
 template <typename Return, template <typename...> class OperationState,
           typename... Senders>
@@ -198,5 +196,26 @@ using RangedLinkSender = RangedLinkSenderBase<IOSQE_IO_LINK, Sender>;
 
 template <typename Sender>
 using RangedHardLinkSender = RangedLinkSenderBase<IOSQE_IO_HARDLINK, Sender>;
+
+} // namespace detail
+
+// TODO: This re-export is intentional. We may adapt these senders to standard
+// sender/receiver concepts in the future.
+using detail::FlaggedOpSender;
+using detail::HardLinkSender;
+using detail::LinkSender;
+using detail::MultiShotOpSender;
+using detail::OpSender;
+using detail::ParallelAllSender;
+using detail::ParallelAnySender;
+using detail::RangedHardLinkSender;
+using detail::RangedLinkSender;
+using detail::RangedParallelAllSender;
+using detail::RangedParallelAnySender;
+using detail::RangedWhenAllSender;
+using detail::RangedWhenAnySender;
+using detail::WhenAllSender;
+using detail::WhenAnySender;
+using detail::ZeroCopyOpSender;
 
 } // namespace condy

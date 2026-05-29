@@ -284,18 +284,18 @@ protected:
     std::exception_ptr exception_;
 };
 
-} // namespace detail
-
 template <typename Allocator>
 class Promise<void, Allocator>
-    : public detail::BindAllocator<detail::PromiseBase<Coro<void, Allocator>>, Allocator> {
+    : public detail::BindAllocator<detail::PromiseBase<Coro<void, Allocator>>,
+                                   Allocator> {
 public:
     void return_void() const noexcept {}
 };
 
 template <typename T, typename Allocator>
 class Promise
-    : public detail::BindAllocator<detail::PromiseBase<Coro<T, Allocator>>, Allocator> {
+    : public detail::BindAllocator<detail::PromiseBase<Coro<T, Allocator>>,
+                                   Allocator> {
 public:
     void return_value(T value) { value_ = std::move(value); }
 
@@ -304,8 +304,6 @@ public:
 private:
     std::optional<T> value_;
 };
-
-namespace detail {
 
 template <typename PromiseType> struct CoroAwaiterBase {
     bool await_ready() const noexcept { return false; }

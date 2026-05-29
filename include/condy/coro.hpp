@@ -10,7 +10,11 @@
 
 namespace condy {
 
+namespace detail {
+
 template <typename T, typename Allocator> class Promise;
+
+} // namespace detail
 
 /**
  * @brief Coroutine type used to define a coroutine function.
@@ -25,7 +29,7 @@ template <typename T, typename Allocator> class Promise;
 template <typename T = void, typename Allocator = void>
 class [[nodiscard]] Coro {
 public:
-    using promise_type = Promise<T, Allocator>;
+    using promise_type = detail::Promise<T, Allocator>;
 
     Coro(std::coroutine_handle<promise_type> h) : handle_(h) {}
     Coro(Coro &&other) noexcept : handle_(other.release()) {}

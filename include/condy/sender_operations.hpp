@@ -111,7 +111,7 @@ template <typename Sender> auto as_awaiter(Sender &&sender) {
  * @param sender The operation to decorate.
  */
 template <unsigned int Flags, typename Sender> auto flag(Sender &&sender) {
-    return FlaggedOpSender<Flags, std::decay_t<Sender>>(
+    return detail::FlaggedOpSender<Flags, std::decay_t<Sender>>(
         std::forward<Sender>(sender));
 }
 
