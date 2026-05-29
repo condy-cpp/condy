@@ -18,14 +18,13 @@
 
 namespace condy {
 
-// Just a tag
-class BufferBase {};
-
 /**
  * @brief Mutable buffer.
  */
-class MutableBuffer : public BufferBase {
+class MutableBuffer {
 public:
+    using CondyBuffer = void;
+
     MutableBuffer() = default;
     MutableBuffer(void *data, size_t size) : data_(data), size_(size) {}
 
@@ -47,8 +46,10 @@ private:
 /**
  * @brief Constant buffer.
  */
-class ConstBuffer : public BufferBase {
+class ConstBuffer {
 public:
+    using CondyBuffer = void;
+
     ConstBuffer() = default;
     ConstBuffer(const void *data, size_t size) : data_(data), size_(size) {}
 
