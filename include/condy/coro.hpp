@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "condy/detail/coro.inl"
+#include "condy/detail/coro.hpp"
 #include <coroutine>
 #include <utility>
 

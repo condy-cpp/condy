@@ -1,5 +1,5 @@
 /**
- * @file coro.inl
+ * @file coro.hpp
  * @brief Coroutine implementation details.
  */
 
