@@ -72,8 +72,9 @@ public:
             // Fast path: if the ring is enabled, we can directly schedule the
             // work
             tsan_release(work);
-            schedule_msg_ring_(curr_runtime,
-                               encode_work(work, WorkType::Schedule));
+            schedule_msg_ring_(
+                curr_runtime,
+                detail::encode_work(work, detail::WorkType::Schedule));
         } else {
             // Slow path: if the ring is not enabled, we need to acquire the
             // mutex to ensure the work is scheduled before the ring is enabled
@@ -82,8 +83,9 @@ public:
             if (state == State::Enabled) {
                 lock.unlock();
                 tsan_release(work);
-                schedule_msg_ring_(curr_runtime,
-                                   encode_work(work, WorkType::Schedule));
+                schedule_msg_ring_(
+                    curr_runtime,
+                    detail::encode_work(work, detail::WorkType::Schedule));
             } else {
                 global_queue_.push_back(work);
             }
@@ -106,8 +108,9 @@ public:
 
         detail::CancelRequest request(data);
         tsan_release(&request);
-        schedule_msg_ring_(curr_runtime,
-                           encode_work(&request, WorkType::Cancel));
+        schedule_msg_ring_(
+            curr_runtime,
+            detail::encode_work(&request, detail::WorkType::Cancel));
         if (curr_runtime != nullptr) {
             // Ensure the cancel msg is submitted.
             curr_runtime->ring_.submit();
@@ -333,8 +336,9 @@ private:
             return;
         }
 
-        schedule_msg_ring_(curr_runtime,
-                           encode_work(nullptr, WorkType::Ignore));
+        schedule_msg_ring_(
+            curr_runtime,
+            detail::encode_work(nullptr, detail::WorkType::Ignore));
     }
 
     void flush_global_queue_() noexcept {
@@ -344,12 +348,14 @@ private:
     static void prep_msg_ring_(int ring_fd, io_uring_sqe *sqe,
                                uintptr_t data) noexcept {
         io_uring_prep_msg_ring(sqe, ring_fd, 0, data, 0);
-        io_uring_sqe_set_data64(sqe, encode_work(nullptr, WorkType::Schedule));
+        io_uring_sqe_set_data64(
+            sqe, detail::encode_work(nullptr, detail::WorkType::Schedule));
     }
 
     static void prep_cancel_(io_uring_sqe *sqe, uintptr_t data) noexcept {
         io_uring_prep_cancel64(sqe, data, 0);
-        io_uring_sqe_set_data64(sqe, encode_work(nullptr, WorkType::Ignore));
+        io_uring_sqe_set_data64(
+            sqe, detail::encode_work(nullptr, detail::WorkType::Ignore));
         io_uring_sqe_set_flags(sqe, IOSQE_CQE_SKIP_SUCCESS);
     }
 
@@ -372,12 +378,12 @@ private:
     }
 
     void process_cqe_(io_uring_cqe *cqe) noexcept {
-        auto [data, type] = decode_work(io_uring_cqe_get_data64(cqe));
+        auto [data, type] = detail::decode_work(io_uring_cqe_get_data64(cqe));
 
-        if (type == WorkType::Ignore) {
+        if (type == detail::WorkType::Ignore) {
             // No-op
             assert(cqe->res != -EINVAL); // If EINVAL, something is wrong
-        } else if (type == WorkType::Schedule) {
+        } else if (type == detail::WorkType::Schedule) {
             if (data == nullptr) {
                 if (cqe->res < 0) {
                     panic_on(std::format("io_uring_prep_msg_ring: {}",
@@ -389,14 +395,14 @@ private:
                 tsan_acquire(work);
                 (*work)();
             }
-        } else if (type == WorkType::Cancel) {
+        } else if (type == detail::WorkType::Cancel) {
             detail::CancelRequest *request =
                 static_cast<detail::CancelRequest *>(data);
             tsan_acquire(request);
             io_uring_sqe *sqe = ring_.get_sqe();
             prep_cancel_(sqe, request->data());
             request->notify();
-        } else if (type == WorkType::Common) {
+        } else if (type == detail::WorkType::Common) {
             auto *handle = static_cast<detail::OpFinishHandleBase *>(data);
             auto op_finish = handle->handle(cqe);
             if (op_finish) {

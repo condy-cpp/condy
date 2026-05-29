@@ -126,7 +126,8 @@ TEST_CASE("test ring - cancel ops") {
             io_uring_sqe *sqe = ring.get_sqe();
             io_uring_prep_cancel(sqe, handles[i].get(), 0);
             io_uring_sqe_set_data64(
-                sqe, condy::encode_work(nullptr, condy::WorkType::Ignore));
+                sqe, condy::detail::encode_work(
+                         nullptr, condy::detail::WorkType::Ignore));
         }
     }
 
@@ -138,7 +139,8 @@ TEST_CASE("test ring - cancel ops") {
     while (reaped < num_ops) {
         reaped += ring.reap_completions([&](io_uring_cqe *cqe) {
             if (io_uring_cqe_get_data64(cqe) ==
-                condy::encode_work(nullptr, condy::WorkType::Ignore)) {
+                condy::detail::encode_work(nullptr,
+                                           condy::detail::WorkType::Ignore)) {
                 return;
             }
             auto *handle = reinterpret_cast<detail::OpFinishHandleBase *>(
