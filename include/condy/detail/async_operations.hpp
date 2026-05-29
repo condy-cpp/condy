@@ -35,7 +35,7 @@ auto make_op_awaiter128(Func &&func, Args &&...args) {
                       ... args = std::forward<Args>(args)](detail::Ring *ring) {
         auto *sqe = ring->get_sqe128();
         if (!sqe) {
-            panic_on("SQE128 not enabled in the ring");
+            detail::panic_on("SQE128 not enabled in the ring");
         }
         func(sqe, args...);
         return sqe;

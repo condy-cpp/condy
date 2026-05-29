@@ -93,10 +93,11 @@ public:
             try {
                 std::rethrow_exception(exception_);
             } catch (const std::exception &e) {
-                panic_on(std::format(
+                detail::panic_on(std::format(
                     "Unhandled exception in detached coroutine: {}", e.what()));
             } catch (...) {
-                panic_on("Unhandled unknown exception in detached coroutine");
+                detail::panic_on(
+                    "Unhandled unknown exception in detached coroutine");
             }
         }
     }
@@ -130,7 +131,7 @@ public:
                            expected == State::RunningJoining) {
                     desired = State::Finished;
                 } else [[unlikely]] {
-                    panic_on(std::format(
+                    detail::panic_on(std::format(
                         "Invalid coroutine state in final_suspend: {}",
                         static_cast<int>(expected)));
                 }
@@ -184,7 +185,7 @@ public:
             } else if (expected == State::Zombie) {
                 desired = State::Finished;
             } else [[unlikely]] {
-                panic_on(
+                detail::panic_on(
                     std::format("Invalid coroutine state in request_detach: {}",
                                 static_cast<int>(expected)));
             }
@@ -210,7 +211,7 @@ public:
             } else if (expected == State::Zombie) {
                 desired = State::Finished;
             } else [[unlikely]] {
-                panic_on(
+                detail::panic_on(
                     std::format("Invalid coroutine state in request_join: {}",
                                 static_cast<int>(expected)));
             }

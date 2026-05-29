@@ -93,7 +93,7 @@ public:
     void force_push(T item) noexcept {
         std::lock_guard<std::mutex> lock(mutex_);
         if (closed_) [[unlikely]] {
-            panic_on("Push to closed channel");
+            detail::panic_on("Push to closed channel");
         }
         if (try_push_inner_(std::move(item))) [[likely]] {
             return;
@@ -105,7 +105,7 @@ public:
             new (std::nothrow) FakePushFinishHandle(std::move(item));
         // NOLINTEND(bugprone-use-after-move)
         if (!fake_handle) {
-            panic_on("Allocation failed for PushFinishHandle");
+            detail::panic_on("Allocation failed for PushFinishHandle");
         }
         assert(pop_awaiters_.empty());
         push_awaiters_.push_back(fake_handle);

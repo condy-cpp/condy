@@ -6,25 +6,6 @@
 #pragma once
 
 #include "condy/detail/utils.hpp"
-#include <cassert>
-#include <cerrno>
-#include <cstddef>
-#include <cstdint>
-#include <cstdlib>
-#include <cstring>
-#include <exception>
-#include <format>
-#include <iostream>
-#include <limits>
-#include <new>
-#include <stack>
-#include <stdexcept>
-#include <string_view>
-#include <system_error>
-#include <tuple>
-#include <type_traits>
-#include <utility>
-#include <variant>
 
 namespace condy {
 
@@ -54,16 +35,6 @@ private:
  */
 template <typename Func> auto defer(Func &&func) {
     return Defer<std::decay_t<Func>>(std::forward<Func>(func));
-}
-
-[[noreturn]] inline void panic_on(std::string_view msg) noexcept {
-    std::cerr << std::format("Panic: {}\n", msg);
-#ifndef CRASH_TEST
-    std::terminate();
-#else
-    // Ctest cannot handle SIGABRT, so we use exit here
-    std::exit(EXIT_FAILURE);
-#endif
 }
 
 template <typename T> class RawStorage {
@@ -206,7 +177,7 @@ std::variant<Ts...> tuple_at(std::tuple<Ts...> &results, size_t idx) {
         return std::variant<Ts...>{std::in_place_index<0>,
                                    std::move(std::get<0>(results))};
 #else
-        panic_on("Index out of bounds in tuple_at");
+        detail::panic_on("Index out of bounds in tuple_at");
 #endif
     }
 }

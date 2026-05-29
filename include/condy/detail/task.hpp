@@ -27,7 +27,7 @@ public:
     TaskBase &operator=(TaskBase &&other) noexcept {
         if (this != &other) {
             if (handle_) {
-                panic_on("Task destroyed without being awaited");
+                detail::panic_on("Task destroyed without being awaited");
             }
             handle_ = std::exchange(other.handle_, nullptr);
         }
@@ -38,7 +38,7 @@ public:
 
     ~TaskBase() {
         if (handle_) {
-            panic_on("Task destroyed without being awaited");
+            detail::panic_on("Task destroyed without being awaited");
         }
     }
 
