@@ -19,6 +19,8 @@
 
 namespace condy {
 
+namespace detail {
+
 template <typename T = void, typename Allocator = void> class TaskBase {
 public:
     using PromiseType = typename Coro<T, Allocator>::promise_type;
@@ -109,6 +111,8 @@ void TaskBase<T, Allocator>::wait_inner_(
     }
 }
 
+} // namespace detail
+
 /**
  * @brief Coroutine task that runs concurrently in the runtime.
  * @tparam T Return type of the coroutine.
@@ -123,9 +127,9 @@ void TaskBase<T, Allocator>::wait_inner_(
  * @warning Unhandled exceptions in a detached task will also cause a panic.
  */
 template <typename T = void, typename Allocator = void>
-class [[nodiscard]] Task : public TaskBase<T, Allocator> {
+class [[nodiscard]] Task : public detail::TaskBase<T, Allocator> {
 public:
-    using Base = TaskBase<T, Allocator>;
+    using Base = detail::TaskBase<T, Allocator>;
     using Base::Base;
 
     /**
@@ -153,9 +157,10 @@ public:
 };
 
 template <typename Allocator>
-class [[nodiscard]] Task<void, Allocator> : public TaskBase<void, Allocator> {
+class [[nodiscard]] Task<void, Allocator>
+    : public detail::TaskBase<void, Allocator> {
 public:
-    using Base = TaskBase<void, Allocator>;
+    using Base = detail::TaskBase<void, Allocator>;
     using Base::Base;
 
     /**
@@ -176,6 +181,8 @@ public:
         }
     }
 };
+
+namespace detail {
 
 template <typename T, typename Allocator>
 struct TaskAwaiterBase : public InvokerAdapter<TaskAwaiterBase<T, Allocator>> {
@@ -250,6 +257,8 @@ inline auto TaskBase<T, Allocator>::operator co_await() noexcept {
     return TaskAwaiter<T, Allocator>(std::exchange(handle_, nullptr),
                                      detail::Context::current().runtime());
 }
+
+} // namespace detail
 
 /**
  * @brief Spawn a coroutine as a task in the given runtime.
