@@ -44,7 +44,7 @@ TEST_CASE("test op_finish_handle - basic usage") {
     auto &context = condy::detail::Context::current();
 
     context.init(&runtime);
-    auto d = condy::defer([&] { context.reset(); });
+    auto d = condy::detail::defer([&] { context.reset(); });
 
     size_t invoke_count = 0;
     int r = 0;
@@ -78,7 +78,7 @@ TEST_CASE("test op_finish_handle - concurrent ops") {
     REQUIRE(enable_r == 0);
     auto &context = condy::detail::Context::current();
     context.init(&runtime);
-    auto d = condy::defer([&] { context.reset(); });
+    auto d = condy::detail::defer([&] { context.reset(); });
 
     size_t invoke_count = 0;
     int r = 0;

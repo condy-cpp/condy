@@ -59,10 +59,10 @@ public:
         if (data == MAP_FAILED) [[unlikely]] {
             throw detail::make_system_error("mmap");
         }
-        auto d1 = defer([&]() { munmap(data, data_size); });
+        auto d1 = detail::defer([&]() { munmap(data, data_size); });
 
         bgid_ = context.next_bgid();
-        auto d2 = defer([&]() { context.recycle_bgid(bgid_); });
+        auto d2 = detail::defer([&]() { context.recycle_bgid(bgid_); });
 
         br_ = reinterpret_cast<io_uring_buf_ring *>(data);
         io_uring_buf_ring_init(br_);
@@ -310,10 +310,10 @@ public:
         if (data == MAP_FAILED) [[unlikely]] {
             throw detail::make_system_error("mmap");
         }
-        auto d1 = defer([&]() { munmap(data, data_size); });
+        auto d1 = detail::defer([&]() { munmap(data, data_size); });
 
         bgid_ = context.next_bgid();
-        auto d2 = defer([&]() { context.recycle_bgid(bgid_); });
+        auto d2 = detail::defer([&]() { context.recycle_bgid(bgid_); });
 
         br_ = reinterpret_cast<io_uring_buf_ring *>(data);
         io_uring_buf_ring_init(br_);

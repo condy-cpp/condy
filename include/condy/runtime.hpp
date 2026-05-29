@@ -147,7 +147,7 @@ public:
             throw std::runtime_error(
                 "Runtime is already running or has been stopped");
         }
-        auto d1 = defer([this]() { state_.store(State::Stopped); });
+        auto d1 = detail::defer([this]() { state_.store(State::Stopped); });
 
         [[maybe_unused]] int r;
         r = io_uring_enable_rings(ring_.ring());
@@ -167,7 +167,7 @@ public:
         }
 
         detail::Context::current().init(this);
-        auto d2 = defer([]() { detail::Context::current().reset(); });
+        auto d2 = detail::defer([]() { detail::Context::current().reset(); });
 
         while (true) {
             tick_count_++;

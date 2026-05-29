@@ -828,7 +828,7 @@ TEST_CASE("test async_operations - test openat2 - basic") {
     int fd = mkstemp(name);
     REQUIRE(fd >= 0);
     close(fd);
-    auto d = condy::defer([&] { unlink(name); });
+    auto d = condy::detail::defer([&] { unlink(name); });
 
     auto func = [&]() -> condy::Coro<void> {
         struct open_how how {};
@@ -847,7 +847,7 @@ TEST_CASE("test async_operations - test openat2 - direct") {
     int fd = mkstemp(name);
     REQUIRE(fd >= 0);
     close(fd);
-    auto d = condy::defer([&] { unlink(name); });
+    auto d = condy::detail::defer([&] { unlink(name); });
 
     auto func = [&]() -> condy::Coro<void> {
         auto &fd_table = condy::current_runtime().fd_table();
@@ -947,7 +947,7 @@ TEST_CASE("test async_operations - test renameat") {
 
     char new_name[32] = {};
     snprintf(new_name, sizeof(new_name), "%s_renamed", old_name);
-    auto d = condy::defer([&] {
+    auto d = condy::detail::defer([&] {
         unlink(old_name); // Ensure cleanup
         unlink(new_name);
     });
@@ -976,7 +976,7 @@ TEST_CASE("test async_operations - test rename") {
 
     char new_name[32] = {};
     snprintf(new_name, sizeof(new_name), "%s_renamed", old_name);
-    auto d = condy::defer([&] {
+    auto d = condy::detail::defer([&] {
         unlink(old_name); // Ensure cleanup
         unlink(new_name);
     });
