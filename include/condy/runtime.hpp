@@ -417,8 +417,8 @@ private:
     static_assert(std::atomic<State>::is_always_lock_free);
 
     using WorkListQueue =
-        IntrusiveSingleList<detail::WorkInvoker,
-                            &detail::WorkInvoker::work_queue_entry_>;
+        detail::IntrusiveSingleList<detail::WorkInvoker,
+                                    &detail::WorkInvoker::work_queue_entry_>;
 
     // Global state
     std::mutex mutex_;

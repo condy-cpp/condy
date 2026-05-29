@@ -107,8 +107,9 @@ private:
     }
 
 private:
-    using HandleList = IntrusiveDoubleList<WaitFinishHandleBase,
-                                           &WaitFinishHandleBase::link_entry_>;
+    using HandleList =
+        detail::IntrusiveDoubleList<WaitFinishHandleBase,
+                                    &WaitFinishHandleBase::link_entry_>;
 
     mutable std::mutex mutex_;
     HandleList wait_awaiters_;
@@ -126,7 +127,7 @@ public:
     void set_result(int32_t result) noexcept { result_ = result; }
 
 public:
-    DoubleLinkEntry link_entry_;
+    detail::DoubleLinkEntry link_entry_;
 
 protected:
     Runtime *runtime_ = nullptr;

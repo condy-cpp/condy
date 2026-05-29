@@ -342,7 +342,8 @@ private:
 
 private:
     template <typename Handle>
-    using HandleList = IntrusiveDoubleList<Handle, &Handle::link_entry_>;
+    using HandleList =
+        detail::IntrusiveDoubleList<Handle, &Handle::link_entry_>;
 
     mutable std::mutex mutex_;
     HandleList<PushFinishHandleBase> push_awaiters_;
@@ -373,7 +374,7 @@ public:
     void set_result(int32_t result) noexcept { result_ = result; }
 
 public:
-    DoubleLinkEntry link_entry_;
+    detail::DoubleLinkEntry link_entry_;
 
 public:
     Runtime *runtime_ = nullptr;
@@ -463,7 +464,7 @@ public:
     }
 
 public:
-    DoubleLinkEntry link_entry_;
+    detail::DoubleLinkEntry link_entry_;
 
 protected:
     Runtime *runtime_ = nullptr;

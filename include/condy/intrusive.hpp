@@ -10,6 +10,7 @@
 #include <utility>
 
 namespace condy {
+namespace detail {
 
 struct SingleLinkEntry {
     SingleLinkEntry *next = nullptr;
@@ -165,4 +166,5 @@ private:
     DoubleLinkEntry *tail_ = nullptr;
 };
 
+} // namespace detail
 } // namespace condy
