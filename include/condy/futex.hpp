@@ -6,8 +6,8 @@
 
 #pragma once
 
+#include "condy/detail/invoker.hpp"
 #include "condy/intrusive.hpp"
-#include "condy/invoker.hpp"
 #include "condy/runtime.hpp"
 #include "condy/type_traits.hpp"
 #include "condy/utils.hpp"

@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "condy/invoker.hpp"
+#include "condy/detail/invoker.hpp"
 #include "condy/sender_operations.hpp"
 #include "condy/utils.hpp"
 #include <atomic>

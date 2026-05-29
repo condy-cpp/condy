@@ -1,6 +1,6 @@
 #include "condy/awaiter_operations.hpp"
 #include "condy/coro.hpp"
-#include "condy/invoker.hpp"
+#include "condy/detail/invoker.hpp"
 #include "condy/runtime.hpp"
 #include "condy/runtime_options.hpp"
 #include "condy/task.hpp"

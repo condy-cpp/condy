@@ -1,4 +1,4 @@
-#include "condy/invoker.hpp"
+#include "condy/detail/invoker.hpp"
 #include <doctest/doctest.h>
 
 namespace {
