@@ -6,8 +6,8 @@
 #pragma once
 
 #include "condy/concepts.hpp"
+#include "condy/detail/utils.hpp"
 #include "condy/senders.hpp"
-#include "condy/utils.hpp"
 #include <coroutine>
 #include <stdexcept>
 

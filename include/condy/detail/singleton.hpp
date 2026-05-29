@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "condy/utils.hpp"
+#include "condy/detail/utils.hpp"
 
 namespace condy {
 namespace detail {

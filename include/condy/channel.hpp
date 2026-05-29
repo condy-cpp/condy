@@ -11,8 +11,8 @@
 #include "condy/detail/intrusive.hpp"
 #include "condy/detail/invoker.hpp"
 #include "condy/detail/type_traits.hpp"
+#include "condy/detail/utils.hpp"
 #include "condy/runtime.hpp"
-#include "condy/utils.hpp"
 #include <bit>
 #include <cerrno>
 #include <cstddef>

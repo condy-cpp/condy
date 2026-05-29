@@ -10,9 +10,9 @@
 
 #include "condy/concepts.hpp"
 #include "condy/detail/type_traits.hpp"
+#include "condy/detail/utils.hpp"
 #include "condy/detail/work_type.hpp"
 #include "condy/runtime.hpp"
-#include "condy/utils.hpp"
 #include <cassert>
 #include <cerrno>
 #include <optional>

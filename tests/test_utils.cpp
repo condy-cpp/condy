@@ -1,5 +1,5 @@
 #include <condy/detail/context.hpp>
-#include <condy/utils.hpp>
+#include <condy/detail/utils.hpp>
 #include <doctest/doctest.h>
 #include <limits>
 #include <memory>

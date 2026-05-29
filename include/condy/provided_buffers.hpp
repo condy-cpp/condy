@@ -11,8 +11,8 @@
 #include "condy/condy_uring.hpp"
 #include "condy/detail/context.hpp"
 #include "condy/detail/ring.hpp"
+#include "condy/detail/utils.hpp"
 #include "condy/runtime.hpp"
-#include "condy/utils.hpp"
 #include <algorithm>
 #include <bit>
 #include <cstddef>

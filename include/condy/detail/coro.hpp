@@ -6,8 +6,8 @@
 #pragma once
 
 #include "condy/detail/invoker.hpp"
+#include "condy/detail/utils.hpp"
 #include "condy/sender_operations.hpp"
-#include "condy/utils.hpp"
 #include <atomic>
 #include <coroutine>
 #include <exception>

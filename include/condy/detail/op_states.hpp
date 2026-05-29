@@ -9,7 +9,7 @@
 #include "condy/condy_uring.hpp"
 #include "condy/detail/finish_handles.hpp"
 #include "condy/detail/type_traits.hpp"
-#include "condy/utils.hpp"
+#include "condy/detail/utils.hpp"
 #include <array>
 #include <cstddef>
 #include <optional>

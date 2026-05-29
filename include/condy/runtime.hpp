@@ -11,10 +11,10 @@
 #include "condy/detail/invoker.hpp"
 #include "condy/detail/ring.hpp"
 #include "condy/detail/runtime.hpp"
+#include "condy/detail/utils.hpp"
 #include "condy/detail/work_type.hpp"
 #include "condy/ring_settings.hpp"
 #include "condy/runtime_options.hpp"
-#include "condy/utils.hpp"
 #include <algorithm>
 #include <atomic>
 #include <cerrno>
