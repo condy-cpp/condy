@@ -12,7 +12,7 @@
 
 namespace {
 
-condy::Ring &enable_runtime_ring(condy::Runtime &runtime) {
+condy::detail::Ring &enable_runtime_ring(condy::Runtime &runtime) {
     auto &ring = runtime.ring();
     int r = io_uring_enable_rings(ring.ring());
     REQUIRE(r == 0);

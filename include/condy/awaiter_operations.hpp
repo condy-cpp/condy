@@ -81,7 +81,7 @@ namespace detail {
 template <typename Func, typename... Args>
 auto make_op_awaiter(Func &&func, Args &&...args) {
     auto prep_func = [func = std::forward<Func>(func),
-                      ... args = std::forward<Args>(args)](Ring *ring) {
+                      ... args = std::forward<Args>(args)](detail::Ring *ring) {
         auto *sqe = ring->get_sqe();
         func(sqe, args...);
         return sqe;
@@ -93,7 +93,7 @@ auto make_op_awaiter(Func &&func, Args &&...args) {
 template <typename Func, typename... Args>
 auto make_op_awaiter128(Func &&func, Args &&...args) {
     auto prep_func = [func = std::forward<Func>(func),
-                      ... args = std::forward<Args>(args)](Ring *ring) {
+                      ... args = std::forward<Args>(args)](detail::Ring *ring) {
         auto *sqe = ring->get_sqe128();
         if (!sqe) {
             panic_on("SQE128 not enabled in the ring");
@@ -109,7 +109,7 @@ template <typename MultiShotFunc, typename Func, typename... Args>
 auto make_multishot_op_awaiter(MultiShotFunc &&multishot_func, Func &&func,
                                Args &&...args) {
     auto prep_func = [func = std::forward<Func>(func),
-                      ... args = std::forward<Args>(args)](Ring *ring) {
+                      ... args = std::forward<Args>(args)](detail::Ring *ring) {
         auto *sqe = ring->get_sqe();
         func(sqe, args...);
         return sqe;
@@ -121,7 +121,7 @@ auto make_multishot_op_awaiter(MultiShotFunc &&multishot_func, Func &&func,
 template <BufferRingLike Br, typename Func, typename... Args>
 auto make_select_buffer_op_awaiter(Br *buffers, Func &&func, Args &&...args) {
     auto prep_func = [bgid = buffers->bgid(), func = std::forward<Func>(func),
-                      ... args = std::forward<Args>(args)](Ring *ring) {
+                      ... args = std::forward<Args>(args)](detail::Ring *ring) {
         auto *sqe = ring->get_sqe();
         func(sqe, args...);
         sqe->flags |= IOSQE_BUFFER_SELECT;
@@ -138,7 +138,7 @@ auto make_multishot_select_buffer_op_awaiter(MultiShotFunc &&multishot_func,
                                              Br *buffers, Func &&func,
                                              Args &&...args) {
     auto prep_func = [bgid = buffers->bgid(), func = std::forward<Func>(func),
-                      ... args = std::forward<Args>(args)](Ring *ring) {
+                      ... args = std::forward<Args>(args)](detail::Ring *ring) {
         auto *sqe = ring->get_sqe();
         func(sqe, args...);
         sqe->flags |= IOSQE_BUFFER_SELECT;
@@ -155,7 +155,7 @@ template <BufferRingLike Br, typename Func, typename... Args>
 auto make_bundle_select_buffer_op_awaiter(Br *buffers, Func &&func,
                                           Args &&...args) {
     auto prep_func = [bgid = buffers->bgid(), func = std::forward<Func>(func),
-                      ... args = std::forward<Args>(args)](Ring *ring) {
+                      ... args = std::forward<Args>(args)](detail::Ring *ring) {
         auto *sqe = ring->get_sqe();
         func(sqe, args...);
         sqe->flags |= IOSQE_BUFFER_SELECT;
@@ -174,7 +174,7 @@ template <typename MultiShotFunc, BufferRingLike Br, typename Func,
 auto make_multishot_bundle_select_buffer_op_awaiter(
     MultiShotFunc &&multishot_func, Br *buffers, Func &&func, Args &&...args) {
     auto prep_func = [bgid = buffers->bgid(), func = std::forward<Func>(func),
-                      ... args = std::forward<Args>(args)](Ring *ring) {
+                      ... args = std::forward<Args>(args)](detail::Ring *ring) {
         auto *sqe = ring->get_sqe();
         func(sqe, args...);
         sqe->flags |= IOSQE_BUFFER_SELECT;
@@ -192,7 +192,7 @@ template <typename FreeFunc, typename Func, typename... Args>
 auto make_zero_copy_op_awaiter(FreeFunc &&free_func, Func &&func,
                                Args &&...args) {
     auto prep_func = [func = std::forward<Func>(func),
-                      ... args = std::forward<Args>(args)](Ring *ring) {
+                      ... args = std::forward<Args>(args)](detail::Ring *ring) {
         auto *sqe = ring->get_sqe();
         func(sqe, args...);
         return sqe;

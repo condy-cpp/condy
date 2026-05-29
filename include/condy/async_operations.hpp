@@ -875,8 +875,8 @@ inline auto async_socket_direct(int domain, int type, int protocol,
 template <CQEHandlerLike CQEHandler = SimpleCQEHandler, FdLike Fd,
           typename CmdFunc>
 inline auto async_uring_cmd(int cmd_op, Fd fd, CmdFunc &&cmd_func) {
-    auto prep_func = [cmd_op, fd,
-                      cmd_func = std::forward<CmdFunc>(cmd_func)](Ring *ring) {
+    auto prep_func = [cmd_op, fd, cmd_func = std::forward<CmdFunc>(cmd_func)](
+                         detail::Ring *ring) {
         auto *sqe = ring->get_sqe();
         io_uring_prep_uring_cmd(sqe, cmd_op, fd);
         cmd_func(sqe);
@@ -893,8 +893,8 @@ template <CQEHandlerLike CQEHandler = SimpleCQEHandler, FdLike Fd,
           typename CmdFunc, typename MultiShotFunc>
 inline auto async_uring_cmd_multishot(int cmd_op, Fd fd, CmdFunc &&cmd_func,
                                       MultiShotFunc &&func) {
-    auto prep_func = [cmd_op, fd,
-                      cmd_func = std::forward<CmdFunc>(cmd_func)](Ring *ring) {
+    auto prep_func = [cmd_op, fd, cmd_func = std::forward<CmdFunc>(cmd_func)](
+                         detail::Ring *ring) {
         auto *sqe = ring->get_sqe();
         io_uring_prep_uring_cmd(sqe, cmd_op, fd);
         cmd_func(sqe);
@@ -915,8 +915,8 @@ inline auto async_uring_cmd_multishot(int cmd_op, Fd fd, CmdFunc &&cmd_func,
 template <CQEHandlerLike CQEHandler = SimpleCQEHandler, FdLike Fd,
           typename CmdFunc>
 inline auto async_uring_cmd128(int cmd_op, Fd fd, CmdFunc &&cmd_func) {
-    auto prep_func = [cmd_op, fd,
-                      cmd_func = std::forward<CmdFunc>(cmd_func)](Ring *ring) {
+    auto prep_func = [cmd_op, fd, cmd_func = std::forward<CmdFunc>(cmd_func)](
+                         detail::Ring *ring) {
         auto *sqe = ring->get_sqe128();
         if (!sqe) {
             panic_on("SQE128 not enabled in the ring");

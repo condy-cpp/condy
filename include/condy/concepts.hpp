@@ -13,16 +13,17 @@ struct io_uring_sqe;
 
 namespace condy {
 
-class Ring;
+class Runtime;
 
 namespace detail {
 
+class Ring;
 struct FixedFd;
 
 } // namespace detail
 
 template <typename T>
-concept PrepFuncLike = requires(T prep_func, Ring *ring) {
+concept PrepFuncLike = requires(T prep_func, detail::Ring *ring) {
     { prep_func(ring) } -> std::same_as<io_uring_sqe *>;
 };
 

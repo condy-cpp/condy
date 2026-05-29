@@ -211,7 +211,7 @@ public:
     auto &settings() noexcept { return settings_; }
 
 private:
-    static Ring create_ring_(const RuntimeOptions &options) {
+    static detail::Ring create_ring_(const RuntimeOptions &options) {
         io_uring_params params;
         std::memset(&params, 0, sizeof(params));
 
@@ -305,7 +305,7 @@ private:
         }
         assert(submit_batch > 0);
 
-        return Ring(ring_entries, &params, buf, buf_size, submit_batch);
+        return detail::Ring(ring_entries, &params, buf, buf_size, submit_batch);
     }
 
     void schedule_msg_ring_(Runtime *curr_runtime, uintptr_t data) noexcept {
@@ -435,7 +435,7 @@ private:
 
     // Local state
     WorkListQueue local_queue_;
-    Ring ring_;
+    detail::Ring ring_;
     size_t tick_count_ = 0;
 
     // Configurable parameters

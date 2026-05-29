@@ -29,13 +29,14 @@ using Handle = detail::OpFinishHandle<SimpleCQEHandler, MockReceiver>;
 TEST_CASE("test ring - init and destroy") {
     io_uring_params params{};
     std::memset(&params, 0, sizeof(params));
-    Ring ring(8, &params, nullptr, 0, std::numeric_limits<size_t>::max());
+    detail::Ring ring(8, &params, nullptr, 0,
+                      std::numeric_limits<size_t>::max());
 }
 
 TEST_CASE("test ring - maybe submit") {
     io_uring_params params{};
     std::memset(&params, 0, sizeof(params));
-    Ring ring(8, &params, nullptr, 0, 2);
+    detail::Ring ring(8, &params, nullptr, 0, 2);
 
     auto *sqe1 = ring.get_sqe();
     io_uring_prep_nop(sqe1);
@@ -60,7 +61,8 @@ TEST_CASE("test ring - maybe submit") {
 TEST_CASE("test ring - register and complete ops") {
     io_uring_params params{};
     std::memset(&params, 0, sizeof(params));
-    Ring ring(8, &params, nullptr, 0, std::numeric_limits<size_t>::max());
+    detail::Ring ring(8, &params, nullptr, 0,
+                      std::numeric_limits<size_t>::max());
 
     size_t invoke_count = 0;
     MockReceiver receiver{invoke_count};
@@ -97,7 +99,8 @@ TEST_CASE("test ring - register and complete ops") {
 TEST_CASE("test ring - cancel ops") {
     io_uring_params params{};
     std::memset(&params, 0, sizeof(params));
-    Ring ring(8, &params, nullptr, 0, std::numeric_limits<size_t>::max());
+    detail::Ring ring(8, &params, nullptr, 0,
+                      std::numeric_limits<size_t>::max());
 
     size_t invoke_count = 0;
     MockReceiver receiver{invoke_count};
