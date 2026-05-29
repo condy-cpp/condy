@@ -1,3 +1,4 @@
+#include <condy/detail/context.hpp>
 #include <condy/utils.hpp>
 #include <doctest/doctest.h>
 #include <limits>
@@ -120,7 +121,7 @@ TEST_CASE("test small_array - large with raw_storage") {
 }
 
 TEST_CASE("test id_pool - basic") {
-    condy::IdPool<uint32_t, 0, 8> pool;
+    condy::detail::IdPool<uint32_t, 0, 8> pool;
     auto id1 = pool.allocate();
     auto id2 = pool.allocate();
     REQUIRE(id1 != id2);
@@ -136,7 +137,7 @@ TEST_CASE("test id_pool - basic") {
 
 TEST_CASE("test id_pool - exhaustion") {
     constexpr uint32_t max_ids = 2;
-    condy::IdPool<uint32_t, 0, max_ids> pool;
+    condy::detail::IdPool<uint32_t, 0, max_ids> pool;
     for (uint32_t i = 0; i < max_ids; ++i) {
         pool.allocate();
     }
