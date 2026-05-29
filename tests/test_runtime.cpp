@@ -11,7 +11,8 @@
 namespace {
 
 struct SetFinishInvoker
-    : public condy::InvokerAdapter<SetFinishInvoker, condy::WorkInvoker> {
+    : public condy::detail::InvokerAdapter<SetFinishInvoker,
+                                           condy::detail::WorkInvoker> {
     void invoke() { finished = true; }
     bool finished = false;
 };

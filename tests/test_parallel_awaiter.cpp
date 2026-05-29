@@ -20,7 +20,7 @@ struct SimpleFinishHandle {
 
     int extract_result() { return res_; }
 
-    void set_invoker(condy::Invoker *invoker) {
+    void set_invoker(condy::detail::Invoker *invoker) {
         invoker_ = invoker;
         registered_ = true;
     }
@@ -28,7 +28,7 @@ struct SimpleFinishHandle {
     int res_;
     int cancelled_ = 0;
     bool registered_ = false;
-    condy::Invoker *invoker_ = nullptr;
+    condy::detail::Invoker *invoker_ = nullptr;
 };
 
 struct SimpleSender {
@@ -41,7 +41,7 @@ struct SimpleSender {
 
     template <typename Receiver>
     struct OperationState
-        : public condy::InvokerAdapter<OperationState<Receiver>> {
+        : public condy::detail::InvokerAdapter<OperationState<Receiver>> {
 
         OperationState(std::shared_ptr<SimpleFinishHandle> handle_ptr,
                        Receiver receiver)

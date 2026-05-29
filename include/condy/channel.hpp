@@ -354,7 +354,7 @@ private:
 };
 
 template <typename T, size_t N>
-class Channel<T, N>::PushFinishHandleBase : public WorkInvoker {
+class Channel<T, N>::PushFinishHandleBase : public detail::WorkInvoker {
 public:
     PushFinishHandleBase(T &item) : item_(item) {}
 
@@ -384,10 +384,11 @@ public:
 template <typename T, size_t N>
 template <typename Receiver>
 class Channel<T, N>::PushFinishHandle
-    : public InvokerAdapter<PushFinishHandle<Receiver>, PushFinishHandleBase> {
+    : public detail::InvokerAdapter<PushFinishHandle<Receiver>,
+                                    PushFinishHandleBase> {
 public:
-    using Base =
-        InvokerAdapter<PushFinishHandle<Receiver>, PushFinishHandleBase>;
+    using Base = detail::InvokerAdapter<PushFinishHandle<Receiver>,
+                                        PushFinishHandleBase>;
 
     PushFinishHandle(Channel &channel, T &item, Receiver receiver)
         : Base(item), channel_(channel), receiver_(std::move(receiver)) {}
@@ -450,7 +451,7 @@ private:
 };
 
 template <typename T, size_t N>
-class Channel<T, N>::PopFinishHandleBase : public WorkInvoker {
+class Channel<T, N>::PopFinishHandleBase : public detail::WorkInvoker {
 public:
     void schedule() noexcept {
         assert(runtime_ != nullptr);
@@ -473,7 +474,8 @@ protected:
 template <typename T, size_t N>
 template <typename Receiver>
 class Channel<T, N>::PopFinishHandle
-    : public InvokerAdapter<PopFinishHandle<Receiver>, PopFinishHandleBase> {
+    : public detail::InvokerAdapter<PopFinishHandle<Receiver>,
+                                    PopFinishHandleBase> {
 public:
     PopFinishHandle(Channel &channel, Receiver receiver)
         : channel_(channel), receiver_(std::move(receiver)) {}

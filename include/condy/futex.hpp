@@ -116,7 +116,7 @@ private:
 };
 
 template <typename T>
-class Futex<T>::WaitFinishHandleBase : public WorkInvoker {
+class Futex<T>::WaitFinishHandleBase : public detail::WorkInvoker {
 public:
     void schedule() noexcept {
         assert(runtime_ != nullptr);
@@ -136,9 +136,10 @@ protected:
 template <typename T>
 template <typename Receiver>
 class Futex<T>::WaitFinishHandle
-    : public InvokerAdapter<WaitFinishHandle<Receiver>, WaitFinishHandleBase> {
+    : public detail::InvokerAdapter<WaitFinishHandle<Receiver>,
+                                    WaitFinishHandleBase> {
 public:
-    using Base = InvokerAdapter<WaitFinishHandle, WaitFinishHandleBase>;
+    using Base = detail::InvokerAdapter<WaitFinishHandle, WaitFinishHandleBase>;
 
     WaitFinishHandle(Futex &futex, Receiver receiver)
         : futex_(futex), receiver_(std::move(receiver)) {}

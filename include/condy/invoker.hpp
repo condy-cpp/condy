@@ -9,6 +9,7 @@
 #include "condy/intrusive.hpp"
 
 namespace condy {
+namespace detail {
 
 class Invoker {
 public:
@@ -39,4 +40,5 @@ public:
     SingleLinkEntry work_queue_entry_;
 };
 
+} // namespace detail
 } // namespace condy

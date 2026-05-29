@@ -142,7 +142,7 @@ public:
         wakeup_();
     }
 
-    void schedule(WorkInvoker *work) noexcept {
+    void schedule(detail::WorkInvoker *work) noexcept {
         auto *curr_runtime = detail::Context::current().runtime();
         if (curr_runtime == this) {
             local_queue_.push_back(work);
@@ -467,7 +467,7 @@ private:
                 }
                 resume_work();
             } else {
-                auto *work = static_cast<WorkInvoker *>(data);
+                auto *work = static_cast<detail::WorkInvoker *>(data);
                 tsan_acquire(work);
                 (*work)();
             }
@@ -499,7 +499,8 @@ private:
     static_assert(std::atomic<State>::is_always_lock_free);
 
     using WorkListQueue =
-        IntrusiveSingleList<WorkInvoker, &WorkInvoker::work_queue_entry_>;
+        IntrusiveSingleList<detail::WorkInvoker,
+                            &detail::WorkInvoker::work_queue_entry_>;
 
     // Global state
     std::mutex mutex_;
