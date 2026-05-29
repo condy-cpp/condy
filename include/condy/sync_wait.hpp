@@ -7,6 +7,7 @@
 
 #include "condy/coro.hpp"
 #include "condy/runtime.hpp"
+#include "condy/runtime_options.hpp"
 #include "condy/task.hpp"
 
 namespace condy {

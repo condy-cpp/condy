@@ -9,7 +9,6 @@
 #include "condy/detail/invoker.hpp"
 #include "condy/detail/type_traits.hpp"
 #include "condy/detail/utils.hpp"
-#include "condy/senders.hpp"
 #include <atomic>
 #include <coroutine>
 #include <exception>

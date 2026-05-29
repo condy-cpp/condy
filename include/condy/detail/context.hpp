@@ -5,7 +5,6 @@
 #pragma once
 
 #include "condy/detail/singleton.hpp"
-#include "condy/detail/utils.hpp"
 #include <cassert>
 #include <cstdint>
 
