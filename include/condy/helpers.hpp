@@ -10,8 +10,7 @@
 
 #include "condy/concepts.hpp"
 #include "condy/condy_uring.hpp"
-#include "condy/detail/context.hpp"
-#include <type_traits>
+#include "condy/detail/helpers.hpp"
 
 #if !IO_URING_CHECK_VERSION(2, 4) // >= 2.4
 /**
@@ -26,27 +25,6 @@
 #endif
 
 namespace condy {
-
-namespace detail {
-
-template <typename CoroFunc> struct SpawnHelper {
-    void operator()(auto &&res) noexcept {
-        // This helper will only be called inside the coroutine context, so it's
-        // safe to assume that the runtime is available.
-        assert(detail::Context::current().runtime() != nullptr);
-        co_spawn(func(std::forward<decltype(res)>(res))).detach();
-    }
-    CoroFunc func;
-};
-
-template <typename Channel> struct PushHelper {
-    void operator()(auto &&res) noexcept {
-        channel.force_push(std::forward<decltype(res)>(res));
-    }
-    Channel &channel;
-};
-
-} // namespace detail
 
 /**
  * @brief Helper to build an invocable that spawns a coroutine on invocation.
@@ -75,20 +53,6 @@ template <typename CoroFunc> auto will_spawn(CoroFunc &&coro) {
 template <typename Channel> auto will_push(Channel &channel) {
     return detail::PushHelper<Channel>{channel};
 }
-
-namespace detail {
-
-struct FixedFd {
-    int value;
-    operator int() const { return value; }
-};
-
-template <typename T> struct FixedBuffer {
-    T value;
-    int buf_index;
-};
-
-} // namespace detail
 
 /**
  * @brief Mark a file descriptor as fixed for io_uring operations.

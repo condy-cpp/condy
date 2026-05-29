@@ -6,6 +6,7 @@
 #include "helpers.hpp"
 #include <cerrno>
 #include <condy/async_operations.hpp>
+#include <condy/helpers.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>

@@ -11,7 +11,7 @@
 #include "condy/awaiter_operations.hpp"
 #include "condy/concepts.hpp"
 #include "condy/condy_uring.hpp"
-#include "condy/helpers.hpp"
+#include "condy/detail/helpers.hpp"
 
 namespace condy {
 

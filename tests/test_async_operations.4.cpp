@@ -7,6 +7,7 @@
 #include "helpers.hpp"
 #include <cerrno>
 #include <condy/async_operations.hpp>
+#include <condy/helpers.hpp>
 #include <cstdint>
 #include <cstring>
 #include <doctest/doctest.h>
