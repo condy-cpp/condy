@@ -5,9 +5,11 @@
 
 #pragma once
 
+#include "condy/concepts.hpp"
 #include "condy/detail/invoker.hpp"
+#include "condy/detail/type_traits.hpp"
 #include "condy/detail/utils.hpp"
-#include "condy/sender_operations.hpp"
+#include "condy/senders.hpp"
 #include <atomic>
 #include <coroutine>
 #include <exception>
@@ -82,6 +84,65 @@ private:
 
 template <typename Promise>
 class BindAllocator<Promise, void> : public Promise {};
+
+struct NeverStopToken {
+public:
+    template <typename> struct callback_type {
+        constexpr explicit callback_type(NeverStopToken, auto &&) noexcept {}
+    };
+
+    static constexpr bool stop_requested() noexcept { return false; }
+
+    static constexpr bool stop_possible() noexcept { return false; }
+
+    constexpr bool operator==(NeverStopToken const &) const noexcept = default;
+};
+
+template <typename Sender> class [[nodiscard]] SenderAwaiter {
+public:
+    SenderAwaiter(Sender sender)
+        : operation_state_(std::move(sender).connect_impl(Receiver{this})) {}
+
+    CONDY_DELETE_COPY_MOVE(SenderAwaiter);
+
+public:
+    bool await_ready() const noexcept { return false; }
+
+    template <typename Promise>
+    bool await_suspend(std::coroutine_handle<Promise> handle) noexcept {
+        operation_state_.start(0);
+        auto h = std::exchange(handle_, handle);
+        return h == std::noop_coroutine();
+    }
+
+    auto await_resume() noexcept { return std::move(result_); }
+
+private:
+    struct Receiver {
+        SenderAwaiter *self;
+        template <typename R> void operator()(R &&result) noexcept {
+            self->handle_result_(std::forward<R>(result));
+        }
+        NeverStopToken get_stop_token() const noexcept { return {}; }
+    };
+
+    template <typename R> void handle_result_(R &&result) noexcept {
+        result_ = std::forward<R>(result);
+        auto h = std::exchange(handle_, nullptr);
+        h.resume();
+    }
+
+    using OperationState = detail::operation_state_t<Sender, Receiver>;
+    // Await/complete path is serialized, so atomic is not needed here.
+    std::coroutine_handle<> handle_ = std::noop_coroutine();
+    OperationState operation_state_;
+    typename Sender::ReturnType result_;
+};
+
+template <typename Sender> auto as_awaiter(Sender &&sender) {
+    return detail::SenderAwaiter<std::decay_t<Sender>>(
+        std::forward<Sender>(sender));
+}
 
 template <typename Coro>
 class PromiseBase : public InvokerAdapter<PromiseBase<Coro>, WorkInvoker> {
