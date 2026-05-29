@@ -7,6 +7,7 @@
 #include "condy/utils.hpp"
 
 namespace condy {
+namespace detail {
 
 template <typename T> class ThreadLocalSingleton {
 public:
@@ -20,4 +21,5 @@ public:
     }
 };
 
+} // namespace detail
 } // namespace condy
