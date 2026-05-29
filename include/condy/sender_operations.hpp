@@ -91,7 +91,7 @@ private:
         h.resume();
     }
 
-    using OperationState = operation_state_t<Sender, Receiver>;
+    using OperationState = detail::operation_state_t<Sender, Receiver>;
     // Await/complete path is serialized, so atomic is not needed here.
     std::coroutine_handle<> handle_ = std::noop_coroutine();
     OperationState operation_state_;

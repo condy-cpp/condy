@@ -183,7 +183,7 @@ private:
     };
 
     using StopCallbackType =
-        stop_callback_t<stop_token_t<Receiver>, Cancellation>;
+        detail::stop_callback_t<detail::stop_token_t<Receiver>, Cancellation>;
 
 private:
     Futex &futex_;

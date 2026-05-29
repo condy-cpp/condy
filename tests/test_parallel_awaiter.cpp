@@ -68,9 +68,9 @@ struct SimpleSender {
         };
         void cancel_() { handle_ptr_->cancel(nullptr); }
 
-        using TokenType = condy::stop_token_t<Receiver>;
+        using TokenType = condy::detail::stop_token_t<Receiver>;
         using StopCallbackType =
-            condy::stop_callback_t<TokenType, Cancellation>;
+            condy::detail::stop_callback_t<TokenType, Cancellation>;
 
         std::shared_ptr<SimpleFinishHandle> handle_ptr_;
         Receiver receiver_;
