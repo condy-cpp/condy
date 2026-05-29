@@ -57,7 +57,7 @@ public:
         void *data = mmap(nullptr, data_size, PROT_READ | PROT_WRITE,
                           MAP_ANONYMOUS | MAP_PRIVATE, 0, 0);
         if (data == MAP_FAILED) [[unlikely]] {
-            throw make_system_error("mmap");
+            throw detail::make_system_error("mmap");
         }
         auto d1 = defer([&]() { munmap(data, data_size); });
 
@@ -74,7 +74,7 @@ public:
         int r = io_uring_register_buf_ring(context.runtime()->ring().ring(),
                                            &reg, br_flags_);
         if (r != 0) [[unlikely]] {
-            throw make_system_error("io_uring_register_buf_ring", -r);
+            throw detail::make_system_error("io_uring_register_buf_ring", -r);
         }
 
         d1.dismiss();
@@ -308,7 +308,7 @@ public:
         void *data = mmap(nullptr, data_size, PROT_READ | PROT_WRITE,
                           MAP_ANONYMOUS | MAP_PRIVATE, 0, 0);
         if (data == MAP_FAILED) [[unlikely]] {
-            throw make_system_error("mmap");
+            throw detail::make_system_error("mmap");
         }
         auto d1 = defer([&]() { munmap(data, data_size); });
 
@@ -325,7 +325,7 @@ public:
         int r = io_uring_register_buf_ring(context.runtime()->ring().ring(),
                                            &reg, br_flags_);
         if (r != 0) [[unlikely]] {
-            throw make_system_error("io_uring_register_buf_ring", -r);
+            throw detail::make_system_error("io_uring_register_buf_ring", -r);
         }
 
         char *buffer_base =

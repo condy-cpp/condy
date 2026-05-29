@@ -81,6 +81,14 @@ inline void tsan_release([[maybe_unused]] void *addr) noexcept {
 #endif
 }
 
+inline auto make_system_error(std::string_view msg, int ec) {
+    return std::system_error(ec, std::generic_category(), std::string(msg));
+}
+
+inline auto make_system_error(std::string_view msg) {
+    return make_system_error(msg, errno);
+}
+
 } // namespace detail
 } // namespace condy
 
