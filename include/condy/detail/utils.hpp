@@ -202,7 +202,7 @@ std::variant<Ts...> tuple_at(std::tuple<Ts...> &results, size_t idx) {
         return std::variant<Ts...>{std::in_place_index<0>,
                                    std::move(std::get<0>(results))};
 #else
-        detail::panic_on("Index out of bounds in tuple_at");
+        panic_on("Index out of bounds in tuple_at");
 #endif
     }
 }

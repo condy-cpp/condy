@@ -51,7 +51,7 @@ public:
 
     template <typename... Args>
     static void *operator new(size_t size, Allocator &alloc, const Args &...) {
-        size_t allocator_offset = detail::align_up(size, alignof(Allocator));
+        size_t allocator_offset = align_up(size, alignof(Allocator));
         size_t total_size = allocator_offset + sizeof(Allocator);
 
         Pointer mem = alloc.allocate(total_size);
@@ -65,7 +65,7 @@ public:
     }
 
     void operator delete(void *ptr, size_t size) noexcept {
-        size_t allocator_offset = detail::align_up(size, alignof(Allocator));
+        size_t allocator_offset = align_up(size, alignof(Allocator));
         size_t total_size = allocator_offset + sizeof(Allocator);
         Pointer mem = static_cast<Pointer>(ptr);
         Allocator &alloc = *std::launder(
@@ -131,7 +131,7 @@ private:
         h.resume();
     }
 
-    using OperationState = detail::operation_state_t<Sender, Receiver>;
+    using OperationState = operation_state_t<Sender, Receiver>;
     // Await/complete path is serialized, so atomic is not needed here.
     std::coroutine_handle<> handle_ = std::noop_coroutine();
     OperationState operation_state_;
@@ -139,8 +139,7 @@ private:
 };
 
 template <typename Sender> auto as_awaiter(Sender &&sender) {
-    return detail::SenderAwaiter<std::decay_t<Sender>>(
-        std::forward<Sender>(sender));
+    return SenderAwaiter<std::decay_t<Sender>>(std::forward<Sender>(sender));
 }
 
 template <typename Coro>
@@ -153,11 +152,10 @@ public:
             try {
                 std::rethrow_exception(exception_);
             } catch (const std::exception &e) {
-                detail::panic_on(std::format(
+                panic_on(std::format(
                     "Unhandled exception in detached coroutine: {}", e.what()));
             } catch (...) {
-                detail::panic_on(
-                    "Unhandled unknown exception in detached coroutine");
+                panic_on("Unhandled unknown exception in detached coroutine");
             }
         }
     }
@@ -191,7 +189,7 @@ public:
                            expected == State::RunningJoining) {
                     desired = State::Finished;
                 } else [[unlikely]] {
-                    detail::panic_on(std::format(
+                    panic_on(std::format(
                         "Invalid coroutine state in final_suspend: {}",
                         static_cast<int>(expected)));
                 }
@@ -219,7 +217,7 @@ public:
     FinalAwaiter final_suspend() const noexcept { return {}; }
 
     template <SenderLike T> auto await_transform(T &&value) {
-        return detail::as_awaiter(std::forward<T>(value));
+        return as_awaiter(std::forward<T>(value));
     }
 
     template <typename T> T &&await_transform(T &&value) {
@@ -245,7 +243,7 @@ public:
             } else if (expected == State::Zombie) {
                 desired = State::Finished;
             } else [[unlikely]] {
-                detail::panic_on(
+                panic_on(
                     std::format("Invalid coroutine state in request_detach: {}",
                                 static_cast<int>(expected)));
             }
@@ -271,7 +269,7 @@ public:
             } else if (expected == State::Zombie) {
                 desired = State::Finished;
             } else [[unlikely]] {
-                detail::panic_on(
+                panic_on(
                     std::format("Invalid coroutine state in request_join: {}",
                                 static_cast<int>(expected)));
             }
@@ -348,8 +346,7 @@ protected:
 
 template <typename T, typename Allocator>
 class Promise
-    : public detail::BindAllocator<detail::PromiseBase<Coro<T, Allocator>>,
-                                   Allocator> {
+    : public BindAllocator<PromiseBase<Coro<T, Allocator>>, Allocator> {
 public:
     void return_value(T value) { value_ = std::move(value); }
 
@@ -361,8 +358,7 @@ private:
 
 template <typename Allocator>
 class Promise<void, Allocator>
-    : public detail::BindAllocator<detail::PromiseBase<Coro<void, Allocator>>,
-                                   Allocator> {
+    : public BindAllocator<PromiseBase<Coro<void, Allocator>>, Allocator> {
 public:
     void return_void() const noexcept {}
 };

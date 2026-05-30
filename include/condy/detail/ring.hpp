@@ -34,7 +34,7 @@ public:
         r = io_uring_queue_init_params(entries, &ring_, params);
 #endif
         if (r < 0) {
-            throw detail::make_system_error("io_uring_queue_init_params", -r);
+            throw make_system_error("io_uring_queue_init_params", -r);
         }
     }
 

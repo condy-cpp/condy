@@ -31,7 +31,7 @@ public:
     template <typename Receiver> auto connect_impl(Receiver receiver) noexcept {
         return std::apply(
             [&](auto &&...args) {
-                return detail::OpSenderOperationState<
+                return OpSenderOperationState<
                     FinishHandle<CQEHandler, Args..., Receiver>, PrepFunc>(
                     std::move(prep_func_), std::move(cqe_handler_),
                     std::move(receiver), std::forward<decltype(args)>(args)...);
@@ -46,17 +46,16 @@ private:
 };
 
 template <PrepFuncLike PrepFunc, CQEHandlerLike CQEHandler>
-using OpSender = OpSenderBase<PrepFunc, CQEHandler, detail::OpFinishHandle>;
+using OpSender = OpSenderBase<PrepFunc, CQEHandler, OpFinishHandle>;
 
 template <PrepFuncLike PrepFunc, CQEHandlerLike CQEHandler,
           typename MultiShotFunc>
 using MultiShotOpSender =
-    OpSenderBase<PrepFunc, CQEHandler, detail::MultiShotOpFinishHandle,
-                 MultiShotFunc>;
+    OpSenderBase<PrepFunc, CQEHandler, MultiShotOpFinishHandle, MultiShotFunc>;
 
 template <PrepFuncLike PrepFunc, CQEHandlerLike CQEHandler, typename FreeFunc>
-using ZeroCopyOpSender = OpSenderBase<PrepFunc, CQEHandler,
-                                      detail::ZeroCopyOpFinishHandle, FreeFunc>;
+using ZeroCopyOpSender =
+    OpSenderBase<PrepFunc, CQEHandler, ZeroCopyOpFinishHandle, FreeFunc>;
 
 template <unsigned int Flags, typename Sender>
 class [[nodiscard]] FlaggedOpSender {
@@ -67,8 +66,8 @@ public:
     FlaggedOpSender(Sender sender) : sender_(std::move(sender)) {}
 
     template <typename Receiver> auto connect_impl(Receiver receiver) noexcept {
-        return detail::FlaggedOpState<Flags, Sender, Receiver>(
-            std::move(sender_), std::move(receiver));
+        return FlaggedOpState<Flags, Sender, Receiver>(std::move(sender_),
+                                                       std::move(receiver));
     }
 
 private:
@@ -113,30 +112,28 @@ template <typename... Senders>
 using ParallelAllSender =
     ParallelSenderBase<std::pair<std::array<size_t, sizeof...(Senders)>,
                                  std::tuple<typename Senders::ReturnType...>>,
-                       detail::ParallelAllOperationState, Senders...>;
+                       ParallelAllOperationState, Senders...>;
 
 template <typename... Senders>
 using ParallelAnySender =
     ParallelSenderBase<std::pair<std::array<size_t, sizeof...(Senders)>,
                                  std::tuple<typename Senders::ReturnType...>>,
-                       detail::ParallelAnyOperationState, Senders...>;
+                       ParallelAnyOperationState, Senders...>;
 
 template <typename... Senders>
 using WhenAllSender =
     ParallelSenderBase<std::tuple<typename Senders::ReturnType...>,
-                       detail::WhenAllOperationState, Senders...>;
+                       WhenAllOperationState, Senders...>;
 
 template <typename... Senders>
 using WhenAnySender =
     ParallelSenderBase<std::variant<typename Senders::ReturnType...>,
-                       detail::WhenAnyOperationState, Senders...>;
+                       WhenAnyOperationState, Senders...>;
 
 template <unsigned int Flags, typename... Senders>
-using LinkSenderBase =
-    ParallelSenderBase<std::tuple<typename Senders::ReturnType...>,
-                       detail::link_sender_helper<detail::LinkOperationState,
-                                                  Flags>::template apply,
-                       Senders...>;
+using LinkSenderBase = ParallelSenderBase<
+    std::tuple<typename Senders::ReturnType...>,
+    link_sender_helper<LinkOperationState, Flags>::template apply, Senders...>;
 
 template <typename... Senders>
 using LinkSender = LinkSenderBase<IOSQE_IO_LINK, Senders...>;
@@ -166,28 +163,27 @@ private:
 template <typename Sender>
 using RangedParallelAllSender = RangedParallelSenderBase<
     std::pair<std::vector<size_t>, std::vector<typename Sender::ReturnType>>,
-    detail::RangedParallelAllOperationState, Sender>;
+    RangedParallelAllOperationState, Sender>;
 
 template <typename Sender>
 using RangedParallelAnySender = RangedParallelSenderBase<
     std::pair<std::vector<size_t>, std::vector<typename Sender::ReturnType>>,
-    detail::RangedParallelAnyOperationState, Sender>;
+    RangedParallelAnyOperationState, Sender>;
 
 template <typename Sender>
 using RangedWhenAllSender =
     RangedParallelSenderBase<std::vector<typename Sender::ReturnType>,
-                             detail::RangedWhenAllOperationState, Sender>;
+                             RangedWhenAllOperationState, Sender>;
 
 template <typename Sender>
 using RangedWhenAnySender =
     RangedParallelSenderBase<std::pair<size_t, typename Sender::ReturnType>,
-                             detail::RangedWhenAnyOperationState, Sender>;
+                             RangedWhenAnyOperationState, Sender>;
 
 template <unsigned int Flags, typename Sender>
 using RangedLinkSenderBase = RangedParallelSenderBase<
     std::vector<typename Sender::ReturnType>,
-    detail::link_sender_helper<detail::RangedLinkOperationState,
-                               Flags>::template apply,
+    link_sender_helper<RangedLinkOperationState, Flags>::template apply,
     Sender>;
 
 template <typename Sender>

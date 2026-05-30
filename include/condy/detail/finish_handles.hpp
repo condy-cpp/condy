@@ -60,7 +60,7 @@ private:
     };
 
     using StopCallbackType =
-        detail::stop_callback_t<detail::stop_token_t<Receiver>, Cancellation>;
+        stop_callback_t<stop_token_t<Receiver>, Cancellation>;
 
 protected:
     void finish_(io_uring_cqe *cqe) noexcept {

@@ -28,7 +28,7 @@ public:
     TaskBase &operator=(TaskBase &&other) noexcept {
         if (this != &other) {
             if (handle_) {
-                detail::panic_on("Task destroyed without being awaited");
+                panic_on("Task destroyed without being awaited");
             }
             handle_ = std::exchange(other.handle_, nullptr);
         }
@@ -39,7 +39,7 @@ public:
 
     ~TaskBase() {
         if (handle_) {
-            detail::panic_on("Task destroyed without being awaited");
+            panic_on("Task destroyed without being awaited");
         }
     }
 
@@ -84,7 +84,7 @@ protected:
 template <typename T, typename Allocator>
 void TaskBase<T, Allocator>::wait_inner_(
     std::coroutine_handle<PromiseType> handle) {
-    if (detail::Context::current().runtime() != nullptr) [[unlikely]] {
+    if (Context::current().runtime() != nullptr) [[unlikely]] {
         throw std::logic_error("Sync wait inside runtime");
     }
     if (handle == nullptr) [[unlikely]] {
@@ -125,7 +125,7 @@ struct TaskAwaiterBase : public InvokerAdapter<TaskAwaiterBase<T, Allocator>> {
     template <typename PromiseType>
     bool
     await_suspend(std::coroutine_handle<PromiseType> caller_handle) noexcept {
-        detail::Context::current().runtime()->pend_work();
+        Context::current().runtime()->pend_work();
         assert(runtime_ != nullptr);
         caller_promise_ = &caller_handle.promise();
         return task_handle_.promise().request_join(this);
@@ -148,7 +148,7 @@ struct TaskAwaiter : public TaskAwaiterBase<T, Allocator> {
     using Base::Base;
 
     T await_resume() {
-        detail::Context::current().runtime()->resume_work();
+        Context::current().runtime()->resume_work();
         auto exception = std::move(Base::task_handle_.promise()).exception();
         if (exception) [[unlikely]] {
             Base::task_handle_.destroy();
@@ -166,7 +166,7 @@ struct TaskAwaiter<void, Allocator> : public TaskAwaiterBase<void, Allocator> {
     using Base::Base;
 
     void await_resume() {
-        detail::Context::current().runtime()->resume_work();
+        Context::current().runtime()->resume_work();
         auto exception = std::move(Base::task_handle_.promise()).exception();
         Base::task_handle_.destroy();
         if (exception) [[unlikely]] {
@@ -178,7 +178,7 @@ struct TaskAwaiter<void, Allocator> : public TaskAwaiterBase<void, Allocator> {
 template <typename T, typename Allocator>
 inline auto TaskBase<T, Allocator>::operator co_await() noexcept {
     return TaskAwaiter<T, Allocator>(std::exchange(handle_, nullptr),
-                                     detail::Context::current().runtime());
+                                     Context::current().runtime());
 }
 
 } // namespace detail

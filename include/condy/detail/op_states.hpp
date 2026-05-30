@@ -31,7 +31,7 @@ public:
 
 public:
     void start(unsigned int flags) noexcept {
-        auto &context = detail::Context::current();
+        auto &context = Context::current();
         auto &ring = context.runtime()->ring();
         context.runtime()->pend_work();
         io_uring_sqe *sqe = prep_func_(&ring);
@@ -60,7 +60,7 @@ public:
     void start(unsigned int flags) noexcept { op_state_.start(flags | Flags); }
 
 private:
-    using OperationState = detail::operation_state_t<Sender, Receiver>;
+    using OperationState = operation_state_t<Sender, Receiver>;
     OperationState op_state_;
 };
 
@@ -86,7 +86,7 @@ private:
     };
     void cancel_() noexcept { stop_source_.request_stop(); }
 
-    using StopCallbackType = detail::stop_callback_t<TokenType, Cancellation>;
+    using StopCallbackType = stop_callback_t<TokenType, Cancellation>;
 
     std::stop_source stop_source_;
     std::optional<StopCallbackType> stop_callback_;
@@ -131,7 +131,7 @@ public:
 private:
     using TokenType =
         std::remove_cvref_t<decltype(std::declval<Canceller &>().chain_token(
-            std::declval<detail::stop_token_t<Receiver>>()))>;
+            std::declval<stop_token_t<Receiver>>()))>;
 
     template <size_t I = 0>
     void connect_senders_(std::tuple<Senders...> &senders,
@@ -169,8 +169,8 @@ private:
     template <typename T> struct operation_state_traits;
     template <size_t... Is>
     struct operation_state_traits<std::index_sequence<Is...>> {
-        using type = std::tuple<detail::RawStorage<
-            detail::operation_state_t<Senders, ChildReceiver<Is>>>...>;
+        using type = std::tuple<
+            RawStorage<operation_state_t<Senders, ChildReceiver<Is>>>...>;
     };
     using OperationStates = typename operation_state_traits<
         std::make_index_sequence<sizeof...(Senders)>>::type;
@@ -185,12 +185,14 @@ protected:
 };
 
 template <typename Receiver, typename... Senders>
-using ParallelAnyOperationState = ParallelOperationState<
-    Receiver, WhenAnyCanceller<detail::stop_token_t<Receiver>>, Senders...>;
+using ParallelAnyOperationState =
+    ParallelOperationState<Receiver, WhenAnyCanceller<stop_token_t<Receiver>>,
+                           Senders...>;
 
 template <typename Receiver, typename... Senders>
-using ParallelAllOperationState = ParallelOperationState<
-    Receiver, WhenAllCanceller<detail::stop_token_t<Receiver>>, Senders...>;
+using ParallelAllOperationState =
+    ParallelOperationState<Receiver, WhenAllCanceller<stop_token_t<Receiver>>,
+                           Senders...>;
 
 template <typename Receiver> struct ReceiverAllWrapper {
     Receiver receiver;
@@ -208,7 +210,7 @@ template <typename Receiver> struct ReceiverAnyWrapper {
     template <typename R> void operator()(R &&result) noexcept {
         auto &[order, results] = result;
         size_t index = order[0];
-        std::move(receiver)(detail::tuple_at(results, index));
+        std::move(receiver)(tuple_at(results, index));
     }
     auto get_stop_token() const noexcept { return receiver.get_stop_token(); }
 };
@@ -228,7 +230,7 @@ public:
     using Base::Base;
 
     void start(unsigned int flags) noexcept {
-        auto &ring = detail::Context::current().runtime()->ring();
+        auto &ring = Context::current().runtime()->ring();
         ring.reserve_space(sizeof...(Senders));
         start_linked_operations_(flags);
     }
@@ -285,7 +287,7 @@ public:
 private:
     using TokenType =
         std::remove_cvref_t<decltype(std::declval<Canceller &>().chain_token(
-            std::declval<detail::stop_token_t<Receiver>>()))>;
+            std::declval<stop_token_t<Receiver>>()))>;
 
     template <typename R> void receive_(size_t index, R &&result) noexcept {
         canceller_(result);
@@ -308,8 +310,8 @@ private:
         auto get_stop_token() const noexcept { return stop_token; }
     };
 
-    using OperationStates = std::vector<
-        detail::RawStorage<detail::operation_state_t<Sender, ChildReceiver>>>;
+    using OperationStates =
+        std::vector<RawStorage<operation_state_t<Sender, ChildReceiver>>>;
 
 protected:
     OperationStates op_states_;
@@ -322,11 +324,11 @@ protected:
 
 template <typename Receiver, typename Sender>
 using RangedParallelAllOperationState = RangedParallelOperationState<
-    Receiver, WhenAllCanceller<detail::stop_token_t<Receiver>>, Sender>;
+    Receiver, WhenAllCanceller<stop_token_t<Receiver>>, Sender>;
 
 template <typename Receiver, typename Sender>
 using RangedParallelAnyOperationState = RangedParallelOperationState<
-    Receiver, WhenAnyCanceller<detail::stop_token_t<Receiver>>, Sender>;
+    Receiver, WhenAnyCanceller<stop_token_t<Receiver>>, Sender>;
 
 template <typename Receiver>
 using ReceiverRangedAllWrapper = ReceiverAllWrapper<Receiver>;
@@ -359,7 +361,7 @@ public:
     using Base::Base;
 
     void start(unsigned int flags) noexcept {
-        auto &ring = detail::Context::current().runtime()->ring();
+        auto &ring = Context::current().runtime()->ring();
         ring.reserve_space(Base::op_states_.size());
         for (size_t i = 0; i < Base::op_states_.size(); ++i) {
             auto &op_state = Base::op_states_[i];

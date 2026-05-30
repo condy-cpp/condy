@@ -29,8 +29,7 @@ struct stop_callback_traits<T, Callback> {
 };
 
 template <typename T, typename Callback>
-using stop_callback_t =
-    typename detail::stop_callback_traits<T, Callback>::type;
+using stop_callback_t = typename stop_callback_traits<T, Callback>::type;
 
 template <typename Sender, typename Receiver>
 using operation_state_t = decltype(std::declval<Sender &&>().connect_impl(
