@@ -71,6 +71,7 @@ public:
         Allocator &alloc = *std::launder(
             reinterpret_cast<Allocator *>(mem + allocator_offset));
         Allocator alloc_copy = std::move(alloc);
+        // NOLINTNEXTLINE(bugprone-use-after-move)
         alloc.~Allocator();
         alloc_copy.deallocate(mem, total_size);
     }
@@ -350,6 +351,7 @@ class Promise
 public:
     void return_value(T value) { value_ = std::move(value); }
 
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
     T value() { return std::move(value_.value()); }
 
 private:

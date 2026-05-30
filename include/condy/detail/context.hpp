@@ -10,7 +10,6 @@
 
 namespace condy {
 
-class Ring;
 class Runtime;
 
 namespace detail {
