@@ -49,7 +49,8 @@ namespace detail {
 class BundledProvidedBufferQueue {
 public:
     BundledProvidedBufferQueue(uint32_t capacity, unsigned int flags)
-        : capacity_(std::bit_ceil(capacity)), buf_lens_(capacity_, 0),
+        : capacity_(std::bit_ceil(capacity)),
+          mask_(io_uring_buf_ring_mask(capacity_)), buf_lens_(capacity_, 0),
           br_flags_(flags) {
         auto &context = detail::Context::current();
 
@@ -83,13 +84,14 @@ public:
 
     ~BundledProvidedBufferQueue() {
         assert(br_ != nullptr);
+        auto &context = detail::Context::current();
         size_t data_size = capacity_ * sizeof(io_uring_buf);
         munmap(br_, data_size);
         [[maybe_unused]] int r = io_uring_unregister_buf_ring(
-            detail::Context::current().runtime()->ring().ring(), bgid_);
+            context.runtime()->ring().ring(), bgid_);
         assert(r == 0);
         if (r == 0) {
-            detail::Context::current().recycle_bgid(bgid_);
+            context.recycle_bgid(bgid_);
         }
     }
 
@@ -121,9 +123,8 @@ public:
             throw std::logic_error("Capacity exceeded");
         }
 
-        auto mask = io_uring_buf_ring_mask(capacity_);
-        uint16_t bid = br_->tail & mask;
-        io_uring_buf_ring_add(br_, buffer.data(), buffer.size(), bid, mask, 0);
+        uint16_t bid = br_->tail & mask_;
+        io_uring_buf_ring_add(br_, buffer.data(), buffer.size(), bid, mask_, 0);
         buf_lens_[bid] = buffer.size();
         io_uring_buf_ring_advance(br_, 1);
         size_++;
@@ -160,15 +161,13 @@ public:
 
         bool is_incr = false;
 #if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
-        if (br_flags_ & IOU_PBUF_RING_INC) {
-            is_incr = true;
-        }
+        is_incr = br_flags_ & IOU_PBUF_RING_INC;
 #endif
 
-        auto mask = io_uring_buf_ring_mask(capacity_);
-        uint16_t curr_bid = result.bid;
+        uint16_t idx = result.bid;
         int64_t bytes = res;
         while (bytes > 0) {
+            uint16_t curr_bid = idx & mask_;
             uint32_t buf_len;
             if (is_incr) {
                 buf_len = std::min<uint32_t>(bytes, buf_lens_[curr_bid]);
@@ -180,7 +179,7 @@ public:
             if (buf_lens_[curr_bid] == 0) {
                 result.num_buffers++;
             }
-            curr_bid = (curr_bid + 1) & mask;
+            idx++;
         }
         assert(size_ >= result.num_buffers);
         size_ -= result.num_buffers;
@@ -192,6 +191,7 @@ private:
     io_uring_buf_ring *br_ = nullptr;
     uint32_t size_ = 0;
     uint32_t capacity_;
+    int mask_;
     uint16_t bgid_;
     std::vector<uint32_t> buf_lens_;
     unsigned int br_flags_;
@@ -300,8 +300,10 @@ class BundledProvidedBufferPool {
 public:
     BundledProvidedBufferPool(uint32_t num_buffers, size_t buffer_size,
                               unsigned int flags)
-        : num_buffers_(std::bit_ceil(num_buffers)), buffer_size_(buffer_size),
-          curr_buf_len_(buffer_size), br_flags_(flags) {
+        : num_buffers_(std::bit_ceil(num_buffers)),
+          mask_(io_uring_buf_ring_mask(num_buffers_)),
+          buffer_size_(buffer_size), curr_buf_len_(buffer_size),
+          br_flags_(flags) {
         auto &context = detail::Context::current();
 
         size_t data_size = num_buffers_ * (sizeof(io_uring_buf) + buffer_size);
@@ -330,10 +332,9 @@ public:
 
         char *buffer_base =
             static_cast<char *>(data) + sizeof(io_uring_buf) * num_buffers_;
-        auto mask = io_uring_buf_ring_mask(num_buffers_);
         for (size_t bid = 0; bid < num_buffers_; bid++) {
             char *ptr = buffer_base + bid * buffer_size;
-            io_uring_buf_ring_add(br_, ptr, buffer_size, bid, mask,
+            io_uring_buf_ring_add(br_, ptr, buffer_size, bid, mask_,
                                   static_cast<int>(bid));
         }
         io_uring_buf_ring_advance(br_, static_cast<int>(num_buffers_));
@@ -344,13 +345,14 @@ public:
 
     ~BundledProvidedBufferPool() {
         assert(br_ != nullptr);
+        auto &context = detail::Context::current();
         size_t data_size = num_buffers_ * (sizeof(io_uring_buf) + buffer_size_);
         munmap(br_, data_size);
         [[maybe_unused]] int r = io_uring_unregister_buf_ring(
-            detail::Context::current().runtime()->ring().ring(), bgid_);
+            context.runtime()->ring().ring(), bgid_);
         assert(r == 0);
         if (r == 0) {
-            detail::Context::current().recycle_bgid(bgid_);
+            context.recycle_bgid(bgid_);
         }
     }
 
@@ -397,9 +399,7 @@ public:
 
         bool is_incr = false;
 #if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
-        if (br_flags_ & IOU_PBUF_RING_INC) {
-            is_incr = true;
-        }
+        is_incr = br_flags_ & IOU_PBUF_RING_INC;
 #endif
 
         int64_t bytes = res;
@@ -435,8 +435,7 @@ public:
         size_t bid = offset / buffer_size_;
         assert(bid < num_buffers_);
         char *buffer_ptr = base + bid * buffer_size_;
-        auto mask = io_uring_buf_ring_mask(num_buffers_);
-        io_uring_buf_ring_add(br_, buffer_ptr, buffer_size_, bid, mask, 0);
+        io_uring_buf_ring_add(br_, buffer_ptr, buffer_size_, bid, mask_, 0);
         io_uring_buf_ring_advance(br_, 1);
     }
 
@@ -451,8 +450,7 @@ private:
     }
 
     io_uring_buf *curr_io_uring_buf_() noexcept {
-        auto mask = io_uring_buf_ring_mask(num_buffers_);
-        return &br_->bufs[br_head_ & mask];
+        return &br_->bufs[br_head_ & mask_];
     }
 
     void advance_io_uring_buf_() noexcept { br_head_++; }
@@ -460,6 +458,7 @@ private:
 private:
     io_uring_buf_ring *br_ = nullptr;
     uint32_t num_buffers_;
+    int mask_;
     uint32_t buffer_size_;
     uint32_t curr_buf_len_;
     uint16_t bgid_;
