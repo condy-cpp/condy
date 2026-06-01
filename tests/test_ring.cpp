@@ -1,6 +1,6 @@
 #include "condy/cqe_handler.hpp"
-#include "condy/finish_handles.hpp"
-#include "condy/ring.hpp"
+#include "condy/detail/finish_handles.hpp"
+#include "condy/detail/ring.hpp"
 #include <cerrno>
 #include <cstddef>
 #include <cstring>
@@ -22,20 +22,21 @@ struct MockReceiver {
     size_t &invoke_count;
 };
 
-using Handle = OpFinishHandle<SimpleCQEHandler, MockReceiver>;
+using Handle = detail::OpFinishHandle<SimpleCQEHandler, MockReceiver>;
 
 } // namespace
 
 TEST_CASE("test ring - init and destroy") {
     io_uring_params params{};
     std::memset(&params, 0, sizeof(params));
-    Ring ring(8, &params, nullptr, 0, std::numeric_limits<size_t>::max());
+    detail::Ring ring(8, &params, nullptr, 0,
+                      std::numeric_limits<size_t>::max());
 }
 
 TEST_CASE("test ring - maybe submit") {
     io_uring_params params{};
     std::memset(&params, 0, sizeof(params));
-    Ring ring(8, &params, nullptr, 0, 2);
+    detail::Ring ring(8, &params, nullptr, 0, 2);
 
     auto *sqe1 = ring.get_sqe();
     io_uring_prep_nop(sqe1);
@@ -60,7 +61,8 @@ TEST_CASE("test ring - maybe submit") {
 TEST_CASE("test ring - register and complete ops") {
     io_uring_params params{};
     std::memset(&params, 0, sizeof(params));
-    Ring ring(8, &params, nullptr, 0, std::numeric_limits<size_t>::max());
+    detail::Ring ring(8, &params, nullptr, 0,
+                      std::numeric_limits<size_t>::max());
 
     size_t invoke_count = 0;
     MockReceiver receiver{invoke_count};
@@ -82,7 +84,7 @@ TEST_CASE("test ring - register and complete ops") {
     while (reaped < num_ops) {
         ring.submit();
         reaped += ring.reap_completions([&](io_uring_cqe *cqe) {
-            auto *handle = reinterpret_cast<OpFinishHandleBase *>(
+            auto *handle = reinterpret_cast<detail::OpFinishHandleBase *>(
                 io_uring_cqe_get_data(cqe));
             REQUIRE(handle != nullptr);
             handle->handle(cqe);
@@ -97,7 +99,8 @@ TEST_CASE("test ring - register and complete ops") {
 TEST_CASE("test ring - cancel ops") {
     io_uring_params params{};
     std::memset(&params, 0, sizeof(params));
-    Ring ring(8, &params, nullptr, 0, std::numeric_limits<size_t>::max());
+    detail::Ring ring(8, &params, nullptr, 0,
+                      std::numeric_limits<size_t>::max());
 
     size_t invoke_count = 0;
     MockReceiver receiver{invoke_count};
@@ -126,7 +129,8 @@ TEST_CASE("test ring - cancel ops") {
             io_uring_sqe *sqe = ring.get_sqe();
             io_uring_prep_cancel(sqe, handles[i].get(), 0);
             io_uring_sqe_set_data64(
-                sqe, condy::encode_work(nullptr, condy::WorkType::Ignore));
+                sqe, condy::detail::encode_work(
+                         nullptr, condy::detail::WorkType::Ignore));
         }
     }
 
@@ -138,10 +142,11 @@ TEST_CASE("test ring - cancel ops") {
     while (reaped < num_ops) {
         reaped += ring.reap_completions([&](io_uring_cqe *cqe) {
             if (io_uring_cqe_get_data64(cqe) ==
-                condy::encode_work(nullptr, condy::WorkType::Ignore)) {
+                condy::detail::encode_work(nullptr,
+                                           condy::detail::WorkType::Ignore)) {
                 return;
             }
-            auto *handle = reinterpret_cast<OpFinishHandleBase *>(
+            auto *handle = reinterpret_cast<detail::OpFinishHandleBase *>(
                 io_uring_cqe_get_data(cqe));
             REQUIRE(handle != nullptr);
             handle->handle(cqe);

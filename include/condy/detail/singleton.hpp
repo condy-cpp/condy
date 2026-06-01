@@ -4,9 +4,10 @@
 
 #pragma once
 
-#include "condy/utils.hpp"
+#include "condy/detail/utils.hpp"
 
 namespace condy {
+namespace detail {
 
 template <typename T> class ThreadLocalSingleton {
 public:
@@ -20,4 +21,5 @@ public:
     }
 };
 
+} // namespace detail
 } // namespace condy

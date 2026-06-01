@@ -11,7 +11,8 @@
 #include "condy/awaiter_operations.hpp"
 #include "condy/concepts.hpp"
 #include "condy/condy_uring.hpp"
-#include "condy/helpers.hpp"
+#include "condy/detail/async_operations.hpp"
+#include "condy/detail/helpers.hpp"
 
 namespace condy {
 
@@ -22,18 +23,6 @@ namespace detail {
 
 class BundledProvidedBufferQueue;
 class BundledProvidedBufferPool;
-
-template <typename Awaiter>
-auto maybe_flag_fixed_fd(Awaiter &&op, const FixedFd &) {
-    return flag<IOSQE_FIXED_FILE>(std::forward<Awaiter>(op));
-}
-
-template <typename Awaiter> auto maybe_flag_fixed_fd(Awaiter &&op, int) {
-    return std::forward<Awaiter>(op);
-}
-
-template <typename Fd>
-constexpr bool is_fixed_fd_v = std::is_same_v<std::remove_cvref_t<Fd>, FixedFd>;
 
 } // namespace detail
 
@@ -472,49 +461,6 @@ inline auto async_madvise64(void *addr, off_t length, int advice) {
 }
 #endif
 
-namespace detail {
-
-inline void prep_sendto(io_uring_sqe *sqe, int sockfd, const void *buf,
-                        size_t len, int flags, const struct sockaddr *addr,
-                        socklen_t addrlen) {
-    io_uring_prep_send(sqe, sockfd, buf, len, flags);
-    io_uring_prep_send_set_addr(sqe, addr, addrlen);
-}
-
-inline void prep_send_fixed(io_uring_sqe *sqe, int sockfd, const void *buf,
-                            size_t len, int flags, int buf_index) {
-    io_uring_prep_send(sqe, sockfd, buf, len, flags);
-    sqe->ioprio |= IORING_RECVSEND_FIXED_BUF;
-    sqe->buf_index = buf_index;
-}
-
-inline void prep_sendto_fixed(io_uring_sqe *sqe, int sockfd, const void *buf,
-                              size_t len, int flags,
-                              const struct sockaddr *addr, socklen_t addrlen,
-                              int buf_index) {
-    prep_sendto(sqe, sockfd, buf, len, flags, addr, addrlen);
-    sqe->ioprio |= IORING_RECVSEND_FIXED_BUF;
-    sqe->buf_index = buf_index;
-}
-
-inline void prep_sendto_zc(io_uring_sqe *sqe, int sockfd, const void *buf,
-                           size_t len, int flags, const struct sockaddr *addr,
-                           socklen_t addrlen, unsigned zc_flags) {
-    io_uring_prep_send_zc(sqe, sockfd, buf, len, flags, zc_flags);
-    io_uring_prep_send_set_addr(sqe, addr, addrlen);
-}
-
-inline void prep_sendto_zc_fixed(io_uring_sqe *sqe, int sockfd, const void *buf,
-                                 size_t len, int flags,
-                                 const struct sockaddr *addr, socklen_t addrlen,
-                                 unsigned zc_flags, int buf_index) {
-    prep_sendto_zc(sqe, sockfd, buf, len, flags, addr, addrlen, zc_flags);
-    sqe->ioprio |= IORING_RECVSEND_FIXED_BUF;
-    sqe->buf_index = buf_index;
-}
-
-} // namespace detail
-
 /**
  * @brief See io_uring_prep_send
  */
@@ -875,8 +821,8 @@ inline auto async_socket_direct(int domain, int type, int protocol,
 template <CQEHandlerLike CQEHandler = SimpleCQEHandler, FdLike Fd,
           typename CmdFunc>
 inline auto async_uring_cmd(int cmd_op, Fd fd, CmdFunc &&cmd_func) {
-    auto prep_func = [cmd_op, fd,
-                      cmd_func = std::forward<CmdFunc>(cmd_func)](Ring *ring) {
+    auto prep_func = [cmd_op, fd, cmd_func = std::forward<CmdFunc>(cmd_func)](
+                         detail::Ring *ring) {
         auto *sqe = ring->get_sqe();
         io_uring_prep_uring_cmd(sqe, cmd_op, fd);
         cmd_func(sqe);
@@ -893,8 +839,8 @@ template <CQEHandlerLike CQEHandler = SimpleCQEHandler, FdLike Fd,
           typename CmdFunc, typename MultiShotFunc>
 inline auto async_uring_cmd_multishot(int cmd_op, Fd fd, CmdFunc &&cmd_func,
                                       MultiShotFunc &&func) {
-    auto prep_func = [cmd_op, fd,
-                      cmd_func = std::forward<CmdFunc>(cmd_func)](Ring *ring) {
+    auto prep_func = [cmd_op, fd, cmd_func = std::forward<CmdFunc>(cmd_func)](
+                         detail::Ring *ring) {
         auto *sqe = ring->get_sqe();
         io_uring_prep_uring_cmd(sqe, cmd_op, fd);
         cmd_func(sqe);
@@ -915,11 +861,11 @@ inline auto async_uring_cmd_multishot(int cmd_op, Fd fd, CmdFunc &&cmd_func,
 template <CQEHandlerLike CQEHandler = SimpleCQEHandler, FdLike Fd,
           typename CmdFunc>
 inline auto async_uring_cmd128(int cmd_op, Fd fd, CmdFunc &&cmd_func) {
-    auto prep_func = [cmd_op, fd,
-                      cmd_func = std::forward<CmdFunc>(cmd_func)](Ring *ring) {
+    auto prep_func = [cmd_op, fd, cmd_func = std::forward<CmdFunc>(cmd_func)](
+                         detail::Ring *ring) {
         auto *sqe = ring->get_sqe128();
         if (!sqe) {
-            panic_on("SQE128 not enabled in the ring");
+            detail::panic_on("SQE128 not enabled in the ring");
         }
         io_uring_prep_uring_cmd128(sqe, cmd_op, fd);
         cmd_func(sqe);

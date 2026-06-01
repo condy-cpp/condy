@@ -57,6 +57,7 @@ void __tsan_release(void *addr); // NOLINT(bugprone-reserved-identifier)
 #endif
 
 namespace condy {
+namespace detail {
 
 inline void tsan_acquire([[maybe_unused]] void *addr) noexcept {
 #if defined(CONDY_DETAIL_HAS_TSAN)
@@ -69,12 +70,6 @@ inline void tsan_release([[maybe_unused]] void *addr) noexcept {
     __tsan_release(addr);
 #endif
 }
-
-} // namespace condy
-
-#undef CONDY_DETAIL_HAS_TSAN
-
-namespace condy {
 
 template <typename Func> class [[nodiscard]] Defer {
 public:
@@ -183,53 +178,6 @@ inline auto make_system_error(std::string_view msg) {
     return make_system_error(msg, errno);
 }
 
-template <typename M, typename T>
-constexpr ptrdiff_t offset_of(M T::*member) noexcept {
-    constexpr T *dummy = nullptr;
-    return reinterpret_cast<ptrdiff_t>(&(dummy->*member));
-}
-
-template <typename M, typename T>
-T *container_of(M T::*member, M *ptr) noexcept {
-    auto offset = offset_of(member);
-    // NOLINTNEXTLINE(performance-no-int-to-ptr)
-    return reinterpret_cast<T *>(reinterpret_cast<uintptr_t>(ptr) - offset);
-}
-
-template <typename T, T From = 0, T To = std::numeric_limits<T>::max()>
-class IdPool {
-public:
-    static_assert(From < To, "Invalid ID range");
-
-    T allocate() {
-        if (!recycled_ids_.empty()) {
-            T id = recycled_ids_.top();
-            recycled_ids_.pop();
-            return id;
-        }
-        if (next_id_ < To) {
-            return next_id_++;
-        }
-        throw std::runtime_error("ID pool exhausted");
-    }
-
-    void recycle(T id) noexcept {
-        assert(From <= id && id < next_id_ && id < To);
-        recycled_ids_.push(id);
-    }
-
-    void reset() noexcept {
-        next_id_ = From;
-        while (!recycled_ids_.empty()) {
-            recycled_ids_.pop();
-        }
-    }
-
-private:
-    T next_id_ = From;
-    std::stack<T> recycled_ids_;
-};
-
 #if __cplusplus >= 202302L
 [[noreturn]] inline void unreachable() { std::unreachable(); }
 #else
@@ -265,4 +213,7 @@ template <typename T> inline T align_up(T value, T alignment) noexcept {
     return (value + alignment - 1) & ~(alignment - 1);
 }
 
+} // namespace detail
 } // namespace condy
+
+#undef CONDY_DETAIL_HAS_TSAN

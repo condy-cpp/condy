@@ -7,6 +7,7 @@
 #include "helpers.hpp"
 #include <cerrno>
 #include <condy/async_operations.hpp>
+#include <condy/helpers.hpp>
 #include <cstdint>
 #include <cstring>
 #include <doctest/doctest.h>
@@ -28,7 +29,7 @@
 
 TEST_CASE("test async_operations - test mkdirat") {
     char name[] = "temp_dir";
-    auto d = condy::defer([&] { rmdir(name); });
+    auto d = condy::detail::defer([&] { rmdir(name); });
 
     auto func = [&]() -> condy::Coro<void> {
         int r = co_await condy::async_mkdirat(AT_FDCWD, name, 0755);
@@ -44,7 +45,7 @@ TEST_CASE("test async_operations - test mkdirat") {
 
 TEST_CASE("test async_operations - test mkdir") {
     char name[] = "temp_dir";
-    auto d = condy::defer([&] { rmdir(name); });
+    auto d = condy::detail::defer([&] { rmdir(name); });
 
     auto func = [&]() -> condy::Coro<void> {
         int r = co_await condy::async_mkdir(name, 0755);
@@ -63,11 +64,11 @@ TEST_CASE("test async_operations - test symlinkat") {
     int target_fd = mkstemp(target_name);
     REQUIRE(target_fd >= 0);
     close(target_fd);
-    auto d1 = condy::defer([&] { unlink(target_name); });
+    auto d1 = condy::detail::defer([&] { unlink(target_name); });
 
     char link_name[32] = {};
     snprintf(link_name, sizeof(link_name), "%s_link", target_name);
-    auto d2 = condy::defer([&] { unlink(link_name); });
+    auto d2 = condy::detail::defer([&] { unlink(link_name); });
 
     auto func = [&]() -> condy::Coro<void> {
         int r =
@@ -88,11 +89,11 @@ TEST_CASE("test async_operations - test symlink") {
     int target_fd = mkstemp(target_name);
     REQUIRE(target_fd >= 0);
     close(target_fd);
-    auto d1 = condy::defer([&] { unlink(target_name); });
+    auto d1 = condy::detail::defer([&] { unlink(target_name); });
 
     char link_name[32] = {};
     snprintf(link_name, sizeof(link_name), "%s_link", target_name);
-    auto d2 = condy::defer([&] { unlink(link_name); });
+    auto d2 = condy::detail::defer([&] { unlink(link_name); });
 
     auto func = [&]() -> condy::Coro<void> {
         int r = co_await condy::async_symlink(target_name, link_name);
@@ -112,11 +113,11 @@ TEST_CASE("test async_operations - test linkat") {
     int target_fd = mkstemp(target_name);
     REQUIRE(target_fd >= 0);
     close(target_fd);
-    auto d1 = condy::defer([&] { unlink(target_name); });
+    auto d1 = condy::detail::defer([&] { unlink(target_name); });
 
     char link_name[32] = {};
     snprintf(link_name, sizeof(link_name), "%s_link", target_name);
-    auto d2 = condy::defer([&] { unlink(link_name); });
+    auto d2 = condy::detail::defer([&] { unlink(link_name); });
 
     auto func = [&]() -> condy::Coro<void> {
         int r = co_await condy::async_linkat(AT_FDCWD, target_name, AT_FDCWD,
@@ -139,11 +140,11 @@ TEST_CASE("test async_operations - test link") {
     int target_fd = mkstemp(target_name);
     REQUIRE(target_fd >= 0);
     close(target_fd);
-    auto d1 = condy::defer([&] { unlink(target_name); });
+    auto d1 = condy::detail::defer([&] { unlink(target_name); });
 
     char link_name[32] = {};
     snprintf(link_name, sizeof(link_name), "%s_link", target_name);
-    auto d2 = condy::defer([&] { unlink(link_name); });
+    auto d2 = condy::detail::defer([&] { unlink(link_name); });
 
     auto func = [&]() -> condy::Coro<void> {
         int r = co_await condy::async_link(target_name, link_name, 0);
@@ -165,7 +166,7 @@ TEST_CASE("test async_operations - test getxattr") {
     int fd = mkstemp(name);
     REQUIRE(fd >= 0);
     close(fd);
-    auto d = condy::defer([&] { unlink(name); });
+    auto d = condy::detail::defer([&] { unlink(name); });
 
     const char *attr_name = "user.test_attr";
     const char *attr_value = "test_value";
@@ -187,7 +188,7 @@ TEST_CASE("test async_operations - test setxattr") {
     int fd = mkstemp(name);
     REQUIRE(fd >= 0);
     close(fd);
-    auto d = condy::defer([&] { unlink(name); });
+    auto d = condy::detail::defer([&] { unlink(name); });
 
     const char *attr_name = "user.test_attr";
     const char *attr_value = "test_value";
@@ -209,7 +210,7 @@ TEST_CASE("test async_operations - test fgetxattr") {
     char name[32] = "XXXXXX";
     int fd = mkstemp(name);
     REQUIRE(fd >= 0);
-    auto d = condy::defer([&] {
+    auto d = condy::detail::defer([&] {
         close(fd);
         unlink(name);
     });
@@ -233,7 +234,7 @@ TEST_CASE("test async_operations - test fsetxattr") {
     char name[32] = "XXXXXX";
     int fd = mkstemp(name);
     REQUIRE(fd >= 0);
-    auto d = condy::defer([&] {
+    auto d = condy::detail::defer([&] {
         close(fd);
         unlink(name);
     });
@@ -785,7 +786,7 @@ TEST_CASE("test async_operations - test ftruncate - basic") {
     char name[32] = "XXXXXX";
     int fd = mkstemp(name);
     REQUIRE(fd >= 0);
-    auto d = condy::defer([&] { unlink(name); });
+    auto d = condy::detail::defer([&] { unlink(name); });
 
     auto func = [&]() -> condy::Coro<void> {
         int r = co_await condy::async_ftruncate(fd, 4096);
@@ -805,7 +806,7 @@ TEST_CASE("test async_operations - test ftruncate - fixed fd") {
     char name[32] = "XXXXXX";
     int fd = mkstemp(name);
     REQUIRE(fd >= 0);
-    auto d = condy::defer([&] { unlink(name); });
+    auto d = condy::detail::defer([&] { unlink(name); });
 
     auto func = [&]() -> condy::Coro<void> {
         auto &fd_table = condy::current_runtime().fd_table();

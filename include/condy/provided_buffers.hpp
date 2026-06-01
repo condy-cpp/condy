@@ -7,13 +7,12 @@
 
 #pragma once
 
-#include "condy/buffers.hpp"
 #include "condy/concepts.hpp"
 #include "condy/condy_uring.hpp"
-#include "condy/context.hpp"
-#include "condy/ring.hpp"
+#include "condy/detail/context.hpp"
+#include "condy/detail/ring.hpp"
+#include "condy/detail/utils.hpp"
 #include "condy/runtime.hpp"
-#include "condy/utils.hpp"
 #include <algorithm>
 #include <bit>
 #include <cstddef>
@@ -21,6 +20,7 @@
 #include <stdexcept>
 #include <sys/mman.h>
 #include <sys/types.h>
+#include <vector>
 
 namespace condy {
 
@@ -58,12 +58,12 @@ public:
         void *data = mmap(nullptr, data_size, PROT_READ | PROT_WRITE,
                           MAP_ANONYMOUS | MAP_PRIVATE, 0, 0);
         if (data == MAP_FAILED) [[unlikely]] {
-            throw make_system_error("mmap");
+            throw detail::make_system_error("mmap");
         }
-        auto d1 = defer([&]() { munmap(data, data_size); });
+        auto d1 = detail::defer([&]() { munmap(data, data_size); });
 
         bgid_ = context.next_bgid();
-        auto d2 = defer([&]() { context.recycle_bgid(bgid_); });
+        auto d2 = detail::defer([&]() { context.recycle_bgid(bgid_); });
 
         br_ = reinterpret_cast<io_uring_buf_ring *>(data);
         io_uring_buf_ring_init(br_);
@@ -75,7 +75,7 @@ public:
         int r = io_uring_register_buf_ring(context.runtime()->ring().ring(),
                                            &reg, br_flags_);
         if (r != 0) [[unlikely]] {
-            throw make_system_error("io_uring_register_buf_ring", -r);
+            throw detail::make_system_error("io_uring_register_buf_ring", -r);
         }
 
         d1.dismiss();
@@ -310,12 +310,12 @@ public:
         void *data = mmap(nullptr, data_size, PROT_READ | PROT_WRITE,
                           MAP_ANONYMOUS | MAP_PRIVATE, 0, 0);
         if (data == MAP_FAILED) [[unlikely]] {
-            throw make_system_error("mmap");
+            throw detail::make_system_error("mmap");
         }
-        auto d1 = defer([&]() { munmap(data, data_size); });
+        auto d1 = detail::defer([&]() { munmap(data, data_size); });
 
         bgid_ = context.next_bgid();
-        auto d2 = defer([&]() { context.recycle_bgid(bgid_); });
+        auto d2 = detail::defer([&]() { context.recycle_bgid(bgid_); });
 
         br_ = reinterpret_cast<io_uring_buf_ring *>(data);
         io_uring_buf_ring_init(br_);
@@ -327,7 +327,7 @@ public:
         int r = io_uring_register_buf_ring(context.runtime()->ring().ring(),
                                            &reg, br_flags_);
         if (r != 0) [[unlikely]] {
-            throw make_system_error("io_uring_register_buf_ring", -r);
+            throw detail::make_system_error("io_uring_register_buf_ring", -r);
         }
 
         char *buffer_base =

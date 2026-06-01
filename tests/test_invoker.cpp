@@ -1,9 +1,9 @@
-#include "condy/invoker.hpp"
+#include "condy/detail/invoker.hpp"
 #include <doctest/doctest.h>
 
 namespace {
 
-class TestA : public condy::InvokerAdapter<TestA> {
+class TestA : public condy::detail::InvokerAdapter<TestA> {
 public:
     TestA() : called_(false) {}
     void invoke() { called_ = true; }
@@ -13,7 +13,7 @@ private:
     bool called_;
 };
 
-class TestB : public condy::InvokerAdapter<TestB> {
+class TestB : public condy::detail::InvokerAdapter<TestB> {
 public:
     TestB() : value_(0) {}
     void invoke() { value_ += 42; }
@@ -38,7 +38,7 @@ TEST_CASE("test invoker - functionality") {
 }
 
 TEST_CASE("test invoker - type erase") {
-    condy::Invoker *invoker = nullptr;
+    condy::detail::Invoker *invoker = nullptr;
 
     {
         TestA a;

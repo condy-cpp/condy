@@ -1,4 +1,4 @@
-#include "condy/intrusive.hpp"
+#include "condy/detail/intrusive.hpp"
 #include <doctest/doctest.h>
 #include <utility>
 
@@ -7,10 +7,10 @@ TEST_CASE("test intrusive - single list") {
 
     struct Item {
         int value;
-        SingleLinkEntry link = {};
+        detail::SingleLinkEntry link = {};
     };
 
-    IntrusiveSingleList<Item, &Item::link> list;
+    detail::IntrusiveSingleList<Item, &Item::link> list;
 
     REQUIRE(list.empty());
 
@@ -50,10 +50,10 @@ TEST_CASE("test intrusive - single list move") {
 
     struct Item {
         int value;
-        SingleLinkEntry link = {};
+        detail::SingleLinkEntry link = {};
     };
 
-    IntrusiveSingleList<Item, &Item::link> list;
+    detail::IntrusiveSingleList<Item, &Item::link> list;
 
     REQUIRE(list.empty());
 
@@ -65,7 +65,7 @@ TEST_CASE("test intrusive - single list move") {
     list.push_back(&item2);
     list.push_back(&item3);
 
-    IntrusiveSingleList<Item, &Item::link> list2;
+    detail::IntrusiveSingleList<Item, &Item::link> list2;
     REQUIRE(list2.empty());
     list2 = std::move(list);
     REQUIRE(list.empty()); // NOLINT(bugprone-use-after-move)
@@ -83,11 +83,11 @@ TEST_CASE("test intrusive - single list splice") {
 
     struct Item {
         int value;
-        SingleLinkEntry link = {};
+        detail::SingleLinkEntry link = {};
     };
 
-    IntrusiveSingleList<Item, &Item::link> list;
-    IntrusiveSingleList<Item, &Item::link> list2;
+    detail::IntrusiveSingleList<Item, &Item::link> list;
+    detail::IntrusiveSingleList<Item, &Item::link> list2;
 
     Item item1{1};
     Item item2{2};
@@ -113,10 +113,10 @@ TEST_CASE("test intrusive - double list") {
 
     struct Item {
         int value;
-        DoubleLinkEntry link = {};
+        detail::DoubleLinkEntry link = {};
     };
 
-    IntrusiveDoubleList<Item, &Item::link> list;
+    detail::IntrusiveDoubleList<Item, &Item::link> list;
 
     REQUIRE(list.empty());
 
@@ -150,10 +150,10 @@ TEST_CASE("test intrusive - double list move") {
 
     struct Item {
         int value;
-        DoubleLinkEntry link = {};
+        detail::DoubleLinkEntry link = {};
     };
 
-    IntrusiveDoubleList<Item, &Item::link> list;
+    detail::IntrusiveDoubleList<Item, &Item::link> list;
 
     REQUIRE(list.empty());
 
@@ -168,7 +168,7 @@ TEST_CASE("test intrusive - double list move") {
 
     REQUIRE(!list.empty());
 
-    IntrusiveDoubleList<Item, &Item::link> list2;
+    detail::IntrusiveDoubleList<Item, &Item::link> list2;
     REQUIRE(list2.empty());
     list2 = std::move(list);
     REQUIRE(list.empty()); // NOLINT(bugprone-use-after-move)

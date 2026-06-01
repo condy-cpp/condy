@@ -7,12 +7,12 @@
 
 #pragma once
 
-#include "condy/context.hpp"
-#include "condy/intrusive.hpp"
-#include "condy/invoker.hpp"
+#include "condy/detail/context.hpp"
+#include "condy/detail/intrusive.hpp"
+#include "condy/detail/invoker.hpp"
+#include "condy/detail/type_traits.hpp"
+#include "condy/detail/utils.hpp"
 #include "condy/runtime.hpp"
-#include "condy/type_traits.hpp"
-#include "condy/utils.hpp"
 #include <bit>
 #include <cerrno>
 #include <cstddef>
@@ -93,7 +93,7 @@ public:
     void force_push(T item) noexcept {
         std::lock_guard<std::mutex> lock(mutex_);
         if (closed_) [[unlikely]] {
-            panic_on("Push to closed channel");
+            detail::panic_on("Push to closed channel");
         }
         if (try_push_inner_(std::move(item))) [[likely]] {
             return;
@@ -105,7 +105,7 @@ public:
             new (std::nothrow) FakePushFinishHandle(std::move(item));
         // NOLINTEND(bugprone-use-after-move)
         if (!fake_handle) {
-            panic_on("Allocation failed for PushFinishHandle");
+            detail::panic_on("Allocation failed for PushFinishHandle");
         }
         assert(pop_awaiters_.empty());
         push_awaiters_.push_back(fake_handle);
@@ -342,19 +342,20 @@ private:
 
 private:
     template <typename Handle>
-    using HandleList = IntrusiveDoubleList<Handle, &Handle::link_entry_>;
+    using HandleList =
+        detail::IntrusiveDoubleList<Handle, &Handle::link_entry_>;
 
     mutable std::mutex mutex_;
     HandleList<PushFinishHandleBase> push_awaiters_;
     HandleList<PopFinishHandleBase> pop_awaiters_;
     size_t head_ = 0;
     size_t tail_ = 0;
-    SmallArray<RawStorage<T>, N> buffer_;
+    detail::SmallArray<detail::RawStorage<T>, N> buffer_;
     bool closed_ = false;
 };
 
 template <typename T, size_t N>
-class Channel<T, N>::PushFinishHandleBase : public WorkInvoker {
+class Channel<T, N>::PushFinishHandleBase : public detail::WorkInvoker {
 public:
     PushFinishHandleBase(T &item) : item_(item) {}
 
@@ -373,7 +374,7 @@ public:
     void set_result(int32_t result) noexcept { result_ = result; }
 
 public:
-    DoubleLinkEntry link_entry_;
+    detail::DoubleLinkEntry link_entry_;
 
 public:
     Runtime *runtime_ = nullptr;
@@ -384,10 +385,11 @@ public:
 template <typename T, size_t N>
 template <typename Receiver>
 class Channel<T, N>::PushFinishHandle
-    : public InvokerAdapter<PushFinishHandle<Receiver>, PushFinishHandleBase> {
+    : public detail::InvokerAdapter<PushFinishHandle<Receiver>,
+                                    PushFinishHandleBase> {
 public:
-    using Base =
-        InvokerAdapter<PushFinishHandle<Receiver>, PushFinishHandleBase>;
+    using Base = detail::InvokerAdapter<PushFinishHandle<Receiver>,
+                                        PushFinishHandleBase>;
 
     PushFinishHandle(Channel &channel, T &item, Receiver receiver)
         : Base(item), channel_(channel), receiver_(std::move(receiver)) {}
@@ -431,7 +433,7 @@ private:
     };
 
     using StopCallbackType =
-        stop_callback_t<stop_token_t<Receiver>, Cancellation>;
+        detail::stop_callback_t<detail::stop_token_t<Receiver>, Cancellation>;
 
 private:
     Channel &channel_;
@@ -450,7 +452,7 @@ private:
 };
 
 template <typename T, size_t N>
-class Channel<T, N>::PopFinishHandleBase : public WorkInvoker {
+class Channel<T, N>::PopFinishHandleBase : public detail::WorkInvoker {
 public:
     void schedule() noexcept {
         assert(runtime_ != nullptr);
@@ -462,7 +464,7 @@ public:
     }
 
 public:
-    DoubleLinkEntry link_entry_;
+    detail::DoubleLinkEntry link_entry_;
 
 protected:
     Runtime *runtime_ = nullptr;
@@ -473,7 +475,8 @@ protected:
 template <typename T, size_t N>
 template <typename Receiver>
 class Channel<T, N>::PopFinishHandle
-    : public InvokerAdapter<PopFinishHandle<Receiver>, PopFinishHandleBase> {
+    : public detail::InvokerAdapter<PopFinishHandle<Receiver>,
+                                    PopFinishHandleBase> {
 public:
     PopFinishHandle(Channel &channel, Receiver receiver)
         : channel_(channel), receiver_(std::move(receiver)) {}
@@ -518,7 +521,7 @@ private:
     };
 
     using StopCallbackType =
-        stop_callback_t<stop_token_t<Receiver>, Cancellation>;
+        detail::stop_callback_t<detail::stop_token_t<Receiver>, Cancellation>;
 
 private:
     Channel &channel_;

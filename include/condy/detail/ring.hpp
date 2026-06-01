@@ -8,13 +8,14 @@
 #pragma once
 
 #include "condy/condy_uring.hpp"
-#include "condy/utils.hpp"
+#include "condy/detail/utils.hpp"
 #include <cassert>
 #include <cerrno>
 #include <cstddef>
 #include <cstring>
 
 namespace condy {
+namespace detail {
 
 class Ring {
 public:
@@ -157,4 +158,5 @@ private:
     size_t maybe_submit_count_ = 0;
 };
 
+} // namespace detail
 } // namespace condy

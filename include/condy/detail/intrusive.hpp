@@ -5,11 +5,25 @@
 
 #pragma once
 
-#include "condy/utils.hpp"
+#include "condy/detail/utils.hpp"
 #include <cassert>
 #include <utility>
 
 namespace condy {
+namespace detail {
+
+template <typename M, typename T>
+constexpr ptrdiff_t offset_of(M T::*member) noexcept {
+    constexpr T *dummy = nullptr;
+    return reinterpret_cast<ptrdiff_t>(&(dummy->*member));
+}
+
+template <typename M, typename T>
+T *container_of(M T::*member, M *ptr) noexcept {
+    auto offset = offset_of(member);
+    // NOLINTNEXTLINE(performance-no-int-to-ptr)
+    return reinterpret_cast<T *>(reinterpret_cast<uintptr_t>(ptr) - offset);
+}
 
 struct SingleLinkEntry {
     SingleLinkEntry *next = nullptr;
@@ -165,4 +179,5 @@ private:
     DoubleLinkEntry *tail_ = nullptr;
 };
 
+} // namespace detail
 } // namespace condy

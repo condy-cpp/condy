@@ -1,9 +1,9 @@
 #include "condy/async_operations.hpp"
 #include "condy/buffers.hpp"
 #include "condy/coro.hpp"
+#include "condy/detail/ring.hpp"
 #include "condy/helpers.hpp"
 #include "condy/provided_buffers.hpp"
-#include "condy/ring.hpp"
 #include "condy/runtime.hpp"
 #include "condy/sync_wait.hpp"
 #include <cerrno>
@@ -12,7 +12,7 @@
 
 namespace {
 
-condy::Ring &enable_runtime_ring(condy::Runtime &runtime) {
+condy::detail::Ring &enable_runtime_ring(condy::Runtime &runtime) {
     auto &ring = runtime.ring();
     int r = io_uring_enable_rings(ring.ring());
     REQUIRE(r == 0);
@@ -123,7 +123,8 @@ TEST_CASE("test buffers - provided buffer queue usage") {
     auto &ring = enable_runtime_ring(runtime);
 
     condy::detail::Context::current().init(&runtime);
-    auto d = condy::defer([]() { condy::detail::Context::current().reset(); });
+    auto d = condy::detail::defer(
+        []() { condy::detail::Context::current().reset(); });
 
     condy::ProvidedBufferQueue queue(4);
     REQUIRE(queue.capacity() == (1 << 2));
@@ -177,7 +178,8 @@ TEST_CASE("test buffers - provided buffer queue usage incr") {
     enable_runtime_ring(runtime);
 
     condy::detail::Context::current().init(&runtime);
-    auto d = condy::defer([]() { condy::detail::Context::current().reset(); });
+    auto d = condy::detail::defer(
+        []() { condy::detail::Context::current().reset(); });
 
     condy::ProvidedBufferQueue queue(4, IOU_PBUF_RING_INC);
     char buf[4][16];
@@ -240,7 +242,8 @@ TEST_CASE("test buffers - provided buffer queue usage bundle") {
     enable_runtime_ring(runtime);
 
     condy::detail::Context::current().init(&runtime);
-    auto d = condy::defer([]() { condy::detail::Context::current().reset(); });
+    auto d = condy::detail::defer(
+        []() { condy::detail::Context::current().reset(); });
 
     condy::detail::BundledProvidedBufferQueue queue(4, 0);
     char buf[4][16];
@@ -280,7 +283,8 @@ TEST_CASE("test buffers - provided buffer queue usage bundle incr") {
     condy::Runtime runtime;
     enable_runtime_ring(runtime);
     condy::detail::Context::current().init(&runtime);
-    auto d = condy::defer([]() { condy::detail::Context::current().reset(); });
+    auto d = condy::detail::defer(
+        []() { condy::detail::Context::current().reset(); });
 
     condy::detail::BundledProvidedBufferQueue queue(4, IOU_PBUF_RING_INC);
     char buf[4][16];
@@ -326,7 +330,8 @@ TEST_CASE("test buffers - provided buffer pool init") {
 TEST_CASE("test buffers - provided buffer pool usage") {
     condy::Runtime runtime;
     auto &ring = enable_runtime_ring(runtime);
-    auto d = condy::defer([]() { condy::detail::Context::current().reset(); });
+    auto d = condy::detail::defer(
+        []() { condy::detail::Context::current().reset(); });
 
     condy::detail::Context::current().init(&runtime);
 
@@ -375,7 +380,8 @@ TEST_CASE("test buffers - provided buffer pool usage incr") {
     enable_runtime_ring(runtime);
 
     condy::detail::Context::current().init(&runtime);
-    auto d = condy::defer([]() { condy::detail::Context::current().reset(); });
+    auto d = condy::detail::defer(
+        []() { condy::detail::Context::current().reset(); });
 
     condy::ProvidedBufferPool pool(4, 16, IOU_PBUF_RING_INC);
     REQUIRE(pool.capacity() == (1 << 2));
@@ -429,7 +435,8 @@ TEST_CASE("test buffers - provided buffer pool usage bundle") {
     enable_runtime_ring(runtime);
 
     condy::detail::Context::current().init(&runtime);
-    auto d = condy::defer([]() { condy::detail::Context::current().reset(); });
+    auto d = condy::detail::defer(
+        []() { condy::detail::Context::current().reset(); });
 
     condy::detail::BundledProvidedBufferPool pool(4, 16, 0);
     REQUIRE(pool.capacity() == (1 << 2));
@@ -468,7 +475,8 @@ TEST_CASE("test buffers - provided buffer pool usage bundle incr") {
     enable_runtime_ring(runtime);
 
     condy::detail::Context::current().init(&runtime);
-    auto d = condy::defer([]() { condy::detail::Context::current().reset(); });
+    auto d = condy::detail::defer(
+        []() { condy::detail::Context::current().reset(); });
 
     condy::detail::BundledProvidedBufferPool pool(4, 16, IOU_PBUF_RING_INC);
     REQUIRE(pool.capacity() == (1 << 2));

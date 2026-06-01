@@ -1,4 +1,4 @@
-#include "condy/awaiter_operations.hpp"
+#include "condy/detail/async_operations.hpp"
 #include "condy/runtime.hpp"
 #include "condy/runtime_options.hpp"
 #include "condy/task.hpp"

@@ -1,6 +1,6 @@
-#include "condy/invoker.hpp"
+#include "condy/detail/invoker.hpp"
+#include "condy/detail/type_traits.hpp"
 #include "condy/runtime.hpp"
-#include "condy/type_traits.hpp"
 #include <condy/awaiters.hpp>
 #include <condy/coro.hpp>
 #include <cstddef>
@@ -20,7 +20,7 @@ struct SimpleFinishHandle {
 
     int extract_result() { return res_; }
 
-    void set_invoker(condy::Invoker *invoker) {
+    void set_invoker(condy::detail::Invoker *invoker) {
         invoker_ = invoker;
         registered_ = true;
     }
@@ -28,7 +28,7 @@ struct SimpleFinishHandle {
     int res_;
     int cancelled_ = 0;
     bool registered_ = false;
-    condy::Invoker *invoker_ = nullptr;
+    condy::detail::Invoker *invoker_ = nullptr;
 };
 
 struct SimpleSender {
@@ -41,7 +41,7 @@ struct SimpleSender {
 
     template <typename Receiver>
     struct OperationState
-        : public condy::InvokerAdapter<OperationState<Receiver>> {
+        : public condy::detail::InvokerAdapter<OperationState<Receiver>> {
 
         OperationState(std::shared_ptr<SimpleFinishHandle> handle_ptr,
                        Receiver receiver)
@@ -68,9 +68,9 @@ struct SimpleSender {
         };
         void cancel_() { handle_ptr_->cancel(nullptr); }
 
-        using TokenType = condy::stop_token_t<Receiver>;
+        using TokenType = condy::detail::stop_token_t<Receiver>;
         using StopCallbackType =
-            condy::stop_callback_t<TokenType, Cancellation>;
+            condy::detail::stop_callback_t<TokenType, Cancellation>;
 
         std::shared_ptr<SimpleFinishHandle> handle_ptr_;
         Receiver receiver_;

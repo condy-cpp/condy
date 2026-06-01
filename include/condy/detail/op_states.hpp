@@ -7,9 +7,9 @@
 
 #include "condy/concepts.hpp"
 #include "condy/condy_uring.hpp"
-#include "condy/finish_handles.hpp"
-#include "condy/type_traits.hpp"
-#include "condy/utils.hpp"
+#include "condy/detail/finish_handles.hpp"
+#include "condy/detail/type_traits.hpp"
+#include "condy/detail/utils.hpp"
 #include <array>
 #include <cstddef>
 #include <optional>
@@ -31,7 +31,7 @@ public:
 
 public:
     void start(unsigned int flags) noexcept {
-        auto &context = detail::Context::current();
+        auto &context = Context::current();
         auto &ring = context.runtime()->ring();
         context.runtime()->pend_work();
         io_uring_sqe *sqe = prep_func_(&ring);
@@ -230,7 +230,7 @@ public:
     using Base::Base;
 
     void start(unsigned int flags) noexcept {
-        auto &ring = detail::Context::current().runtime()->ring();
+        auto &ring = Context::current().runtime()->ring();
         ring.reserve_space(sizeof...(Senders));
         start_linked_operations_(flags);
     }
@@ -361,7 +361,7 @@ public:
     using Base::Base;
 
     void start(unsigned int flags) noexcept {
-        auto &ring = detail::Context::current().runtime()->ring();
+        auto &ring = Context::current().runtime()->ring();
         ring.reserve_space(Base::op_states_.size());
         for (size_t i = 0; i < Base::op_states_.size(); ++i) {
             auto &op_state = Base::op_states_[i];

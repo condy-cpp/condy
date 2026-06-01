@@ -5,12 +5,11 @@
 
 #pragma once
 
+#include "condy/detail/coro.hpp"
 #include <coroutine>
 #include <utility>
 
 namespace condy {
-
-template <typename T, typename Allocator> class Promise;
 
 /**
  * @brief Coroutine type used to define a coroutine function.
@@ -25,7 +24,7 @@ template <typename T, typename Allocator> class Promise;
 template <typename T = void, typename Allocator = void>
 class [[nodiscard]] Coro {
 public:
-    using promise_type = Promise<T, Allocator>;
+    using promise_type = detail::Promise<T, Allocator>;
 
     Coro(std::coroutine_handle<promise_type> h) : handle_(h) {}
     Coro(Coro &&other) noexcept : handle_(other.release()) {}
@@ -48,7 +47,9 @@ public:
      * function call.
      * @return The result of the coroutine, with type `T`.
      */
-    auto operator co_await() noexcept;
+    auto operator co_await() noexcept {
+        return detail::CoroAwaiter<T, Allocator>{release()};
+    }
 
     std::coroutine_handle<promise_type> release() noexcept {
         return std::exchange(handle_, nullptr);
@@ -59,5 +60,3 @@ private:
 };
 
 } // namespace condy
-
-#include "condy/coro.inl"

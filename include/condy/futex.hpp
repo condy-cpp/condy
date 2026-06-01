@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include "condy/intrusive.hpp"
-#include "condy/invoker.hpp"
+#include "condy/detail/intrusive.hpp"
+#include "condy/detail/invoker.hpp"
+#include "condy/detail/type_traits.hpp"
+#include "condy/detail/utils.hpp"
 #include "condy/runtime.hpp"
-#include "condy/type_traits.hpp"
-#include "condy/utils.hpp"
 #include <atomic>
 #include <cerrno>
 #include <optional>
@@ -107,8 +107,9 @@ private:
     }
 
 private:
-    using HandleList = IntrusiveDoubleList<WaitFinishHandleBase,
-                                           &WaitFinishHandleBase::link_entry_>;
+    using HandleList =
+        detail::IntrusiveDoubleList<WaitFinishHandleBase,
+                                    &WaitFinishHandleBase::link_entry_>;
 
     mutable std::mutex mutex_;
     HandleList wait_awaiters_;
@@ -116,7 +117,7 @@ private:
 };
 
 template <typename T>
-class Futex<T>::WaitFinishHandleBase : public WorkInvoker {
+class Futex<T>::WaitFinishHandleBase : public detail::WorkInvoker {
 public:
     void schedule() noexcept {
         assert(runtime_ != nullptr);
@@ -126,7 +127,7 @@ public:
     void set_result(int32_t result) noexcept { result_ = result; }
 
 public:
-    DoubleLinkEntry link_entry_;
+    detail::DoubleLinkEntry link_entry_;
 
 protected:
     Runtime *runtime_ = nullptr;
@@ -136,9 +137,10 @@ protected:
 template <typename T>
 template <typename Receiver>
 class Futex<T>::WaitFinishHandle
-    : public InvokerAdapter<WaitFinishHandle<Receiver>, WaitFinishHandleBase> {
+    : public detail::InvokerAdapter<WaitFinishHandle<Receiver>,
+                                    WaitFinishHandleBase> {
 public:
-    using Base = InvokerAdapter<WaitFinishHandle, WaitFinishHandleBase>;
+    using Base = detail::InvokerAdapter<WaitFinishHandle, WaitFinishHandleBase>;
 
     WaitFinishHandle(Futex &futex, Receiver receiver)
         : futex_(futex), receiver_(std::move(receiver)) {}
@@ -181,7 +183,7 @@ private:
     };
 
     using StopCallbackType =
-        stop_callback_t<stop_token_t<Receiver>, Cancellation>;
+        detail::stop_callback_t<detail::stop_token_t<Receiver>, Cancellation>;
 
 private:
     Futex &futex_;

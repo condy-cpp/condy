@@ -1,5 +1,5 @@
 #include "condy/async_operations.hpp"
-#include "condy/ring.hpp"
+#include "condy/detail/ring.hpp"
 #include "condy/runtime.hpp"
 #include "condy/runtime_options.hpp"
 #include "condy/sync_wait.hpp"

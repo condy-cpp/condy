@@ -9,16 +9,17 @@
 #pragma once
 
 #include "condy/concepts.hpp"
+#include "condy/detail/type_traits.hpp"
+#include "condy/detail/utils.hpp"
+#include "condy/detail/work_type.hpp"
 #include "condy/runtime.hpp"
-#include "condy/type_traits.hpp"
-#include "condy/utils.hpp"
-#include "condy/work_type.hpp"
 #include <cassert>
 #include <cerrno>
 #include <optional>
 #include <utility>
 
 namespace condy {
+namespace detail {
 
 template <CQEHandlerLike CQEHandler, typename Receiver>
 class OpFinishHandle : public OpFinishHandleBase {
@@ -181,4 +182,5 @@ private:
     Handle *handle_ptr_;
 };
 
+} // namespace detail
 } // namespace condy

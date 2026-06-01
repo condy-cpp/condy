@@ -1,9 +1,10 @@
-#include "condy/singleton.hpp"
+#include "condy/detail/singleton.hpp"
 #include <doctest/doctest.h>
 #include <thread>
 
 TEST_CASE("test singleton - ThreadLocalSingleton") {
-    struct MySingleton : public condy::ThreadLocalSingleton<MySingleton> {
+    struct MySingleton
+        : public condy::detail::ThreadLocalSingleton<MySingleton> {
         int value = 0;
     };
 

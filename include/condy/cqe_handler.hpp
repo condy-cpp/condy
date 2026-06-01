@@ -8,7 +8,7 @@
 #pragma once
 
 #include "condy/concepts.hpp"
-#include "condy/context.hpp"
+#include "condy/detail/context.hpp"
 #include "condy/runtime.hpp"
 #include <cassert>
 #include <cerrno>

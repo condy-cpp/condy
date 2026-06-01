@@ -1,6 +1,6 @@
-#include "condy/awaiter_operations.hpp"
 #include "condy/coro.hpp"
-#include "condy/invoker.hpp"
+#include "condy/detail/async_operations.hpp"
+#include "condy/detail/invoker.hpp"
 #include "condy/runtime.hpp"
 #include "condy/runtime_options.hpp"
 #include "condy/task.hpp"
@@ -11,7 +11,8 @@
 namespace {
 
 struct SetFinishInvoker
-    : public condy::InvokerAdapter<SetFinishInvoker, condy::WorkInvoker> {
+    : public condy::detail::InvokerAdapter<SetFinishInvoker,
+                                           condy::detail::WorkInvoker> {
     void invoke() { finished = true; }
     bool finished = false;
 };

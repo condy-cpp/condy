@@ -1,4 +1,5 @@
-#include <condy/utils.hpp>
+#include <condy/detail/context.hpp>
+#include <condy/detail/utils.hpp>
 #include <doctest/doctest.h>
 #include <limits>
 #include <memory>
@@ -18,14 +19,14 @@ struct int_deleter {
 } // namespace
 
 TEST_CASE("test raw_storage - int") {
-    condy::RawStorage<int> storage;
+    condy::detail::RawStorage<int> storage;
     storage.construct(77);
     REQUIRE(storage.get() == 77);
     storage.destroy();
 }
 
 TEST_CASE("test raw_storage - std::string") {
-    condy::RawStorage<std::string> storage;
+    condy::detail::RawStorage<std::string> storage;
     storage.construct("Raw Storage Test");
     REQUIRE(storage.get() == "Raw Storage Test");
     storage.destroy();
@@ -34,7 +35,7 @@ TEST_CASE("test raw_storage - std::string") {
 TEST_CASE("test raw_storage - std::unique_ptr") {
     int_deleter::called = false;
     auto ptr = std::unique_ptr<int, int_deleter>(new int(99));
-    condy::RawStorage<std::unique_ptr<int, int_deleter>> storage;
+    condy::detail::RawStorage<std::unique_ptr<int, int_deleter>> storage;
     storage.construct(std::move(ptr));
     REQUIRE(!int_deleter::called);
     REQUIRE(*(storage.get()) == 99);
@@ -56,14 +57,14 @@ TEST_CASE("test raw_storage - guaranteed return value optimization") {
 
     auto f2 = [&]() { return f1(42); };
 
-    condy::RawStorage<Fixed> storage;
+    condy::detail::RawStorage<Fixed> storage;
     storage.accept(f2);
     REQUIRE(storage.get().value == 42);
     storage.destroy();
 }
 
 TEST_CASE("test small_array - small") {
-    condy::SmallArray<int, 4> arr(3);
+    condy::detail::SmallArray<int, 4> arr(3);
     arr[0] = 10;
     arr[1] = 20;
     arr[2] = 30;
@@ -74,7 +75,7 @@ TEST_CASE("test small_array - small") {
 }
 
 TEST_CASE("test small_array - large") {
-    condy::SmallArray<int, 4> arr(10);
+    condy::detail::SmallArray<int, 4> arr(10);
     for (size_t i = 0; i < arr.capacity(); ++i) {
         arr[i] = static_cast<int>(i * 5);
     }
@@ -90,7 +91,7 @@ TEST_CASE("test small_array - large") {
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
 TEST_CASE("test small_array - small with raw_storage") {
-    condy::SmallArray<condy::RawStorage<std::string>, 2> arr(2);
+    condy::detail::SmallArray<condy::detail::RawStorage<std::string>, 2> arr(2);
     arr[0].construct("Hello");
     arr[1].construct("World");
 
@@ -105,7 +106,7 @@ TEST_CASE("test small_array - small with raw_storage") {
 #endif
 
 TEST_CASE("test small_array - large with raw_storage") {
-    condy::SmallArray<condy::RawStorage<std::string>, 2> arr(3);
+    condy::detail::SmallArray<condy::detail::RawStorage<std::string>, 2> arr(3);
     arr[0].construct("First");
     arr[1].construct("Second");
     arr[2].construct("Third");
@@ -120,7 +121,7 @@ TEST_CASE("test small_array - large with raw_storage") {
 }
 
 TEST_CASE("test id_pool - basic") {
-    condy::IdPool<uint32_t, 0, 8> pool;
+    condy::detail::IdPool<uint32_t, 0, 8> pool;
     auto id1 = pool.allocate();
     auto id2 = pool.allocate();
     REQUIRE(id1 != id2);
@@ -136,7 +137,7 @@ TEST_CASE("test id_pool - basic") {
 
 TEST_CASE("test id_pool - exhaustion") {
     constexpr uint32_t max_ids = 2;
-    condy::IdPool<uint32_t, 0, max_ids> pool;
+    condy::detail::IdPool<uint32_t, 0, max_ids> pool;
     for (uint32_t i = 0; i < max_ids; ++i) {
         pool.allocate();
     }

@@ -1,6 +1,6 @@
-#include "condy/context.hpp"
 #include "condy/cqe_handler.hpp"
-#include "condy/finish_handles.hpp"
+#include "condy/detail/context.hpp"
+#include "condy/detail/finish_handles.hpp"
 #include "condy/runtime.hpp"
 #include <cstddef>
 #include <doctest/doctest.h>
@@ -23,11 +23,12 @@ void event_loop(size_t &count, size_t expected) {
         ring.submit();
         ring.reap_completions([&](io_uring_cqe *cqe) {
             auto [data, type] =
-                condy::decode_work(io_uring_cqe_get_data64(cqe));
-            if (type == condy::WorkType::Ignore) {
+                condy::detail::decode_work(io_uring_cqe_get_data64(cqe));
+            if (type == condy::detail::WorkType::Ignore) {
                 return;
             }
-            auto handle_ptr = static_cast<condy::OpFinishHandleBase *>(data);
+            auto handle_ptr =
+                static_cast<condy::detail::OpFinishHandleBase *>(data);
             handle_ptr->handle(cqe);
         });
     }
@@ -43,12 +44,12 @@ TEST_CASE("test op_finish_handle - basic usage") {
     auto &context = condy::detail::Context::current();
 
     context.init(&runtime);
-    auto d = condy::defer([&] { context.reset(); });
+    auto d = condy::detail::defer([&] { context.reset(); });
 
     size_t invoke_count = 0;
     int r = 0;
     MockReceiver receiver{invoke_count, r};
-    condy::OpFinishHandle<condy::SimpleCQEHandler, MockReceiver> handle(
+    condy::detail::OpFinishHandle<condy::SimpleCQEHandler, MockReceiver> handle(
         condy::SimpleCQEHandler(), receiver);
 
     auto *sqe = ring.get_sqe();
@@ -57,7 +58,7 @@ TEST_CASE("test op_finish_handle - basic usage") {
     ring.submit();
 
     ring.reap_completions([](io_uring_cqe *cqe) {
-        auto handle_ptr = static_cast<condy::OpFinishHandleBase *>(
+        auto handle_ptr = static_cast<condy::detail::OpFinishHandleBase *>(
             io_uring_cqe_get_data(cqe));
         io_uring_cqe mock_cqe = *cqe;
         mock_cqe.res = 42;
@@ -77,13 +78,13 @@ TEST_CASE("test op_finish_handle - concurrent ops") {
     REQUIRE(enable_r == 0);
     auto &context = condy::detail::Context::current();
     context.init(&runtime);
-    auto d = condy::defer([&] { context.reset(); });
+    auto d = condy::detail::defer([&] { context.reset(); });
 
     size_t invoke_count = 0;
     int r = 0;
     MockReceiver receiver{invoke_count, r};
-    condy::OpFinishHandle<condy::SimpleCQEHandler, MockReceiver> handle1(
-        condy::SimpleCQEHandler(), receiver),
+    condy::detail::OpFinishHandle<condy::SimpleCQEHandler, MockReceiver>
+        handle1(condy::SimpleCQEHandler(), receiver),
         handle2(condy::SimpleCQEHandler(), receiver);
 
     auto *sqe1 = ring.get_sqe();
@@ -109,8 +110,8 @@ TEST_CASE("test op_finish_handle - multishot op") {
     int res = -1;
     auto func = [&](int r) { res = r; };
 
-    condy::MultiShotOpFinishHandle<condy::SimpleCQEHandler, decltype(func),
-                                   MockReceiver>
+    condy::detail::MultiShotOpFinishHandle<condy::SimpleCQEHandler,
+                                           decltype(func), MockReceiver>
         handle(condy::SimpleCQEHandler(), receiver, func);
     REQUIRE(invoke_count == 0);
     io_uring_cqe cqe{};
@@ -139,8 +140,8 @@ TEST_CASE("test op_finish_handle - zero copy op") {
     auto func = [&](int r) { res = r; };
 
     auto *handle =
-        new condy::ZeroCopyOpFinishHandle<condy::SimpleCQEHandler,
-                                          decltype(func), MockReceiver>(
+        new condy::detail::ZeroCopyOpFinishHandle<condy::SimpleCQEHandler,
+                                                  decltype(func), MockReceiver>(
             condy::SimpleCQEHandler(), receiver, func);
 
     REQUIRE(invoke_count == 0);

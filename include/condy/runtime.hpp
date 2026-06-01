@@ -6,15 +6,15 @@
 #pragma once
 
 #include "condy/condy_uring.hpp"
-#include "condy/context.hpp"
-#include "condy/intrusive.hpp"
-#include "condy/invoker.hpp"
-#include "condy/ring.hpp"
+#include "condy/detail/context.hpp"
+#include "condy/detail/intrusive.hpp"
+#include "condy/detail/invoker.hpp"
+#include "condy/detail/ring.hpp"
+#include "condy/detail/runtime.hpp"
+#include "condy/detail/utils.hpp"
+#include "condy/detail/work_type.hpp"
 #include "condy/ring_settings.hpp"
 #include "condy/runtime_options.hpp"
-#include "condy/singleton.hpp"
-#include "condy/utils.hpp"
-#include "condy/work_type.hpp"
 #include <algorithm>
 #include <atomic>
 #include <cerrno>
@@ -25,88 +25,6 @@
 #include <mutex>
 
 namespace condy {
-
-namespace detail {
-
-class ThreadLocalRing : public ThreadLocalSingleton<ThreadLocalRing> {
-public:
-    Ring *ring() { return &ring_; }
-
-    ThreadLocalRing() : ring_(create_ring_()) {}
-
-private:
-    // NOLINTNEXTLINE(bugprone-exception-escape)
-    static Ring create_ring_() noexcept {
-        io_uring_params params = {};
-        params.flags |= IORING_SETUP_CLAMP;
-        params.flags |= IORING_SETUP_SINGLE_ISSUER;
-        params.flags |= IORING_SETUP_SUBMIT_ALL;
-        // If we can construct Runtime, we should be able to construct this
-        // thread-local ring. So we ignore errors here.
-        return Ring(8, &params, nullptr, 0, std::numeric_limits<size_t>::max());
-    }
-
-private:
-    Ring ring_;
-};
-
-inline int sync_msg_ring(io_uring_sqe *sqe_data) noexcept {
-#if !IO_URING_CHECK_VERSION(2, 12) // >= 2.12
-    return io_uring_register_sync_msg(sqe_data);
-#else
-    auto *ring = ThreadLocalRing::current().ring();
-    auto *sqe = ring->get_sqe();
-    *sqe = *sqe_data;
-    int r = 0;
-    auto n =
-        ring->reap_completions_wait([&](io_uring_cqe *cqe) { r = cqe->res; });
-    if (n < 0) {
-        return static_cast<int>(n);
-    }
-    assert(n == 1);
-    return r;
-#endif
-}
-
-class CancelRequest {
-public:
-    CancelRequest(uintptr_t data) : data_(data) {}
-
-    void wait() noexcept {
-        while (!finished_.load(std::memory_order_acquire)) {
-            finished_.wait(false, std::memory_order_relaxed);
-        }
-    }
-
-    void notify() noexcept {
-        finished_.store(true, std::memory_order_release);
-        finished_.notify_one();
-    }
-
-    uintptr_t data() const noexcept { return data_; }
-
-private:
-    uintptr_t data_;
-    std::atomic_bool finished_ = false;
-};
-
-} // namespace detail
-
-class OpFinishHandleBase {
-public:
-    using HandleFunc = bool (*)(void *, io_uring_cqe *) noexcept;
-
-    bool handle(io_uring_cqe *cqe) noexcept {
-        assert(handle_func_ != nullptr);
-        return handle_func_(this, cqe);
-    }
-
-protected:
-    OpFinishHandleBase() = default;
-
-protected:
-    HandleFunc handle_func_ = nullptr;
-};
 
 /**
  * @brief The event loop runtime for executing asynchronous
@@ -142,7 +60,7 @@ public:
         wakeup_();
     }
 
-    void schedule(WorkInvoker *work) noexcept {
+    void schedule(detail::WorkInvoker *work) noexcept {
         auto *curr_runtime = detail::Context::current().runtime();
         if (curr_runtime == this) {
             local_queue_.push_back(work);
@@ -153,9 +71,10 @@ public:
         if (state == State::Enabled) {
             // Fast path: if the ring is enabled, we can directly schedule the
             // work
-            tsan_release(work);
-            schedule_msg_ring_(curr_runtime,
-                               encode_work(work, WorkType::Schedule));
+            detail::tsan_release(work);
+            schedule_msg_ring_(
+                curr_runtime,
+                detail::encode_work(work, detail::WorkType::Schedule));
         } else {
             // Slow path: if the ring is not enabled, we need to acquire the
             // mutex to ensure the work is scheduled before the ring is enabled
@@ -163,9 +82,10 @@ public:
             state = state_.load();
             if (state == State::Enabled) {
                 lock.unlock();
-                tsan_release(work);
-                schedule_msg_ring_(curr_runtime,
-                                   encode_work(work, WorkType::Schedule));
+                detail::tsan_release(work);
+                schedule_msg_ring_(
+                    curr_runtime,
+                    detail::encode_work(work, detail::WorkType::Schedule));
             } else {
                 global_queue_.push_back(work);
             }
@@ -187,9 +107,10 @@ public:
         }
 
         detail::CancelRequest request(data);
-        tsan_release(&request);
-        schedule_msg_ring_(curr_runtime,
-                           encode_work(&request, WorkType::Cancel));
+        detail::tsan_release(&request);
+        schedule_msg_ring_(
+            curr_runtime,
+            detail::encode_work(&request, detail::WorkType::Cancel));
         if (curr_runtime != nullptr) {
             // Ensure the cancel msg is submitted.
             curr_runtime->ring_.submit();
@@ -226,7 +147,7 @@ public:
             throw std::runtime_error(
                 "Runtime is already running or has been stopped");
         }
-        auto d1 = defer([this]() { state_.store(State::Stopped); });
+        auto d1 = detail::defer([this]() { state_.store(State::Stopped); });
 
         [[maybe_unused]] int r;
         r = io_uring_enable_rings(ring_.ring());
@@ -246,7 +167,7 @@ public:
         }
 
         detail::Context::current().init(this);
-        auto d2 = defer([]() { detail::Context::current().reset(); });
+        auto d2 = detail::defer([]() { detail::Context::current().reset(); });
 
         while (true) {
             tick_count_++;
@@ -290,7 +211,7 @@ public:
     auto &settings() noexcept { return settings_; }
 
 private:
-    static Ring create_ring_(const RuntimeOptions &options) {
+    static detail::Ring create_ring_(const RuntimeOptions &options) {
         io_uring_params params;
         std::memset(&params, 0, sizeof(params));
 
@@ -384,7 +305,7 @@ private:
         }
         assert(submit_batch > 0);
 
-        return Ring(ring_entries, &params, buf, buf_size, submit_batch);
+        return detail::Ring(ring_entries, &params, buf, buf_size, submit_batch);
     }
 
     void schedule_msg_ring_(Runtime *curr_runtime, uintptr_t data) noexcept {
@@ -398,7 +319,8 @@ private:
             prep_msg_ring_(ring_fd, &sqe, data);
             int r = detail::sync_msg_ring(&sqe);
             if (r < 0) {
-                panic_on(std::format("sync_msg_ring: {}", std::strerror(-r)));
+                detail::panic_on(
+                    std::format("sync_msg_ring: {}", std::strerror(-r)));
             }
         }
     }
@@ -415,8 +337,9 @@ private:
             return;
         }
 
-        schedule_msg_ring_(curr_runtime,
-                           encode_work(nullptr, WorkType::Ignore));
+        schedule_msg_ring_(
+            curr_runtime,
+            detail::encode_work(nullptr, detail::WorkType::Ignore));
     }
 
     void flush_global_queue_() noexcept {
@@ -426,12 +349,14 @@ private:
     static void prep_msg_ring_(int ring_fd, io_uring_sqe *sqe,
                                uintptr_t data) noexcept {
         io_uring_prep_msg_ring(sqe, ring_fd, 0, data, 0);
-        io_uring_sqe_set_data64(sqe, encode_work(nullptr, WorkType::Schedule));
+        io_uring_sqe_set_data64(
+            sqe, detail::encode_work(nullptr, detail::WorkType::Schedule));
     }
 
     static void prep_cancel_(io_uring_sqe *sqe, uintptr_t data) noexcept {
         io_uring_prep_cancel64(sqe, data, 0);
-        io_uring_sqe_set_data64(sqe, encode_work(nullptr, WorkType::Ignore));
+        io_uring_sqe_set_data64(
+            sqe, detail::encode_work(nullptr, detail::WorkType::Ignore));
         io_uring_sqe_set_flags(sqe, IOSQE_CQE_SKIP_SUCCESS);
     }
 
@@ -439,8 +364,8 @@ private:
         auto r = ring_.reap_completions(
             [this](io_uring_cqe *cqe) { process_cqe_(cqe); });
         if (r < 0) {
-            panic_on(std::format("io_uring_peek_cqe: {}",
-                                 std::strerror(static_cast<int>(-r))));
+            detail::panic_on(std::format("io_uring_peek_cqe: {}",
+                                         std::strerror(static_cast<int>(-r))));
         }
     }
 
@@ -448,44 +373,44 @@ private:
         auto r = ring_.reap_completions_wait(
             [this](io_uring_cqe *cqe) { process_cqe_(cqe); });
         if (r < 0) {
-            panic_on(std::format("io_uring_submit_and_wait: {}",
-                                 std::strerror(static_cast<int>(-r))));
+            detail::panic_on(std::format("io_uring_submit_and_wait: {}",
+                                         std::strerror(static_cast<int>(-r))));
         }
     }
 
     void process_cqe_(io_uring_cqe *cqe) noexcept {
-        auto [data, type] = decode_work(io_uring_cqe_get_data64(cqe));
+        auto [data, type] = detail::decode_work(io_uring_cqe_get_data64(cqe));
 
-        if (type == WorkType::Ignore) {
+        if (type == detail::WorkType::Ignore) {
             // No-op
             assert(cqe->res != -EINVAL); // If EINVAL, something is wrong
-        } else if (type == WorkType::Schedule) {
+        } else if (type == detail::WorkType::Schedule) {
             if (data == nullptr) {
                 if (cqe->res < 0) {
-                    panic_on(std::format("io_uring_prep_msg_ring: {}",
-                                         std::strerror(-cqe->res)));
+                    detail::panic_on(std::format("io_uring_prep_msg_ring: {}",
+                                                 std::strerror(-cqe->res)));
                 }
                 resume_work();
             } else {
-                auto *work = static_cast<WorkInvoker *>(data);
-                tsan_acquire(work);
+                auto *work = static_cast<detail::WorkInvoker *>(data);
+                detail::tsan_acquire(work);
                 (*work)();
             }
-        } else if (type == WorkType::Cancel) {
+        } else if (type == detail::WorkType::Cancel) {
             detail::CancelRequest *request =
                 static_cast<detail::CancelRequest *>(data);
-            tsan_acquire(request);
+            detail::tsan_acquire(request);
             io_uring_sqe *sqe = ring_.get_sqe();
             prep_cancel_(sqe, request->data());
             request->notify();
-        } else if (type == WorkType::Common) {
-            auto *handle = static_cast<OpFinishHandleBase *>(data);
+        } else if (type == detail::WorkType::Common) {
+            auto *handle = static_cast<detail::OpFinishHandleBase *>(data);
             auto op_finish = handle->handle(cqe);
             if (op_finish) {
                 resume_work();
             }
         } else {
-            unreachable();
+            detail::unreachable();
         }
     }
 
@@ -499,7 +424,8 @@ private:
     static_assert(std::atomic<State>::is_always_lock_free);
 
     using WorkListQueue =
-        IntrusiveSingleList<WorkInvoker, &WorkInvoker::work_queue_entry_>;
+        detail::IntrusiveSingleList<detail::WorkInvoker,
+                                    &detail::WorkInvoker::work_queue_entry_>;
 
     // Global state
     std::mutex mutex_;
@@ -510,7 +436,7 @@ private:
 
     // Local state
     WorkListQueue local_queue_;
-    Ring ring_;
+    detail::Ring ring_;
     size_t tick_count_ = 0;
 
     // Configurable parameters

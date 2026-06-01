@@ -7,6 +7,7 @@
 #include "helpers.hpp"
 #include <cerrno>
 #include <condy/async_operations.hpp>
+#include <condy/helpers.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -123,7 +124,7 @@ TEST_CASE("test async_operations - test fsync") {
     char name[32] = "XXXXXX";
     int fd = mkstemp(name);
     REQUIRE(fd >= 0);
-    auto d = condy::defer([&] {
+    auto d = condy::detail::defer([&] {
         close(fd);
         unlink(name);
     });
@@ -542,7 +543,7 @@ TEST_CASE("test async_operations - test fallocate - basic") {
     char name[32] = "XXXXXX";
     int fd = mkstemp(name);
     REQUIRE(fd >= 0);
-    auto d = condy::defer([&] {
+    auto d = condy::detail::defer([&] {
         close(fd);
         unlink(name);
     });
@@ -563,7 +564,7 @@ TEST_CASE("test async_operations - test fallocate - fixed fd") {
     char name[32] = "XXXXXX";
     int fd = mkstemp(name);
     REQUIRE(fd >= 0);
-    auto d = condy::defer([&] {
+    auto d = condy::detail::defer([&] {
         close(fd);
         unlink(name);
     });
@@ -591,7 +592,7 @@ TEST_CASE("test async_operations - test openat - basic") {
     int fd = mkstemp(name);
     REQUIRE(fd >= 0);
     close(fd);
-    auto d = condy::defer([&] { unlink(name); });
+    auto d = condy::detail::defer([&] { unlink(name); });
 
     auto func = [&]() -> condy::Coro<void> {
         int rfd = co_await condy::async_openat(AT_FDCWD, name, O_RDONLY, 0);
@@ -606,7 +607,7 @@ TEST_CASE("test async_operations - test openat - direct") {
     int fd = mkstemp(name);
     REQUIRE(fd >= 0);
     close(fd);
-    auto d = condy::defer([&] { unlink(name); });
+    auto d = condy::detail::defer([&] { unlink(name); });
 
     auto func = [&]() -> condy::Coro<void> {
         auto &fd_table = condy::current_runtime().fd_table();
@@ -626,7 +627,7 @@ TEST_CASE("test async_operations - test open - basic") {
     int fd = mkstemp(name);
     REQUIRE(fd >= 0);
     close(fd);
-    auto d = condy::defer([&] { unlink(name); });
+    auto d = condy::detail::defer([&] { unlink(name); });
 
     auto func = [&]() -> condy::Coro<void> {
         int rfd = co_await condy::async_open(name, O_RDONLY, 0);
@@ -641,7 +642,7 @@ TEST_CASE("test async_operations - test open - direct") {
     int fd = mkstemp(name);
     REQUIRE(fd >= 0);
     close(fd);
-    auto d = condy::defer([&] { unlink(name); });
+    auto d = condy::detail::defer([&] { unlink(name); });
 
     auto func = [&]() -> condy::Coro<void> {
         auto &fd_table = condy::current_runtime().fd_table();
@@ -940,7 +941,7 @@ TEST_CASE("test async_operations - test statx") {
     REQUIRE(w == msg.size());
 
     close(fd);
-    auto d = condy::defer([&] { unlink(name); });
+    auto d = condy::detail::defer([&] { unlink(name); });
 
     auto func = [&]() -> condy::Coro<void> {
         struct statx stx {};

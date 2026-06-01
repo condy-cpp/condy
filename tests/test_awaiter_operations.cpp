@@ -1,3 +1,4 @@
+#include "condy/detail/async_operations.hpp"
 #include "condy/sync_wait.hpp"
 #include <cerrno>
 #include <condy/awaiter_operations.hpp>

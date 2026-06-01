@@ -1,7 +1,7 @@
-#include "condy/awaiter_operations.hpp"
-#include "condy/context.hpp"
 #include "condy/coro.hpp"
-#include "condy/ring.hpp"
+#include "condy/detail/async_operations.hpp"
+#include "condy/detail/context.hpp"
+#include "condy/detail/ring.hpp"
 #include "condy/sync_wait.hpp"
 #include <doctest/doctest.h>
 #include <limits>
@@ -123,10 +123,10 @@ TEST_CASE("test buffer_table - use registered buffer") {
 #if !IO_URING_CHECK_VERSION(2, 10) // >= 2.10
 TEST_CASE("test buffer_table - clone buffer table") {
     io_uring_params params = {};
-    condy::Ring ring1(128, &params, nullptr, 0,
-                      std::numeric_limits<size_t>::max());
-    condy::Ring ring2(128, &params, nullptr, 0,
-                      std::numeric_limits<size_t>::max());
+    condy::detail::Ring ring1(128, &params, nullptr, 0,
+                              std::numeric_limits<size_t>::max());
+    condy::detail::Ring ring2(128, &params, nullptr, 0,
+                              std::numeric_limits<size_t>::max());
 
     auto table1 = condy::BufferTable(*ring1.ring());
     auto table2 = condy::BufferTable(*ring2.ring());
