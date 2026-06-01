@@ -27,6 +27,11 @@ jobs:
         run: |
           bash ./scripts/format-all.sh
 
+      - name: Configure liburing
+        run: |
+          cd third_party/liburing
+          ./configure --cc=clang --cxx=clang++
+
       - name: Configure CMake
         run: |
           cmake -B ${{github.workspace}}/build \
