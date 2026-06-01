@@ -27,30 +27,26 @@ target_compile_features(condy INTERFACE cxx_std_20)
 
 if(BUILD_EXAMPLES OR BUILD_BENCHMARKS OR BUILD_TESTS OR LINK_LIBURING)
     enable_language(C)
+    include(ExternalProject)
+
     # liburing
     set(LIBURING_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/liburing)
     message(STATUS "Configuring liburing in ${LIBURING_SOURCE_DIR}")
-    execute_process(
-        COMMAND ./configure --cc=${CMAKE_C_COMPILER} --cxx=${CMAKE_CXX_COMPILER}
-        WORKING_DIRECTORY ${LIBURING_SOURCE_DIR}
-        OUTPUT_QUIET
-        RESULT_VARIABLE LIBURING_CONFIG_RESULT
+
+    ExternalProject_Add(
+        liburing_ext
+        SOURCE_DIR ${LIBURING_SOURCE_DIR}
+        CONFIGURE_COMMAND ./configure --cc=${CMAKE_C_COMPILER} --cxx=${CMAKE_CXX_COMPILER}
+        BUILD_COMMAND $(MAKE) -C src
+        BUILD_IN_SOURCE 1
+        INSTALL_COMMAND ""
+        BUILD_BYPRODUCTS ${LIBURING_SOURCE_DIR}/src/liburing.a
     )
-    if (NOT LIBURING_CONFIG_RESULT EQUAL 0)
-        message(FATAL_ERROR "Failed to configure liburing")
-    else()
-        message(STATUS "Configuring liburing succeeded")
-    endif()
-    add_custom_target(
-        build_uring
-        ALL
-        COMMAND $(MAKE) -C src
-        WORKING_DIRECTORY ${LIBURING_SOURCE_DIR}
-    )
+
     add_library(uring STATIC IMPORTED GLOBAL)
     set_target_properties(uring PROPERTIES IMPORTED_LOCATION ${LIBURING_SOURCE_DIR}/src/liburing.a)
     target_include_directories(uring INTERFACE ${LIBURING_SOURCE_DIR}/src/include)
-    add_dependencies(uring build_uring)
+    add_dependencies(uring liburing_ext)
 endif()
 
 if(LINK_LIBURING)
