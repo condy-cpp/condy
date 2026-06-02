@@ -13,8 +13,6 @@ struct io_uring_sqe;
 
 namespace condy {
 
-class Runtime;
-
 namespace detail {
 
 class Ring;
