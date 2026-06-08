@@ -249,26 +249,26 @@ namespace detail {
 
 class BundledProvidedBufferPool {
 protected:
-    BundledProvidedBufferPool(uint32_t num_buffers, size_t buffer_size,
-                              unsigned int flags)
-        : num_buffers_(std::bit_ceil(num_buffers)),
+    BundledProvidedBufferPool(void *buffer_data, uint32_t num_buffers,
+                              size_t buffer_size, unsigned int flags)
+        : buffers_base_(static_cast<char *>(buffer_data)),
+          num_buffers_(std::bit_ceil(num_buffers)),
           mask_(io_uring_buf_ring_mask(num_buffers_)),
           buffer_size_(buffer_size), curr_buf_len_(buffer_size),
           br_flags_(flags) {
         auto &context = detail::Context::current();
 
-        size_t data_size = num_buffers_ * (sizeof(io_uring_buf) + buffer_size);
-        void *data = mmap(nullptr, data_size, PROT_READ | PROT_WRITE,
-                          MAP_ANONYMOUS | MAP_PRIVATE, 0, 0);
-        if (data == MAP_FAILED) [[unlikely]] {
-            throw detail::make_system_error("mmap");
-        }
-        auto d1 = detail::defer([&]() { munmap(data, data_size); });
-
         bgid_ = context.next_bgid();
         auto d2 = detail::defer([&]() { context.recycle_bgid(bgid_); });
 
-        br_ = reinterpret_cast<io_uring_buf_ring *>(data);
+        size_t ring_size = num_buffers_ * sizeof(io_uring_buf);
+        void *ring_data = mmap(nullptr, ring_size, PROT_READ | PROT_WRITE,
+                               MAP_ANONYMOUS | MAP_PRIVATE, 0, 0);
+        if (ring_data == MAP_FAILED) [[unlikely]] {
+            throw detail::make_system_error("mmap");
+        }
+        auto d1 = detail::defer([&]() { munmap(ring_data, ring_size); });
+        br_ = reinterpret_cast<io_uring_buf_ring *>(ring_data);
         io_uring_buf_ring_init(br_);
 
         io_uring_buf_reg reg = {};
@@ -281,11 +281,9 @@ protected:
             throw detail::make_system_error("io_uring_register_buf_ring", -r);
         }
 
-        char *buffer_base =
-            static_cast<char *>(data) + sizeof(io_uring_buf) * num_buffers_;
         for (size_t bid = 0; bid < num_buffers_; bid++) {
-            char *ptr = buffer_base + bid * buffer_size;
-            io_uring_buf_ring_add(br_, ptr, buffer_size, bid, mask_,
+            char *ptr = buffers_base_ + bid * buffer_size_;
+            io_uring_buf_ring_add(br_, ptr, buffer_size_, bid, mask_,
                                   static_cast<int>(bid));
         }
         io_uring_buf_ring_advance(br_, static_cast<int>(num_buffers_));
@@ -297,14 +295,15 @@ protected:
     ~BundledProvidedBufferPool() {
         assert(br_ != nullptr);
         auto &context = detail::Context::current();
-        size_t data_size = num_buffers_ * (sizeof(io_uring_buf) + buffer_size_);
-        munmap(br_, data_size);
         [[maybe_unused]] int r = io_uring_unregister_buf_ring(
             context.runtime()->ring().ring(), bgid_);
         assert(r == 0);
         if (r == 0) {
             context.recycle_bgid(bgid_);
         }
+
+        size_t ring_size = num_buffers_ * sizeof(io_uring_buf);
+        munmap(br_, ring_size);
     }
 
 public:
@@ -382,24 +381,18 @@ public:
 
     void add_buffer_back(void *ptr, [[maybe_unused]] size_t size) noexcept {
         assert(size <= buffer_size_);
-        char *base = get_buffers_base_();
-        assert(ptr >= base);
-        size_t offset = static_cast<char *>(ptr) - base;
+        assert(ptr >= buffers_base_);
+        size_t offset = static_cast<char *>(ptr) - buffers_base_;
         size_t bid = offset / buffer_size_;
         assert(bid < num_buffers_);
-        char *buffer_ptr = base + bid * buffer_size_;
+        char *buffer_ptr = buffers_base_ + bid * buffer_size_;
         io_uring_buf_ring_add(br_, buffer_ptr, buffer_size_, bid, mask_, 0);
         io_uring_buf_ring_advance(br_, 1);
     }
 
 private:
     char *get_buffer_(uint16_t bid) const noexcept {
-        return get_buffers_base_() + static_cast<size_t>(bid) * buffer_size_;
-    }
-
-    char *get_buffers_base_() const noexcept {
-        return reinterpret_cast<char *>(br_) +
-               sizeof(io_uring_buf) * num_buffers_;
+        return buffers_base_ + static_cast<size_t>(bid) * buffer_size_;
     }
 
     io_uring_buf *curr_io_uring_buf_() noexcept {
@@ -408,8 +401,9 @@ private:
 
     void advance_io_uring_buf_() noexcept { br_head_++; }
 
-private:
+protected:
     io_uring_buf_ring *br_ = nullptr;
+    char *buffers_base_ = nullptr;
     uint32_t num_buffers_;
     int mask_;
     uint32_t buffer_size_;
@@ -444,7 +438,29 @@ public:
      */
     ProvidedBufferPool(uint32_t num_buffers, size_t buffer_size,
                        unsigned int flags = 0)
-        : BundledProvidedBufferPool(num_buffers, buffer_size, flags) {}
+        : BundledProvidedBufferPool(
+              alloc_buffer_data_(std::bit_ceil(num_buffers) * buffer_size),
+              num_buffers, buffer_size, flags),
+          external_memory_(false) {}
+
+    /**
+     * @brief Construct with externally provided buffer memory.
+     * @param buffer_data Pointer to externally allocated buffer memory.
+     * @param num_buffers Number of buffers in the pool.
+     * @param buffer_size Size of each buffer in bytes.
+     * @param flags Optional flags for io_uring buffer registration.
+     */
+    ProvidedBufferPool(void *buffer_data, uint32_t num_buffers,
+                       size_t buffer_size, unsigned int flags = 0)
+        : BundledProvidedBufferPool(buffer_data, num_buffers, buffer_size,
+                                    flags),
+          external_memory_(true) {}
+
+    ~ProvidedBufferPool() {
+        if (!external_memory_) {
+            munmap(buffers_base_, capacity() * buffer_size());
+        }
+    }
 
 public:
     ProvidedBuffer handle_finish(io_uring_cqe *cqe) noexcept {
@@ -456,6 +472,18 @@ public:
         assert(buffers.size() == 1);
         return std::move(buffers[0]);
     }
+
+private:
+    static void *alloc_buffer_data_(size_t buf_size) {
+        void *buf_data = mmap(nullptr, buf_size, PROT_READ | PROT_WRITE,
+                              MAP_ANONYMOUS | MAP_PRIVATE, 0, 0);
+        if (buf_data == MAP_FAILED) [[unlikely]] {
+            throw detail::make_system_error("mmap");
+        }
+        return buf_data;
+    }
+
+    bool external_memory_ = false;
 };
 
 /**

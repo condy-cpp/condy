@@ -514,6 +514,70 @@ TEST_CASE("test buffers - provided buffer pool usage bundle incr") {
 }
 #endif
 
+TEST_CASE("test buffers - provided buffer pool external memory") {
+    condy::Runtime runtime;
+    auto &ring = enable_runtime_ring(runtime);
+    auto d = condy::detail::defer(
+        []() { condy::detail::Context::current().reset(); });
+
+    condy::detail::Context::current().init(&runtime);
+
+    constexpr size_t num_bufs = 4;
+    constexpr size_t buf_size = 32;
+    size_t total = num_bufs * buf_size;
+
+    void *ext_mem = mmap(nullptr, total, PROT_READ | PROT_WRITE,
+                         MAP_ANONYMOUS | MAP_PRIVATE, 0, 0);
+    REQUIRE(ext_mem != MAP_FAILED);
+
+    {
+        condy::ProvidedBufferPool pool(ext_mem, num_bufs, buf_size);
+        REQUIRE(pool.capacity() == num_bufs);
+        REQUIRE(pool.buffer_size() == buf_size);
+
+        int pipefd[2];
+        REQUIRE(pipe(pipefd) == 0);
+
+        ssize_t r = ::write(pipefd[1], "hello external buffer pool!", 26);
+        REQUIRE(r == 26);
+
+        auto *sqe = ring.get_sqe();
+        io_uring_prep_read(sqe, pipefd[0], nullptr, 0, 0);
+        io_uring_sqe_set_flags(sqe, IOSQE_BUFFER_SELECT);
+        sqe->buf_group = pool.bgid();
+        io_uring_sqe_set_data(sqe, nullptr);
+
+        int read_result = -1;
+        condy::ProvidedBuffer ret;
+
+        size_t reaped = 0;
+        while (reaped < 1) {
+            ring.submit();
+            reaped += ring.reap_completions([&](io_uring_cqe *cqe) {
+                auto *data = io_uring_cqe_get_data(cqe);
+                REQUIRE(data == nullptr);
+                read_result = cqe->res;
+                ret = pool.handle_finish(cqe);
+            });
+        }
+
+        REQUIRE(read_result == 26);
+        REQUIRE(ret.data() != nullptr);
+        REQUIRE(ret.data() >= ext_mem);
+        REQUIRE(static_cast<char *>(ret.data()) <
+                static_cast<char *>(ext_mem) + total);
+
+        ::close(pipefd[0]);
+        ::close(pipefd[1]);
+    }
+
+    // Pool destroyed; external memory should still be valid
+    memset(ext_mem, 0xAB, total);
+    REQUIRE(static_cast<char *>(ext_mem)[0] == static_cast<char>(0xAB));
+
+    munmap(ext_mem, total);
+}
+
 TEST_CASE("test buffers - provided buffer is also buffer") {
     condy::ProvidedBuffer buf;
     auto fixed_buf = condy::fixed(2, buf);
