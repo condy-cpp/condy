@@ -589,3 +589,156 @@ TEST_CASE("test buffers - provided buffer is also buffer") {
     [[maybe_unused]]
     auto aw2 = condy::async_read(0, buf, 0);
 }
+
+TEST_CASE("test buffers - provided buffer queue before ring enabled") {
+    condy::Runtime runtime;
+
+    // Creating a provided buffer queue should succeed even before the ring is
+    // enabled, since io_uring_register_buf_ring does not require an enabled
+    // ring.
+    condy::ProvidedBufferQueue queue(runtime, 4);
+    REQUIRE(queue.capacity() == (1 << 2));
+
+    char buf1[32], buf2[32];
+    REQUIRE(queue.push(condy::buffer(buf1)) == 0);
+    REQUIRE(queue.size() == 1);
+    REQUIRE(queue.push(condy::buffer(buf2)) == 1);
+    REQUIRE(queue.size() == 2);
+
+    // Now enable the ring and verify I/O still works.
+    auto &ring = enable_runtime_ring(runtime);
+
+    int pipefd[2];
+    REQUIRE(pipe(pipefd) == 0);
+    ssize_t r = ::write(pipefd[1], "data", 4);
+    REQUIRE(r == 4);
+
+    auto *sqe = ring.get_sqe();
+    io_uring_prep_read(sqe, pipefd[0], nullptr, 0, 0);
+    io_uring_sqe_set_flags(sqe, IOSQE_BUFFER_SELECT);
+    sqe->buf_group = queue.bgid();
+    io_uring_sqe_set_data(sqe, nullptr);
+
+    condy::BufferInfo ret;
+    size_t reaped = 0;
+    while (reaped < 1) {
+        ring.submit();
+        reaped += ring.reap_completions([&](io_uring_cqe *cqe) {
+            REQUIRE(io_uring_cqe_get_data(cqe) == nullptr);
+            r = cqe->res;
+            ret = queue.handle_finish(cqe);
+        });
+    }
+
+    REQUIRE(r > 0);
+    REQUIRE(ret.num_buffers == 1);
+    REQUIRE(ret.bid == 0);
+    REQUIRE(queue.size() == 1);
+    REQUIRE(std::memcmp(buf1, "data", 4) == 0);
+
+    ::close(pipefd[0]);
+    ::close(pipefd[1]);
+}
+
+TEST_CASE("test buffers - provided buffer pool before ring enabled") {
+    condy::Runtime runtime;
+
+    // Creating a provided buffer pool should succeed even before the ring is
+    // enabled.
+    condy::ProvidedBufferPool pool(runtime, 4, 16);
+    REQUIRE(pool.capacity() == (1 << 2));
+
+    // Now enable the ring and verify I/O still works.
+    auto &ring = enable_runtime_ring(runtime);
+
+    int pipefd[2];
+    REQUIRE(pipe(pipefd) == 0);
+    ssize_t r = ::write(pipefd[1], "data", 4);
+    REQUIRE(r == 4);
+
+    auto *sqe = ring.get_sqe();
+    io_uring_prep_read(sqe, pipefd[0], nullptr, 0, 0);
+    io_uring_sqe_set_flags(sqe, IOSQE_BUFFER_SELECT);
+    sqe->buf_group = pool.bgid();
+    io_uring_sqe_set_data(sqe, nullptr);
+
+    condy::ProvidedBuffer ret;
+    size_t reaped = 0;
+    while (reaped < 1) {
+        ring.submit();
+        reaped += ring.reap_completions([&](io_uring_cqe *cqe) {
+            REQUIRE(io_uring_cqe_get_data(cqe) == nullptr);
+            r = cqe->res;
+            ret = pool.handle_finish(cqe);
+        });
+    }
+
+    REQUIRE(r == 4);
+    REQUIRE(ret.owns_buffer());
+    REQUIRE(ret.size() == 16);
+    REQUIRE(std::memcmp(ret.data(), "data", 4) == 0);
+
+    ::close(pipefd[0]);
+    ::close(pipefd[1]);
+}
+
+TEST_CASE("test buffers - provided buffer pool external memory explicit "
+          "runtime") {
+    condy::Runtime runtime;
+    auto &ring = enable_runtime_ring(runtime);
+
+    constexpr size_t num_bufs = 4;
+    constexpr size_t buf_size = 32;
+    size_t total = num_bufs * buf_size;
+
+    void *ext_mem = mmap(nullptr, total, PROT_READ | PROT_WRITE,
+                         MAP_ANONYMOUS | MAP_PRIVATE, 0, 0);
+    // REQUIRE(ext_mem != MAP_FAILED);
+
+    {
+        condy::ProvidedBufferPool pool(runtime, ext_mem, num_bufs, buf_size);
+        REQUIRE(pool.capacity() == num_bufs);
+        REQUIRE(pool.buffer_size() == buf_size);
+
+        int pipefd[2];
+        REQUIRE(pipe(pipefd) == 0);
+
+        ssize_t r = ::write(pipefd[1], "hello explicit runtime pool!", 27);
+        REQUIRE(r == 27);
+
+        auto *sqe = ring.get_sqe();
+        io_uring_prep_read(sqe, pipefd[0], nullptr, 0, 0);
+        io_uring_sqe_set_flags(sqe, IOSQE_BUFFER_SELECT);
+        sqe->buf_group = pool.bgid();
+        io_uring_sqe_set_data(sqe, nullptr);
+
+        int read_result = -1;
+        condy::ProvidedBuffer ret;
+
+        size_t reaped = 0;
+        while (reaped < 1) {
+            ring.submit();
+            reaped += ring.reap_completions([&](io_uring_cqe *cqe) {
+                auto *data = io_uring_cqe_get_data(cqe);
+                REQUIRE(data == nullptr);
+                read_result = cqe->res;
+                ret = pool.handle_finish(cqe);
+            });
+        }
+
+        REQUIRE(read_result == 27);
+        REQUIRE(ret.data() != nullptr);
+        REQUIRE(ret.data() >= ext_mem);
+        REQUIRE(static_cast<char *>(ret.data()) <
+                static_cast<char *>(ext_mem) + total);
+
+        ::close(pipefd[0]);
+        ::close(pipefd[1]);
+    }
+
+    // Pool destroyed; external memory should still be valid
+    memset(ext_mem, 0xAB, total);
+    REQUIRE(static_cast<char *>(ext_mem)[0] == static_cast<char>(0xAB));
+
+    munmap(ext_mem, total);
+}
