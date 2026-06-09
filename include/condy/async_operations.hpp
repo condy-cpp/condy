@@ -349,7 +349,7 @@ inline auto async_close(detail::FixedFd fd) {
  * @brief See io_uring_prep_read
  */
 template <FdLike Fd, BufferLike Buffer>
-inline auto async_read(Fd fd, Buffer &&buf, __u64 offset) {
+inline auto async_read(Fd fd, const Buffer &buf, __u64 offset) {
     auto op = detail::make_op_awaiter(io_uring_prep_read, fd, buf.data(),
                                       buf.size(), offset);
     return detail::maybe_flag_fixed_fd(std::move(op), fd);
@@ -395,7 +395,7 @@ inline auto async_read_multishot(Fd fd, Buffer &buf, __u64 offset,
  * @brief See io_uring_prep_write
  */
 template <FdLike Fd, BufferLike Buffer>
-inline auto async_write(Fd fd, Buffer &&buf, __u64 offset) {
+inline auto async_write(Fd fd, const Buffer &buf, __u64 offset) {
     auto op = detail::make_op_awaiter(io_uring_prep_write, fd, buf.data(),
                                       buf.size(), offset);
     return detail::maybe_flag_fixed_fd(std::move(op), fd);
@@ -465,7 +465,7 @@ inline auto async_madvise64(void *addr, off_t length, int advice) {
  * @brief See io_uring_prep_send
  */
 template <FdLike Fd, BufferLike Buffer>
-inline auto async_send(Fd sockfd, Buffer &&buf, int flags) {
+inline auto async_send(Fd sockfd, const Buffer &buf, int flags) {
     auto op = detail::make_op_awaiter(io_uring_prep_send, sockfd, buf.data(),
                                       buf.size(), flags);
     return detail::maybe_flag_fixed_fd(std::move(op), sockfd);
@@ -498,7 +498,7 @@ inline auto async_send(Fd sockfd, detail::BundledProvidedBufferQueue &buf,
  * @brief See io_uring_prep_send and io_uring_prep_send_set_addr
  */
 template <FdLike Fd, BufferLike Buffer>
-inline auto async_sendto(Fd sockfd, Buffer &&buf, int flags,
+inline auto async_sendto(Fd sockfd, const Buffer &buf, int flags,
                          const struct sockaddr *addr, socklen_t addrlen) {
     auto op = detail::make_op_awaiter(detail::prep_sendto, sockfd, buf.data(),
                                       buf.size(), flags, addr, addrlen);
@@ -534,8 +534,8 @@ inline auto async_sendto(Fd sockfd, detail::BundledProvidedBufferQueue &buf,
  * @brief See io_uring_prep_send_zc
  */
 template <FdLike Fd, typename Buffer, typename FreeFunc>
-inline auto async_send_zc(Fd sockfd, Buffer &&buf, int flags, unsigned zc_flags,
-                          FreeFunc &&func) {
+inline auto async_send_zc(Fd sockfd, const Buffer &buf, int flags,
+                          unsigned zc_flags, FreeFunc &&func) {
     auto op = detail::make_zero_copy_op_awaiter(
         std::forward<FreeFunc>(func), io_uring_prep_send_zc, sockfd, buf.data(),
         buf.size(), flags, zc_flags);
@@ -558,7 +558,7 @@ inline auto async_send_zc(Fd sockfd, detail::FixedBuffer<Buffer> buf, int flags,
  * @brief See io_uring_prep_send_zc and io_uring_prep_send_set_addr
  */
 template <FdLike Fd, BufferLike Buffer, typename FreeFunc>
-inline auto async_sendto_zc(Fd sockfd, Buffer &&buf, int flags,
+inline auto async_sendto_zc(Fd sockfd, const Buffer &buf, int flags,
                             const struct sockaddr *addr, socklen_t addrlen,
                             unsigned zc_flags, FreeFunc &&func) {
     auto op = detail::make_zero_copy_op_awaiter(
@@ -586,7 +586,7 @@ inline auto async_sendto_zc(Fd sockfd, detail::FixedBuffer<Buffer> buf,
  * @brief See io_uring_prep_recv
  */
 template <FdLike Fd, BufferLike Buffer>
-inline auto async_recv(Fd sockfd, Buffer &&buf, int flags) {
+inline auto async_recv(Fd sockfd, const Buffer &buf, int flags) {
     auto op = detail::make_op_awaiter(io_uring_prep_recv, sockfd, buf.data(),
                                       buf.size(), flags);
     return detail::maybe_flag_fixed_fd(std::move(op), sockfd);
