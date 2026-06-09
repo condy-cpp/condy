@@ -48,7 +48,7 @@ struct BufferInfo {
 namespace detail {
 
 class BundledProvidedBufferQueue {
-public:
+protected:
     BundledProvidedBufferQueue(uint32_t capacity, unsigned int flags)
         : capacity_(std::bit_ceil(capacity)),
           mask_(io_uring_buf_ring_mask(capacity_)), buf_lens_(capacity_, 0),
@@ -96,6 +96,7 @@ public:
         }
     }
 
+public:
     CONDY_DELETE_COPY_MOVE(BundledProvidedBufferQueue);
 
 public:
@@ -247,7 +248,7 @@ using ProvidedBuffer = detail::ManagedBuffer<detail::BundledProvidedBufferPool>;
 namespace detail {
 
 class BundledProvidedBufferPool {
-public:
+protected:
     BundledProvidedBufferPool(uint32_t num_buffers, size_t buffer_size,
                               unsigned int flags)
         : num_buffers_(std::bit_ceil(num_buffers)),
@@ -306,6 +307,7 @@ public:
         }
     }
 
+public:
     CONDY_DELETE_COPY_MOVE(BundledProvidedBufferPool);
 
 public:
