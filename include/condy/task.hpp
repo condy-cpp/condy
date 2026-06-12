@@ -61,8 +61,8 @@ public:
 };
 
 template <typename Allocator>
-class [[nodiscard]] Task<void, Allocator>
-    : public detail::TaskBase<void, Allocator> {
+class [[nodiscard]]
+Task<void, Allocator> : public detail::TaskBase<void, Allocator> {
 public:
     using Base = detail::TaskBase<void, Allocator>;
     using Base::Base;
