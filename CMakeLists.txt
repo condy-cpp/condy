@@ -59,6 +59,9 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     # False positive with GCC
     # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=109224
     add_compile_options(-Wno-mismatched-new-delete)
+    # False positive with GCC: coroutine frame variables (e.g.
+    # structured bindings from co_await) are reported as maybe-uninitialized
+    add_compile_options(-Wno-maybe-uninitialized)
 endif()
 
 if(BUILD_EXAMPLES)
