@@ -37,7 +37,7 @@ TEST_CASE("test async_operations - test mkdirat") {
     };
     condy::sync_wait(func());
 
-    struct stat st {};
+    struct stat st{};
     int r = stat(name, &st);
     REQUIRE(r == 0);
     REQUIRE(S_ISDIR(st.st_mode));
@@ -53,7 +53,7 @@ TEST_CASE("test async_operations - test mkdir") {
     };
     condy::sync_wait(func());
 
-    struct stat st {};
+    struct stat st{};
     int r = stat(name, &st);
     REQUIRE(r == 0);
     REQUIRE(S_ISDIR(st.st_mode));
@@ -126,8 +126,7 @@ TEST_CASE("test async_operations - test linkat") {
     };
     condy::sync_wait(func());
 
-    struct stat st1 {
-    }, st2{};
+    struct stat st1{}, st2{};
     int r = stat(target_name, &st1);
     REQUIRE(r == 0);
     r = stat(link_name, &st2);
@@ -152,8 +151,7 @@ TEST_CASE("test async_operations - test link") {
     };
     condy::sync_wait(func());
 
-    struct stat st1 {
-    }, st2{};
+    struct stat st1{}, st2{};
     int r = stat(target_name, &st1);
     REQUIRE(r == 0);
     r = stat(link_name, &st2);
@@ -624,7 +622,7 @@ TEST_CASE("test async_operations - test cmd_getsockname - basic") {
     int listen_fd = create_accept_socket();
 
     auto func = [&]() -> condy::Coro<void> {
-        struct sockaddr_in addr {};
+        struct sockaddr_in addr{};
         socklen_t addrlen = sizeof(addr);
         int r = co_await condy::async_cmd_getsockname(
             listen_fd, (struct sockaddr *)&addr, &addrlen, 0);
@@ -648,7 +646,7 @@ TEST_CASE("test async_operations - test cmd_getsockname - fixed fd") {
         int r = co_await condy::async_files_update(&listen_fd, 1, 0);
         REQUIRE(r == 1);
 
-        struct sockaddr_in addr {};
+        struct sockaddr_in addr{};
         socklen_t addrlen = sizeof(addr);
         r = co_await condy::async_cmd_getsockname(
             condy::fixed(0), (struct sockaddr *)&addr, &addrlen, 0);
@@ -794,7 +792,7 @@ TEST_CASE("test async_operations - test ftruncate - basic") {
     };
     condy::sync_wait(func());
 
-    struct stat st {};
+    struct stat st{};
     int r = stat(name, &st);
     REQUIRE(r == 0);
     REQUIRE(st.st_size == 4096);
@@ -819,7 +817,7 @@ TEST_CASE("test async_operations - test ftruncate - fixed fd") {
     };
     condy::sync_wait(func());
 
-    struct stat st {};
+    struct stat st{};
     int r = stat(name, &st);
     REQUIRE(r == 0);
     REQUIRE(st.st_size == 4096);

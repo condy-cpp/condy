@@ -30,7 +30,7 @@ TEST_CASE("test async_operations - test sendmsg - basic") {
 
     auto msg = generate_data(1024);
     auto func = [&]() -> condy::Coro<void> {
-        struct msghdr msg_hdr {};
+        struct msghdr msg_hdr{};
         iovec iov{
             .iov_base = const_cast<char *>(msg.data()),
             .iov_len = msg.size(),
@@ -58,7 +58,7 @@ TEST_CASE("test async_operations - test sendmsg - zero copy") {
 
     auto msg = generate_data(1024);
     auto func = [&]() -> condy::Coro<void> {
-        struct msghdr msg_hdr {};
+        struct msghdr msg_hdr{};
         iovec iov{
             .iov_base = const_cast<char *>(msg.data()),
             .iov_len = msg.size(),
@@ -90,7 +90,7 @@ TEST_CASE("test async_operations - test sendmsg - zero copy fixed buffer") {
 
     auto msg = generate_data(1024);
     auto func = [&]() -> condy::Coro<void> {
-        struct msghdr msg_hdr {};
+        struct msghdr msg_hdr{};
         iovec iov{
             .iov_base = msg.data(),
             .iov_len = msg.size(),
@@ -221,7 +221,7 @@ TEST_CASE("test async_operations - test accept - basic") {
     auto main = [&]() -> condy::Coro<void> {
         std::jthread client_thread(client);
 
-        struct sockaddr_in addr {};
+        struct sockaddr_in addr{};
         socklen_t addrlen = sizeof(addr);
         for (int i = 0; i < 4; i++) {
             int conn_fd = co_await condy::async_accept(
@@ -265,7 +265,7 @@ TEST_CASE("test async_operations - test accept - direct") {
 
         condy::current_runtime().fd_table().init(2);
 
-        struct sockaddr_in addr {};
+        struct sockaddr_in addr{};
         socklen_t addrlen = sizeof(addr);
         int fd1 = co_await condy::async_accept_direct(
             listen_fd, (sockaddr *)&addr, &addrlen, 0, CONDY_FILE_INDEX_ALLOC);
@@ -317,7 +317,7 @@ TEST_CASE("test async_operations - test accept - multishot") {
         std::jthread client_thread(client);
 
         size_t count = 0;
-        struct sockaddr_in addr {};
+        struct sockaddr_in addr{};
         socklen_t addrlen = sizeof(addr);
 
         condy::Channel<std::monostate> done_channel(1);
@@ -369,7 +369,7 @@ TEST_CASE("test async_operations - test accept - multishot direct") {
         fd_table.init(4);
 
         size_t count = 0;
-        struct sockaddr_in addr {};
+        struct sockaddr_in addr{};
         socklen_t addrlen = sizeof(addr);
 
         condy::Channel<std::monostate> done_channel(1);
@@ -554,7 +554,7 @@ TEST_CASE("test async_operations - test fallocate - basic") {
     };
     condy::sync_wait(func());
 
-    struct stat st {};
+    struct stat st{};
     int r = fstat(fd, &st);
     REQUIRE(r == 0);
     REQUIRE(st.st_size == 1024 * 1024);
@@ -581,7 +581,7 @@ TEST_CASE("test async_operations - test fallocate - fixed fd") {
     };
     condy::sync_wait(func());
 
-    struct stat st {};
+    struct stat st{};
     int r = fstat(fd, &st);
     REQUIRE(r == 0);
     REQUIRE(st.st_size == 1024 * 1024);
@@ -944,7 +944,7 @@ TEST_CASE("test async_operations - test statx") {
     auto d = condy::detail::defer([&] { unlink(name); });
 
     auto func = [&]() -> condy::Coro<void> {
-        struct statx stx {};
+        struct statx stx{};
         int r =
             co_await condy::async_statx(AT_FDCWD, name, 0, STATX_SIZE, &stx);
         REQUIRE(r == 0);

@@ -11,14 +11,17 @@ namespace detail {
 
 template <typename T> class ThreadLocalSingleton {
 public:
-    ThreadLocalSingleton() = default;
-
     CONDY_DELETE_COPY_MOVE(ThreadLocalSingleton);
 
     static T &current() noexcept {
         static thread_local T instance;
         return instance;
     }
+
+private:
+    ThreadLocalSingleton() = default;
+
+    friend T;
 };
 
 } // namespace detail

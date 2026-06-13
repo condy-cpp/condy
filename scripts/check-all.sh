@@ -20,4 +20,4 @@ while getopts "h" opt; do
     esac
 done
 
-run-clang-tidy -p build/ '^.*(benchmarks|examples|tests)/.*\.(hpp|cpp)$'
+run-clang-tidy -p build/ -header-filter='include/condy/.*' '^.*(benchmarks|examples|tests)/.*\.(hpp|cpp)$'

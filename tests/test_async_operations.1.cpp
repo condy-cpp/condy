@@ -75,7 +75,7 @@ TEST_CASE("test async_operations - recvmsg multishot") {
     };
 
     auto func = [&]() -> condy::Coro<void> {
-        struct msghdr msg_hdr {};
+        struct msghdr msg_hdr{};
         msg_hdr.msg_iov = nullptr;
         msg_hdr.msg_iovlen = 0;
 
@@ -1162,7 +1162,7 @@ TEST_CASE("test async_operations - test recvmsg - basic") {
     ssize_t r = write(sv[1], msg.data(), msg.size());
     REQUIRE(r == msg.size());
     auto func = [&]() -> condy::Coro<void> {
-        struct msghdr msg_hdr {};
+        struct msghdr msg_hdr{};
         char buf_storage[1024];
         iovec iov{
             .iov_base = buf_storage,
@@ -1195,7 +1195,7 @@ TEST_CASE("test async_operations - test recvmsg - multishot") {
     close(sv[1]);
 
     auto func = [&]() -> condy::Coro<void> {
-        struct msghdr msg_hdr {};
+        struct msghdr msg_hdr{};
         size_t count = 0;
         std::string actual;
 

@@ -98,9 +98,16 @@ if [ "$QUIET_MODE" = true ]; then
     KERNEL_ARGS="$KERNEL_ARGS quiet"
 fi
 
+# Use the maximum CPU feature set available to QEMU.
+CPU_MODEL="max"
+if [ "$KVM_ENABLED" = true ]; then
+    CPU_MODEL="host"
+fi
+
 # Run the VM,
 qemu-system-x86_64 \
     $KVM_FLAG \
+    -cpu "$CPU_MODEL" \
     -smp 4 \
     -m 512M \
     -kernel "$KERNEL_IMAGE" \

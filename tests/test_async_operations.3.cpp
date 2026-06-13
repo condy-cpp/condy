@@ -803,7 +803,7 @@ TEST_CASE("test async_operations - test recv - bundled multishot") {
         close(sv[1]);
 
         auto [n2, bufs2] = co_await condy::async_recv_multishot(
-            sv[0], condy::bundled(pool), 0, [&](auto) {
+            sv[0], condy::bundled(pool), 0, [&](const auto &) {
                 REQUIRE(false); // Should not be called
             });
         REQUIRE(n2 == 512);
@@ -831,7 +831,7 @@ TEST_CASE("test async_operations - test openat2 - basic") {
     auto d = condy::detail::defer([&] { unlink(name); });
 
     auto func = [&]() -> condy::Coro<void> {
-        struct open_how how {};
+        struct open_how how{};
         how.flags = O_RDONLY;
         how.mode = 0;
 
@@ -853,7 +853,7 @@ TEST_CASE("test async_operations - test openat2 - direct") {
         auto &fd_table = condy::current_runtime().fd_table();
         fd_table.init(1);
 
-        struct open_how how {};
+        struct open_how how{};
         how.flags = O_RDONLY;
         how.mode = 0;
 
@@ -915,7 +915,7 @@ TEST_CASE("test async_operations - test unlinkat") {
     };
     condy::sync_wait(func());
 
-    struct stat st {};
+    struct stat st{};
     int r = stat(name, &st);
     REQUIRE(r == -1);
     REQUIRE(errno == ENOENT);
@@ -933,7 +933,7 @@ TEST_CASE("test async_operations - test unlink") {
     };
     condy::sync_wait(func());
 
-    struct stat st {};
+    struct stat st{};
     int r = stat(name, &st);
     REQUIRE(r == -1);
     REQUIRE(errno == ENOENT);
@@ -959,7 +959,7 @@ TEST_CASE("test async_operations - test renameat") {
     };
     condy::sync_wait(func());
 
-    struct stat st {};
+    struct stat st{};
     int r = stat(old_name, &st);
     REQUIRE(r == -1);
     REQUIRE(errno == ENOENT);
@@ -987,7 +987,7 @@ TEST_CASE("test async_operations - test rename") {
     };
     condy::sync_wait(func());
 
-    struct stat st {};
+    struct stat st{};
     int r = stat(old_name, &st);
     REQUIRE(r == -1);
     REQUIRE(errno == ENOENT);
