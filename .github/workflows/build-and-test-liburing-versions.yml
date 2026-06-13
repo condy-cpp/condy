@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        liburing-version: [ "2.3", "2.6" ]
+        liburing-version: [ "2.3", "2.14" ]
 
     steps:
       - name: Checkout Repository and Submodules
