@@ -166,11 +166,34 @@ template <typename Awaiter> auto maybe_flag_fixed_fd(Awaiter &&op, int) {
 template <typename Fd>
 constexpr bool is_fixed_fd_v = std::is_same_v<std::remove_cvref_t<Fd>, FixedFd>;
 
+inline void prep_send_fixed(io_uring_sqe *sqe, int sockfd, const void *buf,
+                            size_t len, int flags, int buf_index) noexcept {
+    io_uring_prep_send(sqe, sockfd, buf, len, flags);
+    sqe->ioprio |= IORING_RECVSEND_FIXED_BUF;
+    sqe->buf_index = buf_index;
+}
+
+inline void prep_recv_fixed(io_uring_sqe *sqe, int sockfd, void *buf,
+                            size_t len, int flags, int buf_index) noexcept {
+    io_uring_prep_recv(sqe, sockfd, buf, len, flags);
+    sqe->ioprio |= IORING_RECVSEND_FIXED_BUF;
+    sqe->buf_index = buf_index;
+}
+
 inline void prep_sendto(io_uring_sqe *sqe, int sockfd, const void *buf,
                         size_t len, int flags, const struct sockaddr *addr,
                         socklen_t addrlen) noexcept {
     io_uring_prep_send(sqe, sockfd, buf, len, flags);
     io_uring_prep_send_set_addr(sqe, addr, addrlen);
+}
+
+inline void prep_sendto_fixed(io_uring_sqe *sqe, int sockfd, const void *buf,
+                              size_t len, int flags,
+                              const struct sockaddr *addr, socklen_t addrlen,
+                              int buf_index) noexcept {
+    prep_sendto(sqe, sockfd, buf, len, flags, addr, addrlen);
+    sqe->ioprio |= IORING_RECVSEND_FIXED_BUF;
+    sqe->buf_index = buf_index;
 }
 
 inline void prep_sendto_zc(io_uring_sqe *sqe, int sockfd, const void *buf,
