@@ -210,6 +210,12 @@ public:
      */
     auto &settings() noexcept { return settings_; }
 
+    /**
+     * @brief Get the buffer group ID pool.
+     * @return IdPool<uint16_t>& Reference to the buffer group ID pool.
+     */
+    auto &bgid_pool() noexcept { return bgid_pool_; }
+
 private:
     static detail::Ring create_ring_(const RuntimeOptions &options) {
         io_uring_params params;
@@ -446,6 +452,7 @@ private:
     FdTable fd_table_;
     BufferTable buffer_table_;
     RingSettings settings_;
+    detail::IdPool<uint16_t> bgid_pool_;
 };
 
 /**

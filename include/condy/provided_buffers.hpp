@@ -49,11 +49,12 @@ namespace detail {
 
 class BundledProvidedBufferQueue {
 protected:
-    BundledProvidedBufferQueue(uint32_t capacity, unsigned int flags)
-        : capacity_(std::bit_ceil(capacity)),
+    BundledProvidedBufferQueue(Runtime *runtime, uint32_t capacity,
+                               unsigned int flags)
+        : runtime_(runtime), capacity_(std::bit_ceil(capacity)),
           mask_(io_uring_buf_ring_mask(capacity_)), buf_lens_(capacity_, 0),
           br_flags_(flags) {
-        auto &context = detail::Context::current();
+        auto &bgid_pool = runtime_->bgid_pool();
 
         size_t data_size = capacity_ * sizeof(io_uring_buf);
         void *data = mmap(nullptr, data_size, PROT_READ | PROT_WRITE,
@@ -63,8 +64,8 @@ protected:
         }
         auto d1 = detail::defer([&]() { munmap(data, data_size); });
 
-        bgid_ = context.next_bgid();
-        auto d2 = detail::defer([&]() { context.recycle_bgid(bgid_); });
+        bgid_ = bgid_pool.allocate();
+        auto d2 = detail::defer([&]() { bgid_pool.recycle(bgid_); });
 
         br_ = reinterpret_cast<io_uring_buf_ring *>(data);
         io_uring_buf_ring_init(br_);
@@ -73,8 +74,8 @@ protected:
         reg.ring_addr = reinterpret_cast<uint64_t>(br_);
         reg.ring_entries = capacity_;
         reg.bgid = bgid_;
-        int r = io_uring_register_buf_ring(context.runtime()->ring().ring(),
-                                           &reg, br_flags_);
+        int r = io_uring_register_buf_ring(runtime_->ring().ring(), &reg,
+                                           br_flags_);
         if (r != 0) [[unlikely]] {
             throw detail::make_system_error("io_uring_register_buf_ring", -r);
         }
@@ -85,14 +86,13 @@ protected:
 
     ~BundledProvidedBufferQueue() {
         assert(br_ != nullptr);
-        auto &context = detail::Context::current();
         size_t data_size = capacity_ * sizeof(io_uring_buf);
         munmap(br_, data_size);
-        [[maybe_unused]] int r = io_uring_unregister_buf_ring(
-            context.runtime()->ring().ring(), bgid_);
+        [[maybe_unused]] int r =
+            io_uring_unregister_buf_ring(runtime_->ring().ring(), bgid_);
         assert(r == 0);
         if (r == 0) {
-            context.recycle_bgid(bgid_);
+            runtime_->bgid_pool().recycle(bgid_);
         }
     }
 
@@ -190,6 +190,7 @@ public:
     }
 
 private:
+    Runtime *runtime_;
     io_uring_buf_ring *br_ = nullptr;
     uint32_t size_ = 0;
     uint32_t capacity_;
@@ -221,7 +222,20 @@ public:
      * (default: 0).
      */
     ProvidedBufferQueue(uint32_t capacity, unsigned int flags = 0)
-        : BundledProvidedBufferQueue(capacity, flags) {}
+        : ProvidedBufferQueue(*detail::Context::current().runtime(), capacity,
+                              flags) {}
+
+    /**
+     * @brief Construct a new Provided Buffer Queue object with specified
+     * Runtime.
+     * @param runtime The Runtime to associate with this buffer queue.
+     * @param capacity Number of buffers the queue can hold.
+     * @param flags Optional flags for io_uring buffer ring registration
+     * (default: 0).
+     */
+    ProvidedBufferQueue(Runtime &runtime, uint32_t capacity,
+                        unsigned int flags = 0)
+        : BundledProvidedBufferQueue(&runtime, capacity, flags) {}
 
     BufferInfo handle_finish(io_uring_cqe *cqe) noexcept {
         assert(cqe != nullptr);
@@ -249,17 +263,18 @@ namespace detail {
 
 class BundledProvidedBufferPool {
 protected:
-    BundledProvidedBufferPool(void *buffer_data, uint32_t num_buffers,
-                              size_t buffer_size, unsigned int flags)
-        : buffers_base_(static_cast<char *>(buffer_data)),
+    BundledProvidedBufferPool(Runtime *runtime, void *buffer_data,
+                              uint32_t num_buffers, size_t buffer_size,
+                              unsigned int flags)
+        : runtime_(runtime), buffers_base_(static_cast<char *>(buffer_data)),
           num_buffers_(std::bit_ceil(num_buffers)),
           mask_(io_uring_buf_ring_mask(num_buffers_)),
           buffer_size_(buffer_size), curr_buf_len_(buffer_size),
           br_flags_(flags) {
-        auto &context = detail::Context::current();
+        auto &bgid_pool = runtime_->bgid_pool();
 
-        bgid_ = context.next_bgid();
-        auto d2 = detail::defer([&]() { context.recycle_bgid(bgid_); });
+        bgid_ = bgid_pool.allocate();
+        auto d2 = detail::defer([&]() { bgid_pool.recycle(bgid_); });
 
         size_t ring_size = num_buffers_ * sizeof(io_uring_buf);
         void *ring_data = mmap(nullptr, ring_size, PROT_READ | PROT_WRITE,
@@ -275,8 +290,8 @@ protected:
         reg.ring_addr = reinterpret_cast<uint64_t>(br_);
         reg.ring_entries = num_buffers_;
         reg.bgid = bgid_;
-        int r = io_uring_register_buf_ring(context.runtime()->ring().ring(),
-                                           &reg, br_flags_);
+        int r = io_uring_register_buf_ring(runtime_->ring().ring(), &reg,
+                                           br_flags_);
         if (r != 0) [[unlikely]] {
             throw detail::make_system_error("io_uring_register_buf_ring", -r);
         }
@@ -294,12 +309,11 @@ protected:
 
     ~BundledProvidedBufferPool() {
         assert(br_ != nullptr);
-        auto &context = detail::Context::current();
-        [[maybe_unused]] int r = io_uring_unregister_buf_ring(
-            context.runtime()->ring().ring(), bgid_);
+        [[maybe_unused]] int r =
+            io_uring_unregister_buf_ring(runtime_->ring().ring(), bgid_);
         assert(r == 0);
         if (r == 0) {
-            context.recycle_bgid(bgid_);
+            runtime_->bgid_pool().recycle(bgid_);
         }
 
         size_t ring_size = num_buffers_ * sizeof(io_uring_buf);
@@ -402,6 +416,7 @@ private:
     void advance_io_uring_buf_() noexcept { br_head_++; }
 
 protected:
+    Runtime *runtime_;
     io_uring_buf_ring *br_ = nullptr;
     char *buffers_base_ = nullptr;
     uint32_t num_buffers_;
@@ -438,7 +453,22 @@ public:
      */
     ProvidedBufferPool(uint32_t num_buffers, size_t buffer_size,
                        unsigned int flags = 0)
+        : ProvidedBufferPool(*detail::Context::current().runtime(), num_buffers,
+                             buffer_size, flags) {}
+
+    /**
+     * @brief Construct a new Provided Buffer Pool object with specified
+     * Runtime.
+     * @param runtime The Runtime to associate with this buffer pool.
+     * @param num_buffers Number of buffers to allocate in the pool.
+     * @param buffer_size Size of each buffer in bytes.
+     * @param flags Optional flags for io_uring buffer registration (default:
+     * 0).
+     */
+    ProvidedBufferPool(Runtime &runtime, uint32_t num_buffers,
+                       size_t buffer_size, unsigned int flags = 0)
         : BundledProvidedBufferPool(
+              &runtime,
               alloc_buffer_data_(std::bit_ceil(num_buffers) * buffer_size),
               num_buffers, buffer_size, flags),
           external_memory_(false) {}
@@ -452,8 +482,23 @@ public:
      */
     ProvidedBufferPool(void *buffer_data, uint32_t num_buffers,
                        size_t buffer_size, unsigned int flags = 0)
-        : BundledProvidedBufferPool(buffer_data, num_buffers, buffer_size,
-                                    flags),
+        : ProvidedBufferPool(*detail::Context::current().runtime(), buffer_data,
+                             num_buffers, buffer_size, flags) {}
+
+    /**
+     * @brief Construct with externally provided buffer memory and specified
+     * Runtime.
+     * @param runtime The Runtime to associate with this buffer pool.
+     * @param buffer_data Pointer to externally allocated buffer memory.
+     * @param num_buffers Number of buffers in the pool.
+     * @param buffer_size Size of each buffer in bytes.
+     * @param flags Optional flags for io_uring buffer registration.
+     */
+    ProvidedBufferPool(Runtime &runtime, void *buffer_data,
+                       uint32_t num_buffers, size_t buffer_size,
+                       unsigned int flags = 0)
+        : BundledProvidedBufferPool(&runtime, buffer_data, num_buffers,
+                                    buffer_size, flags),
           external_memory_(true) {}
 
     ~ProvidedBufferPool() {
