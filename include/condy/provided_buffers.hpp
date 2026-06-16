@@ -153,14 +153,6 @@ public:
             .num_buffers = 0,
         };
 
-#if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
-        if (flags & IORING_CQE_F_BUF_MORE) {
-            assert(buf_lens_[result.bid] > static_cast<uint32_t>(res));
-            buf_lens_[result.bid] -= res;
-            return result;
-        }
-#endif
-
         bool is_incr = false;
 #if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
         is_incr = br_flags_ & IOU_PBUF_RING_INC;
@@ -335,19 +327,6 @@ public:
 
         assert(res > 0);
 
-        uint16_t bid = flags >> IORING_CQE_BUFFER_SHIFT;
-
-#if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
-        if (flags & IORING_CQE_F_BUF_MORE) {
-            char *data = get_buffer_(bid) + (buffer_size_ - curr_buf_len_);
-            buffers.emplace_back(data, res, nullptr);
-            assert(static_cast<uint32_t>(res) < curr_buf_len_);
-            curr_buf_len_ -= res;
-            return buffers;
-        }
-#endif
-        assert(bid == curr_io_uring_buf_()->bid);
-
         bool is_incr = false;
 #if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
         is_incr = br_flags_ & IOU_PBUF_RING_INC;
@@ -356,7 +335,7 @@ public:
         int64_t bytes = res;
         while (bytes > 0) {
             auto *buf_ptr = curr_io_uring_buf_();
-            bid = buf_ptr->bid;
+            uint16_t bid = buf_ptr->bid;
 
             char *data = get_buffer_(bid) + (buffer_size_ - curr_buf_len_);
             uint32_t buf_len;
