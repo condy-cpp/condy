@@ -329,6 +329,44 @@ TEST_CASE("test async_operations - test send - zero copy fixed buffer") {
     close(sv[1]);
 }
 
+TEST_CASE("test async_operations - test send - fixed buffer") {
+    int sv[2];
+    create_tcp_socketpair(sv);
+
+    auto msg = generate_data(1024);
+    bool skipped = false;
+    auto func = [&]() -> condy::Coro<void> {
+        auto &buffer_table = condy::current_runtime().buffer_table();
+        buffer_table.init(1);
+        iovec register_iov{
+            .iov_base = const_cast<char *>(msg.data()),
+            .iov_len = msg.size(),
+        };
+        buffer_table.update(0, &register_iov, 1);
+
+        ssize_t n = co_await condy::async_send(
+            sv[1], condy::fixed(0, condy::buffer(msg)), 0);
+        if (n == -EINVAL) {
+            MESSAGE("kernel does not support fixed buffers for plain "
+                    "send/recv, skipping");
+            skipped = true;
+            co_return;
+        }
+        REQUIRE(n == msg.size());
+    };
+    condy::sync_wait(func());
+
+    if (!skipped) {
+        char read_buf[2048];
+        ssize_t r = recv(sv[0], read_buf, sizeof(read_buf), 0);
+        REQUIRE(r == msg.size());
+        REQUIRE(std::string_view(read_buf, r) == msg);
+    }
+
+    close(sv[0]);
+    close(sv[1]);
+}
+
 TEST_CASE("test async_operations - test sendto - basic") {
     int sender_fd = socket(AF_INET, SOCK_DGRAM, 0);
     REQUIRE(sender_fd >= 0);
@@ -584,6 +622,44 @@ TEST_CASE("test async_operations - test sendto - zero copy fixed buffer") {
     close(receiver_fd);
 }
 
+TEST_CASE("test async_operations - test sendto - fixed buffer") {
+    int udp_sv[2];
+    REQUIRE(socketpair(AF_UNIX, SOCK_DGRAM, 0, udp_sv) == 0);
+
+    auto msg = generate_data(1024);
+    bool skipped = false;
+    auto func = [&]() -> condy::Coro<void> {
+        auto &buffer_table = condy::current_runtime().buffer_table();
+        buffer_table.init(1);
+        iovec register_iov{
+            .iov_base = const_cast<char *>(msg.data()),
+            .iov_len = msg.size(),
+        };
+        buffer_table.update(0, &register_iov, 1);
+
+        ssize_t n = co_await condy::async_sendto(
+            udp_sv[0], condy::fixed(0, condy::buffer(msg)), 0, nullptr, 0);
+        if (n == -EINVAL) {
+            MESSAGE("kernel does not support fixed buffers for plain "
+                    "send/recv, skipping");
+            skipped = true;
+            co_return;
+        }
+        REQUIRE(n == msg.size());
+    };
+    condy::sync_wait(func());
+
+    if (!skipped) {
+        char read_buf[2048];
+        ssize_t r = recv(udp_sv[1], read_buf, sizeof(read_buf), 0);
+        REQUIRE(r == msg.size());
+        REQUIRE(std::string_view(read_buf, r) == msg);
+    }
+
+    close(udp_sv[0]);
+    close(udp_sv[1]);
+}
+
 TEST_CASE("test async_operations - test recv - basic") {
     int sv[2];
     create_tcp_socketpair(sv);
@@ -623,6 +699,40 @@ TEST_CASE("test async_operations - test recv - fixed fd") {
             co_await condy::async_recv(condy::fixed(0), condy::buffer(buf), 0);
         REQUIRE(n == msg.size());
         REQUIRE(std::string_view(buf, n) == msg);
+    };
+    condy::sync_wait(func());
+
+    close(sv[0]);
+    close(sv[1]);
+}
+
+TEST_CASE("test async_operations - test recv - fixed buffer") {
+    int sv[2];
+    create_tcp_socketpair(sv);
+
+    auto msg = generate_data(1024);
+    ssize_t r = send(sv[1], msg.data(), msg.size(), 0);
+    REQUIRE(r == msg.size());
+
+    auto func = [&]() -> condy::Coro<void> {
+        auto &buffer_table = condy::current_runtime().buffer_table();
+        buffer_table.init(1);
+        char buf_storage[2048];
+        iovec register_iov{
+            .iov_base = buf_storage,
+            .iov_len = sizeof(buf_storage),
+        };
+        buffer_table.update(0, &register_iov, 1);
+
+        ssize_t n = co_await condy::async_recv(
+            sv[0], condy::fixed(0, condy::buffer(buf_storage, 2048)), 0);
+        if (n == -EINVAL) {
+            MESSAGE("kernel does not support fixed buffers for plain "
+                    "send/recv, skipping");
+            co_return;
+        }
+        REQUIRE(n == msg.size());
+        REQUIRE(std::string_view(buf_storage, n) == msg);
     };
     condy::sync_wait(func());
 
