@@ -56,40 +56,23 @@ protected:
           br_flags_(flags) {
         auto &bgid_pool = runtime_->bgid_pool();
 
-        size_t data_size = capacity_ * sizeof(io_uring_buf);
-        void *data = mmap(nullptr, data_size, PROT_READ | PROT_WRITE,
-                          MAP_ANONYMOUS | MAP_PRIVATE, 0, 0);
-        if (data == MAP_FAILED) [[unlikely]] {
-            throw detail::make_system_error("mmap");
-        }
-        auto d1 = detail::defer([&]() { munmap(data, data_size); });
-
         bgid_ = bgid_pool.allocate();
-        auto d2 = detail::defer([&]() { bgid_pool.recycle(bgid_); });
+        auto d = detail::defer([&]() { bgid_pool.recycle(bgid_); });
 
-        br_ = reinterpret_cast<io_uring_buf_ring *>(data);
-        io_uring_buf_ring_init(br_);
-
-        io_uring_buf_reg reg = {};
-        reg.ring_addr = reinterpret_cast<uint64_t>(br_);
-        reg.ring_entries = capacity_;
-        reg.bgid = bgid_;
-        int r = io_uring_register_buf_ring(runtime_->ring().ring(), &reg,
-                                           br_flags_);
-        if (r != 0) [[unlikely]] {
-            throw detail::make_system_error("io_uring_register_buf_ring", -r);
+        int err = 0;
+        br_ = io_uring_setup_buf_ring(runtime_->ring().ring(), capacity_, bgid_,
+                                      br_flags_, &err);
+        if (br_ == nullptr) [[unlikely]] {
+            throw detail::make_system_error("io_uring_setup_buf_ring", -err);
         }
 
-        d1.dismiss();
-        d2.dismiss();
+        d.dismiss();
     }
 
     ~BundledProvidedBufferQueue() {
         assert(br_ != nullptr);
-        size_t data_size = capacity_ * sizeof(io_uring_buf);
-        munmap(br_, data_size);
-        [[maybe_unused]] int r =
-            io_uring_unregister_buf_ring(runtime_->ring().ring(), bgid_);
+        [[maybe_unused]] int r = io_uring_free_buf_ring(runtime_->ring().ring(),
+                                                        br_, capacity_, bgid_);
         assert(r == 0);
         if (r == 0) {
             runtime_->bgid_pool().recycle(bgid_);
@@ -274,26 +257,13 @@ protected:
         auto &bgid_pool = runtime_->bgid_pool();
 
         bgid_ = bgid_pool.allocate();
-        auto d2 = detail::defer([&]() { bgid_pool.recycle(bgid_); });
+        auto d = detail::defer([&]() { bgid_pool.recycle(bgid_); });
 
-        size_t ring_size = num_buffers_ * sizeof(io_uring_buf);
-        void *ring_data = mmap(nullptr, ring_size, PROT_READ | PROT_WRITE,
-                               MAP_ANONYMOUS | MAP_PRIVATE, 0, 0);
-        if (ring_data == MAP_FAILED) [[unlikely]] {
-            throw detail::make_system_error("mmap");
-        }
-        auto d1 = detail::defer([&]() { munmap(ring_data, ring_size); });
-        br_ = reinterpret_cast<io_uring_buf_ring *>(ring_data);
-        io_uring_buf_ring_init(br_);
-
-        io_uring_buf_reg reg = {};
-        reg.ring_addr = reinterpret_cast<uint64_t>(br_);
-        reg.ring_entries = num_buffers_;
-        reg.bgid = bgid_;
-        int r = io_uring_register_buf_ring(runtime_->ring().ring(), &reg,
-                                           br_flags_);
-        if (r != 0) [[unlikely]] {
-            throw detail::make_system_error("io_uring_register_buf_ring", -r);
+        int err = 0;
+        br_ = io_uring_setup_buf_ring(runtime_->ring().ring(), num_buffers_,
+                                      bgid_, br_flags_, &err);
+        if (br_ == nullptr) [[unlikely]] {
+            throw detail::make_system_error("io_uring_setup_buf_ring", -err);
         }
 
         for (size_t bid = 0; bid < num_buffers_; bid++) {
@@ -303,21 +273,17 @@ protected:
         }
         io_uring_buf_ring_advance(br_, static_cast<int>(num_buffers_));
 
-        d1.dismiss();
-        d2.dismiss();
+        d.dismiss();
     }
 
     ~BundledProvidedBufferPool() {
         assert(br_ != nullptr);
-        [[maybe_unused]] int r =
-            io_uring_unregister_buf_ring(runtime_->ring().ring(), bgid_);
+        [[maybe_unused]] int r = io_uring_free_buf_ring(
+            runtime_->ring().ring(), br_, num_buffers_, bgid_);
         assert(r == 0);
         if (r == 0) {
             runtime_->bgid_pool().recycle(bgid_);
         }
-
-        size_t ring_size = num_buffers_ * sizeof(io_uring_buf);
-        munmap(br_, ring_size);
     }
 
 public:
