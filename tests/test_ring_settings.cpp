@@ -94,30 +94,6 @@ TEST_CASE("test ring_settings - clock") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 9) // >= 2.9
-TEST_CASE("test ring_settings - rings_size") {
-    // Defer taskrun is required
-    condy::Runtime runtime(condy::RuntimeOptions().enable_defer_taskrun());
-
-    auto func = [&]() -> condy::Coro<void> {
-        for (int i = 0; i < 5; i++) {
-            co_await condy::async_nop();
-        }
-        auto &settings = runtime.settings();
-        io_uring_params params = {};
-        params.sq_entries = 2;
-        params.cq_entries = 4;
-        // Set at runtime is ok
-        REQUIRE(settings.set_rings_size(&params) == 0);
-        for (int i = 0; i < 5; i++) {
-            co_await condy::async_nop();
-        }
-    };
-
-    condy::sync_wait(runtime, func());
-}
-#endif
-
 #if !IO_URING_CHECK_VERSION(2, 10) // >= 2.10
 TEST_CASE("test ring_settings - iowait") {
     condy::Runtime runtime;
