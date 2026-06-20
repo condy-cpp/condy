@@ -252,8 +252,10 @@ public:
     /**
      * @brief Resize the rings of the io_uring instance.
      * @details See io_uring_resize_rings for more details.
+     * @deprecated Unsafe during CQE processing; use RuntimeOptions instead.
      * @param params Pointer to the io_uring_params structure.
      */
+    [[deprecated("unsafe during CQE processing, use RuntimeOptions")]]
     int set_rings_size(io_uring_params *params) noexcept {
         return io_uring_resize_rings(&ring_, params);
     }
