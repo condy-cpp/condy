@@ -89,12 +89,6 @@ private:
     bool active_ = true;
 };
 
-/**
- * @brief Defer the execution of a function until the current scope ends.
- * @param func The function to be executed upon scope exit.
- * @return Defer object that will execute the function when it goes out of
- * scope.
- */
 template <typename Func> auto defer(Func &&func) {
     return Defer<std::decay_t<Func>>(std::forward<Func>(func));
 }

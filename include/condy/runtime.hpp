@@ -48,18 +48,6 @@ public:
     CONDY_DELETE_COPY_MOVE(Runtime);
 
 public:
-    /**
-     * @brief Allow the runtime to exit when there are no pending works.
-     * @details By default, the runtime will keep running even if there are no
-     * pending works. Calling this function will allow the runtime to exit
-     * once all pending works are completed.
-     * @note This function is thread-safe and can be called from any thread.
-     */
-    void allow_exit() noexcept {
-        exit_allowed_.store(true, std::memory_order_release);
-        wakeup_();
-    }
-
     void schedule(detail::WorkInvoker *work) noexcept {
         auto *curr_runtime = detail::Context::current().runtime();
         if (curr_runtime == this) {
@@ -131,6 +119,23 @@ public:
         pending_works_--;
     }
 
+    auto &bgid_pool() noexcept { return bgid_pool_; }
+
+    auto &ring() noexcept { return ring_; }
+
+public:
+    /**
+     * @brief Allow the runtime to exit when there are no pending works.
+     * @details By default, the runtime will keep running even if there are no
+     * pending works. Calling this function will allow the runtime to exit
+     * once all pending works are completed.
+     * @note This function is thread-safe and can be called from any thread.
+     */
+    void allow_exit() noexcept {
+        exit_allowed_.store(true, std::memory_order_release);
+        wakeup_();
+    }
+
     /**
      * @brief Run the runtime event loop in the current thread.
      * @details This function starts the event loop of the runtime in the
@@ -190,8 +195,6 @@ public:
         }
     }
 
-    auto &ring() noexcept { return ring_; }
-
     /**
      * @brief Get the file descriptor table of the runtime.
      * @return FdTable& Reference to the fd table of the runtime.
@@ -209,12 +212,6 @@ public:
      * @return RingSettings& Reference to the ring settings of the runtime.
      */
     auto &settings() noexcept { return settings_; }
-
-    /**
-     * @brief Get the buffer group ID pool.
-     * @return IdPool<uint16_t>& Reference to the buffer group ID pool.
-     */
-    auto &bgid_pool() noexcept { return bgid_pool_; }
 
 private:
     static detail::Ring create_ring_(const RuntimeOptions &options) {
