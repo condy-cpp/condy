@@ -56,7 +56,7 @@ public:
             return;
         }
 
-        if (ring_enabled_.load(std::memory_order_acquire)) {
+        if (ring_enabled_.load(std::memory_order_relaxed)) {
             // Fast path: if the ring is enabled, we can directly schedule the
             // work
             detail::tsan_release(work);
@@ -67,7 +67,7 @@ public:
             // Slow path: if the ring is not enabled, we need to acquire the
             // mutex to ensure the work is scheduled before the ring is enabled
             std::unique_lock<std::mutex> lock(mutex_);
-            if (ring_enabled_.load(std::memory_order_acquire)) {
+            if (ring_enabled_.load(std::memory_order_relaxed)) {
                 lock.unlock();
                 detail::tsan_release(work);
                 schedule_msg_ring_(
@@ -88,7 +88,7 @@ public:
             return;
         }
 
-        if (!ring_enabled_.load(std::memory_order_acquire)) {
+        if (!ring_enabled_.load(std::memory_order_relaxed)) {
             return;
         }
 
@@ -157,7 +157,7 @@ public:
             {
                 std::lock_guard<std::mutex> lock(mutex_);
                 flush_global_queue_();
-                ring_enabled_.store(true, std::memory_order_release);
+                ring_enabled_.store(true, std::memory_order_relaxed);
             }
 
             if (!disable_register_ring_fd_) {
@@ -334,7 +334,7 @@ private:
             return;
         }
 
-        if (!ring_enabled_.load(std::memory_order_acquire)) {
+        if (!ring_enabled_.load(std::memory_order_relaxed)) {
             return;
         }
 
