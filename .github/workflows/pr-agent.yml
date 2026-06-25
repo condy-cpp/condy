@@ -1,0 +1,30 @@
+name: PR Agent
+
+on:
+  issue_comment:
+    types: [created, edited]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  pr_agent_job:
+    name: PR Agent
+    runs-on: ubuntu-26.04
+    if: |
+      github.event.sender.type != 'Bot' &&
+      github.event.issue.pull_request &&
+      startsWith(github.event.comment.body, '/') &&
+      contains(fromJSON('["OWNER", "COLLABORATOR", "MEMBER"]'), github.event.comment.author_association)
+    steps:
+      - name: PR Agent Step
+        id: pragent
+        uses: the-pr-agent/pr-agent@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CONFIG.MODEL: "deepseek/deepseek-chat"
+          CONFIG.FALLBACK_MODELS: "['deepseek/deepseek-chat']"
+          DEEPSEEK.KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          PR_REVIEWER.ENABLE_REVIEW_LABELS_EFFORT: false
+          PR_REVIEWER.ENABLE_REVIEW_LABELS_SECURITY: false
