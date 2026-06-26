@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <liburing.h>
+#include <liburing.h> // IWYU pragma: export
 
 #include <cerrno>
 #include <cstring>
