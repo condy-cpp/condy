@@ -71,3 +71,28 @@ TEST_CASE("test sync_wait - with allocator") {
     REQUIRE(result == 42);
     REQUIRE(finished);
 }
+
+TEST_CASE("test sync_wait - one runtime multiple times") {
+    bool finished1 = false;
+    bool finished2 = false;
+
+    auto func1 = [&]() -> condy::Coro<int> {
+        finished1 = true;
+        co_return 42;
+    };
+
+    auto func2 = [&]() -> condy::Coro<int> {
+        finished2 = true;
+        co_return 84;
+    };
+
+    condy::Runtime runtime;
+
+    auto result1 = condy::sync_wait(runtime, func1());
+    REQUIRE(result1 == 42);
+    REQUIRE(finished1);
+
+    auto result2 = condy::sync_wait(runtime, func2());
+    REQUIRE(result2 == 84);
+    REQUIRE(finished2);
+}

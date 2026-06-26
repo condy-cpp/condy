@@ -250,3 +250,54 @@ TEST_CASE("test runtime - allow_exit from other thread") {
 
     t1.join();
 }
+
+TEST_CASE("test runtime - multiple run calls") {
+    condy::Runtime runtime(options);
+    size_t run_count = 0;
+
+    auto func = [&]() -> condy::Coro<void> {
+        run_count++;
+        co_return;
+    };
+
+    // First run
+    condy::co_spawn(runtime, func()).detach();
+    runtime.allow_exit();
+    runtime.run();
+    REQUIRE(run_count == 1);
+
+    // Second run should also work
+    condy::co_spawn(runtime, func()).detach();
+    runtime.allow_exit();
+    runtime.run();
+    REQUIRE(run_count == 2);
+}
+
+TEST_CASE("test runtime - run from different thread throws") {
+    condy::Runtime runtime(options);
+
+    // First call binds the thread
+    runtime.allow_exit();
+    runtime.run();
+
+    // Second call from a different thread should throw
+    std::thread t(
+        [&]() { REQUIRE_THROWS_AS(runtime.run(), std::runtime_error); });
+    t.join();
+}
+
+TEST_CASE("test runtime - cross-thread schedule between runs") {
+    condy::Runtime runtime(options);
+
+    runtime.allow_exit();
+    runtime.run();
+
+    SetFinishInvoker invoker;
+    std::thread t([&]() { runtime.schedule(&invoker); });
+    t.join();
+
+    runtime.allow_exit();
+    runtime.run();
+
+    REQUIRE(invoker.finished);
+}
