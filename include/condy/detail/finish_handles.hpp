@@ -55,7 +55,7 @@ private:
         OpFinishHandle *self;
         Runtime *runtime;
         void operator()() noexcept {
-            runtime->cancel(encode_work(self, WorkType::Common));
+            runtime->cancel_internal(encode_work(self, WorkType::Common));
         }
     };
 

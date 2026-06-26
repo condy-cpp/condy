@@ -31,7 +31,7 @@ TEST_CASE("test runtime - single thread schedule no-op") {
     condy::Runtime runtime(options);
 
     SetFinishInvoker invoker;
-    runtime.schedule(&invoker);
+    runtime.schedule_internal(&invoker);
     runtime.allow_exit();
     runtime.run();
 
@@ -44,7 +44,7 @@ TEST_CASE("test runtime - single thread schedule multiple no-op") {
     const int num_invokers = 20;
     std::vector<SetFinishInvoker> invokers(num_invokers);
     for (int i = 0; i < num_invokers; ++i) {
-        runtime.schedule(&invokers[i]);
+        runtime.schedule_internal(&invokers[i]);
     }
     runtime.allow_exit();
     runtime.run();
@@ -66,7 +66,7 @@ TEST_CASE("test runtime - single thread schedule coroutine") {
     auto coro = func();
     auto h = coro.release();
 
-    runtime.schedule(&h.promise());
+    runtime.schedule_internal(&h.promise());
     runtime.allow_exit();
     runtime.run();
 
@@ -94,7 +94,7 @@ TEST_CASE("test runtime - single thread schedule multiple coroutines") {
 
     for (int i = 0; i < num_coros; ++i) {
         handles.emplace_back(coros[i].release());
-        runtime.schedule(&handles[i].promise());
+        runtime.schedule_internal(&handles[i].promise());
     }
 
     runtime.allow_exit();
@@ -126,7 +126,7 @@ TEST_CASE("test runtime - single thread schedule coroutines with operation") {
 
     for (int i = 0; i < num_coros; ++i) {
         handles.emplace_back(coros[i].release());
-        runtime.schedule(&handles[i].promise());
+        runtime.schedule_internal(&handles[i].promise());
     }
 
     runtime.allow_exit();
@@ -161,7 +161,7 @@ TEST_CASE("test runtime - single thread schedule coroutines with parallel "
 
     for (int i = 0; i < num_coros; ++i) {
         handles.emplace_back(coros[i].release());
-        runtime.schedule(&handles[i].promise());
+        runtime.schedule_internal(&handles[i].promise());
     }
 
     runtime.allow_exit();
@@ -193,7 +193,7 @@ TEST_CASE("test runtime - single thread schedule coroutine with cancel") {
     };
     auto coro = func();
     auto h = coro.release();
-    runtime.schedule(&h.promise());
+    runtime.schedule_internal(&h.promise());
     runtime.allow_exit();
     runtime.run();
 
@@ -293,7 +293,7 @@ TEST_CASE("test runtime - cross-thread schedule between runs") {
     runtime.run();
 
     SetFinishInvoker invoker;
-    std::thread t([&]() { runtime.schedule(&invoker); });
+    std::thread t([&]() { runtime.schedule_internal(&invoker); });
     t.join();
 
     runtime.allow_exit();
