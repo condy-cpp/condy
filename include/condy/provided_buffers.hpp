@@ -240,7 +240,12 @@ class BundledProvidedBufferPool;
  * @note The lifetime of the provided buffer must not exceed the lifetime of the
  * provided buffer pool it is associated with.
  */
-using ProvidedBuffer = detail::ManagedBuffer<detail::BundledProvidedBufferPool>;
+class ProvidedBuffer
+    : public detail::ManagedBuffer<detail::BundledProvidedBufferPool> {
+public:
+    using Base = detail::ManagedBuffer<detail::BundledProvidedBufferPool>;
+    using Base::Base;
+};
 
 namespace detail {
 
