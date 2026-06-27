@@ -73,7 +73,7 @@ TEST_CASE("test task - local spawn and await") {
     auto coro = main();
     auto h = coro.release();
 
-    runtime.schedule(&h.promise());
+    runtime.schedule_internal(&h.promise());
     runtime.allow_exit();
     runtime.run();
 
@@ -100,7 +100,7 @@ TEST_CASE("test task - remote spawn and await") {
 
     std::thread rt2_thread([&]() { runtime2.run(); });
 
-    runtime1.schedule(&h.promise());
+    runtime1.schedule_internal(&h.promise());
     runtime1.allow_exit();
     runtime1.run();
 
@@ -399,7 +399,7 @@ TEST_CASE("test task - spawn task with custom allocator") {
     auto coro = main();
     auto h = coro.release();
 
-    runtime.schedule(&h.promise());
+    runtime.schedule_internal(&h.promise());
     runtime.allow_exit();
     runtime.run();
 

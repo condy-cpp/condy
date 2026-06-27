@@ -104,7 +104,7 @@ inline Task<T, Allocator> co_spawn(Runtime &runtime,
     auto &promise = handle.promise();
     promise.mark_running();
 
-    runtime.schedule(&promise);
+    runtime.schedule_internal(&promise);
     return {handle};
 }
 
@@ -132,7 +132,7 @@ struct [[nodiscard]] SwitchAwaiter {
 
     template <typename PromiseType>
     void await_suspend(std::coroutine_handle<PromiseType> handle) noexcept {
-        runtime_->schedule(&handle.promise());
+        runtime_->schedule_internal(&handle.promise());
     }
 
     void await_resume() const noexcept {}

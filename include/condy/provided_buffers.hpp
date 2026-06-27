@@ -54,14 +54,14 @@ protected:
         : runtime_(runtime), capacity_(std::bit_ceil(capacity)),
           mask_(io_uring_buf_ring_mask(capacity_)), buf_lens_(capacity_, 0),
           br_flags_(flags) {
-        auto &bgid_pool = runtime_->bgid_pool();
+        auto &bgid_pool = runtime_->bgid_pool_internal();
 
         bgid_ = bgid_pool.allocate();
         auto d = detail::defer([&]() { bgid_pool.recycle(bgid_); });
 
         int err = 0;
-        br_ = io_uring_setup_buf_ring(runtime_->ring().ring(), capacity_, bgid_,
-                                      br_flags_, &err);
+        br_ = io_uring_setup_buf_ring(runtime_->ring_internal().ring(),
+                                      capacity_, bgid_, br_flags_, &err);
         if (br_ == nullptr) [[unlikely]] {
             throw detail::make_system_error("io_uring_setup_buf_ring", -err);
         }
@@ -71,11 +71,11 @@ protected:
 
     ~BundledProvidedBufferQueue() {
         assert(br_ != nullptr);
-        [[maybe_unused]] int r = io_uring_free_buf_ring(runtime_->ring().ring(),
-                                                        br_, capacity_, bgid_);
+        [[maybe_unused]] int r = io_uring_free_buf_ring(
+            runtime_->ring_internal().ring(), br_, capacity_, bgid_);
         assert(r == 0);
         if (r == 0) {
-            runtime_->bgid_pool().recycle(bgid_);
+            runtime_->bgid_pool_internal().recycle(bgid_);
         }
     }
 
@@ -259,14 +259,14 @@ protected:
           mask_(io_uring_buf_ring_mask(num_buffers_)),
           buffer_size_(buffer_size), curr_buf_len_(buffer_size),
           br_flags_(flags) {
-        auto &bgid_pool = runtime_->bgid_pool();
+        auto &bgid_pool = runtime_->bgid_pool_internal();
 
         bgid_ = bgid_pool.allocate();
         auto d = detail::defer([&]() { bgid_pool.recycle(bgid_); });
 
         int err = 0;
-        br_ = io_uring_setup_buf_ring(runtime_->ring().ring(), num_buffers_,
-                                      bgid_, br_flags_, &err);
+        br_ = io_uring_setup_buf_ring(runtime_->ring_internal().ring(),
+                                      num_buffers_, bgid_, br_flags_, &err);
         if (br_ == nullptr) [[unlikely]] {
             throw detail::make_system_error("io_uring_setup_buf_ring", -err);
         }
@@ -284,10 +284,10 @@ protected:
     ~BundledProvidedBufferPool() {
         assert(br_ != nullptr);
         [[maybe_unused]] int r = io_uring_free_buf_ring(
-            runtime_->ring().ring(), br_, num_buffers_, bgid_);
+            runtime_->ring_internal().ring(), br_, num_buffers_, bgid_);
         assert(r == 0);
         if (r == 0) {
-            runtime_->bgid_pool().recycle(bgid_);
+            runtime_->bgid_pool_internal().recycle(bgid_);
         }
     }
 

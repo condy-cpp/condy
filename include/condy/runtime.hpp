@@ -49,7 +49,7 @@ public:
     CONDY_DELETE_COPY_MOVE(Runtime);
 
 public:
-    void schedule(detail::WorkInvoker *work) noexcept {
+    void schedule_internal(detail::WorkInvoker *work) noexcept {
         auto *curr_runtime = detail::Context::current().runtime();
         if (curr_runtime == this) {
             local_queue_.push_back(work);
@@ -79,8 +79,7 @@ public:
         }
     }
 
-    // Internal use only. Schedule a cancel request for the given data.
-    void cancel(uintptr_t data) noexcept {
+    void cancel_internal(uintptr_t data) noexcept {
         auto *curr_runtime = detail::Context::current().runtime();
         if (curr_runtime == this) {
             io_uring_sqe *sqe = ring_.get_sqe();
@@ -107,19 +106,19 @@ public:
         request.wait();
     }
 
-    void pend_work() noexcept {
+    void pend_work_internal() noexcept {
         assert(detail::Context::current().runtime() == this);
         pending_works_++;
     }
 
-    void resume_work() noexcept {
+    void resume_work_internal() noexcept {
         assert(detail::Context::current().runtime() == this);
         pending_works_--;
     }
 
-    auto &bgid_pool() noexcept { return bgid_pool_; }
+    auto &bgid_pool_internal() noexcept { return bgid_pool_; }
 
-    auto &ring() noexcept { return ring_; }
+    auto &ring_internal() noexcept { return ring_; }
 
 public:
     /**
@@ -315,7 +314,7 @@ private:
         if (curr_runtime != nullptr) {
             io_uring_sqe *sqe = curr_runtime->ring_.get_sqe();
             prep_msg_ring_(ring_fd, sqe, data);
-            curr_runtime->pend_work();
+            curr_runtime->pend_work_internal();
         } else {
             io_uring_sqe sqe = {};
             prep_msg_ring_(ring_fd, &sqe, data);
@@ -391,7 +390,7 @@ private:
                     detail::panic_on(std::format("io_uring_prep_msg_ring: {}",
                                                  std::strerror(-cqe->res)));
                 }
-                resume_work();
+                resume_work_internal();
             } else {
                 auto *work = static_cast<detail::WorkInvoker *>(data);
                 detail::tsan_acquire(work);
@@ -408,7 +407,7 @@ private:
             auto *handle = static_cast<detail::OpFinishHandleBase *>(data);
             auto op_finish = handle->handle(cqe);
             if (op_finish) {
-                resume_work();
+                resume_work_internal();
             }
         } else {
             detail::unreachable();

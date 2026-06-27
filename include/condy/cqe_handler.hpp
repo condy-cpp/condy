@@ -21,7 +21,7 @@ namespace detail {
 
 // Just for debugging, check if the CQE is big as expected
 inline bool check_cqe32([[maybe_unused]] io_uring_cqe *cqe) {
-    auto &ring = detail::Context::current().runtime()->ring();
+    auto &ring = detail::Context::current().runtime()->ring_internal();
     auto ring_flags = ring.ring()->flags;
     if (ring_flags & IORING_SETUP_CQE32) {
         return true;

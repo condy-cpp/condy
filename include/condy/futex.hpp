@@ -121,7 +121,7 @@ class Futex<T>::WaitFinishHandleBase : public detail::WorkInvoker {
 public:
     void schedule() noexcept {
         assert(runtime_ != nullptr);
-        runtime_->schedule(this);
+        runtime_->schedule_internal(this);
     }
 
     void set_result(int32_t result) noexcept { result_ = result; }
@@ -152,7 +152,7 @@ public:
             std::move(receiver_)(r);
             return;
         }
-        runtime->pend_work();
+        runtime->pend_work_internal();
 
         auto stop_token = receiver_.get_stop_token();
         if (stop_token.stop_possible()) {
@@ -163,7 +163,7 @@ public:
     void invoke() noexcept {
         stop_callback_.reset();
         assert(this->runtime_ != nullptr);
-        this->runtime_->resume_work();
+        this->runtime_->resume_work_internal();
         std::move(receiver_)(this->result_);
     }
 
@@ -173,7 +173,7 @@ private:
             // Successfully canceled
             this->result_ = -ECANCELED;
             assert(this->runtime_ != nullptr);
-            this->runtime_->schedule(this);
+            this->runtime_->schedule_internal(this);
         }
     }
 

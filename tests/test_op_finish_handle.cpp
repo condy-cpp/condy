@@ -18,7 +18,7 @@ struct MockReceiver {
 };
 
 void event_loop(size_t &count, size_t expected) {
-    auto &ring = condy::detail::Context::current().runtime()->ring();
+    auto &ring = condy::detail::Context::current().runtime()->ring_internal();
     while (count != expected) {
         ring.submit();
         ring.reap_completions([&](io_uring_cqe *cqe) {
@@ -38,7 +38,7 @@ void event_loop(size_t &count, size_t expected) {
 
 TEST_CASE("test op_finish_handle - basic usage") {
     condy::Runtime runtime;
-    auto &ring = runtime.ring();
+    auto &ring = runtime.ring_internal();
     int enable_r = io_uring_enable_rings(ring.ring());
     REQUIRE(enable_r == 0);
     auto &context = condy::detail::Context::current();
@@ -73,7 +73,7 @@ TEST_CASE("test op_finish_handle - basic usage") {
 
 TEST_CASE("test op_finish_handle - concurrent ops") {
     condy::Runtime runtime;
-    auto &ring = runtime.ring();
+    auto &ring = runtime.ring_internal();
     int enable_r = io_uring_enable_rings(ring.ring());
     REQUIRE(enable_r == 0);
     auto &context = condy::detail::Context::current();

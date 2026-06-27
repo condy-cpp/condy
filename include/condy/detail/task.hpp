@@ -125,7 +125,7 @@ struct TaskAwaiterBase : public InvokerAdapter<TaskAwaiterBase<T, Allocator>> {
     template <typename PromiseType>
     bool
     await_suspend(std::coroutine_handle<PromiseType> caller_handle) noexcept {
-        Context::current().runtime()->pend_work();
+        Context::current().runtime()->pend_work_internal();
         assert(runtime_ != nullptr);
         caller_promise_ = &caller_handle.promise();
         return task_handle_.promise().request_join(this);
@@ -133,7 +133,7 @@ struct TaskAwaiterBase : public InvokerAdapter<TaskAwaiterBase<T, Allocator>> {
 
     void invoke() noexcept {
         assert(caller_promise_ != nullptr);
-        runtime_->schedule(caller_promise_);
+        runtime_->schedule_internal(caller_promise_);
     }
 
     std::coroutine_handle<typename Coro<T, Allocator>::promise_type>
@@ -148,7 +148,7 @@ struct TaskAwaiter : public TaskAwaiterBase<T, Allocator> {
     using Base::Base;
 
     T await_resume() {
-        Context::current().runtime()->resume_work();
+        Context::current().runtime()->resume_work_internal();
         auto exception = std::move(Base::task_handle_.promise()).exception();
         if (exception) [[unlikely]] {
             Base::task_handle_.destroy();
@@ -166,7 +166,7 @@ struct TaskAwaiter<void, Allocator> : public TaskAwaiterBase<void, Allocator> {
     using Base::Base;
 
     void await_resume() {
-        Context::current().runtime()->resume_work();
+        Context::current().runtime()->resume_work_internal();
         auto exception = std::move(Base::task_handle_.promise()).exception();
         Base::task_handle_.destroy();
         if (exception) [[unlikely]] {
