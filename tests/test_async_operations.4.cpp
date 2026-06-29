@@ -824,50 +824,53 @@ TEST_CASE("test async_operations - test ftruncate - fixed fd") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
-TEST_CASE("test async_operations - test cmd_discard - basic") {
-    BlkDevice blkdev;
-    if (blkdev.path().empty()) {
-        MESSAGE("Can't create loop device, skipping");
-        return;
-    }
+// TODO: Kernel 7.1 regression, uncomment after fixed
+// https://lore.kernel.org/linux-block/20260616155129.406057-1-yi1tang.yang@gmail.com/
+//
+// #if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
+// TEST_CASE("test async_operations - test cmd_discard - basic") {
+//     BlkDevice blkdev;
+//     if (blkdev.path().empty()) {
+//         MESSAGE("Can't create loop device, skipping");
+//         return;
+//     }
 
-    int fd = open(blkdev.path().c_str(), O_RDWR);
-    REQUIRE(fd >= 0);
+//     int fd = open(blkdev.path().c_str(), O_RDWR);
+//     REQUIRE(fd >= 0);
 
-    auto func = [&]() -> condy::Coro<void> {
-        int r = co_await condy::async_cmd_discard(fd, 0, 4096);
-        REQUIRE(r == 0);
-    };
-    condy::sync_wait(func());
-    close(fd);
-}
-#endif
+//     auto func = [&]() -> condy::Coro<void> {
+//         int r = co_await condy::async_cmd_discard(fd, 0, 4096);
+//         REQUIRE(r == 0);
+//     };
+//     condy::sync_wait(func());
+//     close(fd);
+// }
+// #endif
 
-#if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
-TEST_CASE("test async_operations - test cmd_discard - fixed fd") {
-    BlkDevice blkdev;
-    if (blkdev.path().empty()) {
-        MESSAGE("Can't create loop device, skipping");
-        return;
-    }
+// #if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
+// TEST_CASE("test async_operations - test cmd_discard - fixed fd") {
+//     BlkDevice blkdev;
+//     if (blkdev.path().empty()) {
+//         MESSAGE("Can't create loop device, skipping");
+//         return;
+//     }
 
-    int fd = open(blkdev.path().c_str(), O_RDWR);
-    REQUIRE(fd >= 0);
+//     int fd = open(blkdev.path().c_str(), O_RDWR);
+//     REQUIRE(fd >= 0);
 
-    auto func = [&]() -> condy::Coro<void> {
-        auto &fd_table = condy::current_runtime().fd_table();
-        fd_table.init(1);
-        int r = co_await condy::async_files_update(&fd, 1, 0);
-        REQUIRE(r == 1);
+//     auto func = [&]() -> condy::Coro<void> {
+//         auto &fd_table = condy::current_runtime().fd_table();
+//         fd_table.init(1);
+//         int r = co_await condy::async_files_update(&fd, 1, 0);
+//         REQUIRE(r == 1);
 
-        r = co_await condy::async_cmd_discard(condy::fixed(0), 0, 4096);
-        REQUIRE(r == 0);
-    };
-    condy::sync_wait(func());
-    close(fd);
-}
-#endif
+//         r = co_await condy::async_cmd_discard(condy::fixed(0), 0, 4096);
+//         REQUIRE(r == 0);
+//     };
+//     condy::sync_wait(func());
+//     close(fd);
+// }
+// #endif
 
 #if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
 TEST_CASE("test async_operations - test bind - basic") {
