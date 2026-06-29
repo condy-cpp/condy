@@ -34,13 +34,13 @@ struct DoubleLinkEntry {
     DoubleLinkEntry *prev = nullptr;
 };
 
-template <typename T, SingleLinkEntry T::*Member> class IntrusiveSingleList {
+class SingleLinkListImpl {
 public:
-    IntrusiveSingleList() = default;
-    IntrusiveSingleList(IntrusiveSingleList &&other) noexcept
+    SingleLinkListImpl() = default;
+    SingleLinkListImpl(SingleLinkListImpl &&other) noexcept
         : head_(std::exchange(other.head_, nullptr)),
           tail_(std::exchange(other.tail_, nullptr)) {}
-    IntrusiveSingleList &operator=(IntrusiveSingleList &&other) noexcept {
+    SingleLinkListImpl &operator=(SingleLinkListImpl &&other) noexcept {
         if (this != &other) {
             assert(empty());
             head_ = std::exchange(other.head_, nullptr);
@@ -49,14 +49,11 @@ public:
         return *this;
     }
 
-    CONDY_DELETE_COPY(IntrusiveSingleList);
+    CONDY_DELETE_COPY(SingleLinkListImpl);
 
-public:
-    void push_back(T *item) noexcept {
-        assert(item != nullptr);
-        SingleLinkEntry *entry = &(item->*Member);
+    void push_back(SingleLinkEntry *entry) noexcept {
+        assert(entry != nullptr);
         assert(entry->next == nullptr);
-        entry->next = nullptr;
         if (!head_) {
             head_ = entry;
             tail_ = entry;
@@ -66,7 +63,7 @@ public:
         }
     }
 
-    void push_back(IntrusiveSingleList other) noexcept {
+    void push_back(SingleLinkListImpl &other) noexcept {
         if (other.empty()) {
             return;
         }
@@ -77,11 +74,13 @@ public:
             tail_->next = other.head_;
             tail_ = other.tail_;
         }
+        other.head_ = nullptr;
+        other.tail_ = nullptr;
     }
 
     bool empty() const noexcept { return head_ == nullptr; }
 
-    T *pop_front() noexcept {
+    SingleLinkEntry *pop_front() noexcept {
         if (empty()) {
             return nullptr;
         }
@@ -91,7 +90,7 @@ public:
             tail_ = nullptr;
         }
         entry->next = nullptr;
-        return container_of(Member, entry);
+        return entry;
     }
 
 private:
@@ -99,13 +98,13 @@ private:
     SingleLinkEntry *tail_ = nullptr;
 };
 
-template <typename T, DoubleLinkEntry T::*Member> class IntrusiveDoubleList {
+class DoubleLinkListImpl {
 public:
-    IntrusiveDoubleList() = default;
-    IntrusiveDoubleList(IntrusiveDoubleList &&other) noexcept
+    DoubleLinkListImpl() = default;
+    DoubleLinkListImpl(DoubleLinkListImpl &&other) noexcept
         : head_(std::exchange(other.head_, nullptr)),
           tail_(std::exchange(other.tail_, nullptr)) {}
-    IntrusiveDoubleList &operator=(IntrusiveDoubleList &&other) noexcept {
+    DoubleLinkListImpl &operator=(DoubleLinkListImpl &&other) noexcept {
         if (this != &other) {
             assert(empty());
             head_ = std::exchange(other.head_, nullptr);
@@ -114,12 +113,10 @@ public:
         return *this;
     }
 
-    CONDY_DELETE_COPY(IntrusiveDoubleList);
+    CONDY_DELETE_COPY(DoubleLinkListImpl);
 
-public:
-    void push_back(T *item) noexcept {
-        assert(item != nullptr);
-        DoubleLinkEntry *entry = &(item->*Member);
+    void push_back(DoubleLinkEntry *entry) noexcept {
+        assert(entry != nullptr);
         assert(entry->next == nullptr && entry->prev == nullptr);
         entry->next = nullptr;
         entry->prev = tail_;
@@ -134,7 +131,7 @@ public:
 
     bool empty() const noexcept { return head_ == nullptr; }
 
-    T *pop_front() noexcept {
+    DoubleLinkEntry *pop_front() noexcept {
         if (empty()) {
             return nullptr;
         }
@@ -147,12 +144,11 @@ public:
         }
         entry->next = nullptr;
         entry->prev = nullptr;
-        return container_of(Member, entry);
+        return entry;
     }
 
-    bool remove(T *item) noexcept {
-        assert(item != nullptr);
-        DoubleLinkEntry *entry = &(item->*Member);
+    bool remove(DoubleLinkEntry *entry) noexcept {
+        assert(entry != nullptr);
         if (entry->prev == nullptr && entry->next == nullptr &&
             head_ != entry) {
             return false;
@@ -177,6 +173,42 @@ public:
 private:
     DoubleLinkEntry *head_ = nullptr;
     DoubleLinkEntry *tail_ = nullptr;
+};
+
+template <typename T, SingleLinkEntry T::*Member> class IntrusiveSingleList {
+public:
+    void push_back(T *item) noexcept { impl_.push_back(&(item->*Member)); }
+
+    void push_back(IntrusiveSingleList other) noexcept {
+        impl_.push_back(other.impl_);
+    }
+
+    bool empty() const noexcept { return impl_.empty(); }
+
+    T *pop_front() noexcept {
+        SingleLinkEntry *entry = impl_.pop_front();
+        return entry ? container_of(Member, entry) : nullptr;
+    }
+
+private:
+    SingleLinkListImpl impl_;
+};
+
+template <typename T, DoubleLinkEntry T::*Member> class IntrusiveDoubleList {
+public:
+    void push_back(T *item) noexcept { impl_.push_back(&(item->*Member)); }
+
+    bool empty() const noexcept { return impl_.empty(); }
+
+    T *pop_front() noexcept {
+        DoubleLinkEntry *entry = impl_.pop_front();
+        return entry ? container_of(Member, entry) : nullptr;
+    }
+
+    bool remove(T *item) noexcept { return impl_.remove(&(item->*Member)); }
+
+private:
+    DoubleLinkListImpl impl_;
 };
 
 } // namespace detail
