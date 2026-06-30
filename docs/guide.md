@@ -643,9 +643,6 @@ condy::Coro<void> session(int session_fd) {
 }
 ```
 
-> [!NOTE]  
-> io_uring also supports Zero Copy Rx. Condy will support this feature in the future.
-
 ### File Registration
 
 io_uring allows you to register files with the kernel. Normally, each asynchronous operation increments/decrements the file's reference count, but registering files with the kernel can skip this process and improve performance.
@@ -832,7 +829,7 @@ condy::Coro<int> co_main() {
             break;
         }
 
-        // Error handling (excluding buffer pool full)
+        // Error handling (excluding buffer pool empty)
         if (res < 0 && res != -ENOBUFS) {
             ch.push_close();
             co_return 1;
@@ -843,6 +840,117 @@ condy::Coro<int> co_main() {
 }
 
 int main() { return condy::sync_wait(co_main()); }
+```
+
+### Zero Copy Rx
+
+Similar to Zero Copy Tx, io_uring also supports receiving data directly into user-space memory, allowing the NIC to write incoming data without kernel-to-user copies. Condy provides the `condy::ZeroCopyRxBufferPool` type to encapsulate this feature.
+
+`condy::ZeroCopyRxBufferPool` manages a set of pre-registered buffers. When used with `condy::async_recv_multishot()`, each received packet is placed into a buffer from the pool, and the coroutine receives a `condy::ZeroCopyRxBuffer` — an RAII type that automatically returns the buffer to the pool when it goes out of scope.
+
+Constructing a `condy::ZeroCopyRxBufferPool` requires:
+- A network interface index (`if_idx`) and receive queue index (`if_rxq`).
+- The number of receive queue entries (`rq_entries`).
+- A `condy::ZeroCopyRxArea` describing the memory region, or a `condy::ZeroCopyRxDMABufArea` for DMA-BUF scenarios.
+
+> [!NOTE]
+> See https://docs.kernel.org/networking/iou-zcrx.html for more information.
+
+The following example demonstrates a echo server using Zero Copy Rx. The structure is similar to the Provided Buffers example above — `condy::ZeroCopyRxBufferPool` and `condy::ProvidedBufferPool` share the same usage pattern with `condy::async_recv_multishot()`.
+
+```cpp
+#include <arpa/inet.h>
+#include <condy.hpp>
+
+// Background coroutine: handle buffers from the Channel
+condy::Coro<void>
+handle_buffers(condy::Channel<std::pair<int, condy::ZeroCopyRxBuffer>> &ch,
+               int session_fd) {
+    while (true) {
+        auto [r, data] = co_await ch.pop();
+        if (r == -EPIPE) {
+            break;
+        }
+        assert(r == 0);
+        auto &[n, buffer] = data;
+        co_await condy::async_write(session_fd,
+                                    condy::buffer(buffer.data(), n), 0);
+    }
+}
+
+// Main coroutine: receive data and use zero-copy buffer pool
+condy::Coro<int> co_main() {
+    sockaddr_in server_addr{};
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(8080);
+    inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr);
+
+    int server_fd = co_await condy::async_socket(AF_INET, SOCK_STREAM, 0, 0);
+    if (server_fd < 0) {
+        co_return 1;
+    }
+
+    int r =
+        ::bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
+    if (r < 0) {
+        co_await condy::async_close(server_fd);
+        co_return 1;
+    }
+
+    r = ::listen(server_fd, 10);
+    if (r < 0) {
+        co_await condy::async_close(server_fd);
+        co_return 1;
+    }
+
+    // Accept one client connection
+    sockaddr_in client_addr;
+    socklen_t client_addr_len = sizeof(client_addr);
+    int session_fd = co_await condy::async_accept(
+        server_fd, (struct sockaddr *)&client_addr, &client_addr_len, 0);
+    if (session_fd < 0) {
+        co_await condy::async_close(server_fd);
+        co_return 1;
+    }
+
+    // Create zero-copy receive buffer pool.
+    // For demonstration, we use the device-less constructor so the example
+    // runs without requiring a specific NIC. In production, provide if_idx
+    // and if_rxq matching your hardware.
+    condy::ZeroCopyRxBufferPool pool(condy::current_runtime(), 256,
+                                     condy::ZeroCopyRxArea{.size = 8ul * 4096});
+    condy::Channel<std::pair<int, condy::ZeroCopyRxBuffer>> ch(16);
+
+    // Spawn background task to handle writes
+    condy::co_spawn(handle_buffers(ch, session_fd)).detach();
+
+    while (true) {
+        // Multishot receive with zero-copy: callback handles normal results;
+        // coroutine resumes on final error or termination
+        auto [res, buf] = co_await condy::async_recv_multishot(
+            session_fd, pool, 0, condy::will_push(ch));
+
+        if (res == 0) {
+            // Termination signal
+            ch.push_close();
+            break;
+        }
+
+        // Error handling (excluding buffer pool empty)
+        if (res < 0 && res != -ENOMEM) {
+            ch.push_close();
+            co_return 1;
+        }
+    }
+
+    co_return 0;
+}
+
+int main() {
+    condy::Runtime runtime(
+        condy::RuntimeOptions().enable_cqe32().enable_defer_taskrun());
+    return condy::sync_wait(runtime, co_main());
+}
 ```
 
 ### Initialization Options
