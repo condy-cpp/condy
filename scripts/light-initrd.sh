@@ -65,12 +65,15 @@ cp "$BUSYBOX_PATH" "$WORK_DIR/bin/busybox"
 cat << 'EOF' > "$WORK_DIR/init"
 #!/bin/busybox sh
 
+set -euo pipefail
+
 # Initialize minimal directories
-busybox mkdir -p /etc /proc /root /sbin /sys /usr/bin /usr/sbin
+busybox mkdir -p /etc /proc /root /sbin /sys /usr/bin /usr/sbin /dev/pts
 
 # Mount necessary filesystems
 busybox mount -t proc proc /proc
 busybox mount -t sysfs sys /sys
+busybox mount -t devpts devpts /dev/pts
 busybox mdev -s
 
 # Install busybox applets
@@ -86,8 +89,9 @@ ip link set lo up
 # Reduce kernel printk verbosity
 echo 5 > /proc/sys/kernel/printk
 
-# Start an interactive shell
-login root
+# Start an interactive shell with proper session and controlling terminal
+# setsid: create a new session; cttyhack: attach controlling terminal
+setsid cttyhack /bin/login root
 
 # Power off
 poweroff -f
