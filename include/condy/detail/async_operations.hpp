@@ -191,5 +191,14 @@ inline void prep_sendto_zc_fixed(io_uring_sqe *sqe, int sockfd, const void *buf,
     sqe->buf_index = buf_index;
 }
 
+#if !IO_URING_CHECK_VERSION(2, 15) // >= 2.15
+inline void prep_recv_zc_multishot(io_uring_sqe *sqe, int fd,
+                                   uint32_t zcrx_id) {
+    io_uring_prep_rw(IORING_OP_RECV_ZC, sqe, fd, nullptr, 0, 0);
+    sqe->ioprio |= IORING_RECV_MULTISHOT;
+    sqe->zcrx_ifq_idx = zcrx_id;
+}
+#endif
+
 } // namespace detail
 } // namespace condy

@@ -13,6 +13,7 @@
 #include "condy/condy_uring.hpp"
 #include "condy/detail/async_operations.hpp"
 #include "condy/detail/helpers.hpp"
+#include "condy/zcrx.hpp"
 
 namespace condy {
 
@@ -643,6 +644,27 @@ inline auto async_recv_multishot(Fd sockfd, Buffer &buf, int flags,
     auto op = detail::make_multishot_bundle_select_buffer_op_awaiter(
         std::forward<MultiShotFunc>(func), &buf, io_uring_prep_recv_multishot,
         sockfd, nullptr, 0, flags);
+    return detail::maybe_flag_fixed_fd(std::move(op), sockfd);
+}
+#endif
+
+#if !IO_URING_CHECK_VERSION(2, 15) // >= 2.15
+/**
+ * @brief See https://docs.kernel.org/networking/iou-zcrx.html
+ */
+template <FdLike Fd, typename MultiShotFunc>
+inline auto async_recv_multishot(Fd sockfd, ZeroCopyRxBufferPool &pool,
+                                 [[maybe_unused]] int flags,
+                                 MultiShotFunc &&func) {
+    auto zcrx_id = pool.zcrx_id();
+    auto prep_func = [=](detail::Ring *ring) {
+        auto *sqe = ring->get_sqe();
+        detail::prep_recv_zc_multishot(sqe, sockfd, zcrx_id);
+        return sqe;
+    };
+    auto op = build_multishot_op_awaiter<
+        SelectBufferCQEHandler<ZeroCopyRxBufferPool>>(
+        std::move(prep_func), std::forward<MultiShotFunc>(func), &pool);
     return detail::maybe_flag_fixed_fd(std::move(op), sockfd);
 }
 #endif
