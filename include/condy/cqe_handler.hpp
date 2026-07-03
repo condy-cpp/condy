@@ -102,7 +102,7 @@ struct TxTimestampResult {
     /**
      * @brief The timestamp value.
      */
-    io_timespec ts; // *(io_timespec *)(cqe + 1)
+    io_timespec ts; // *(io_timespec *)(cqe->big_cqe)
 };
 
 /**
@@ -120,7 +120,7 @@ struct TxTimestampCQEHandler {
         result.tstype =
             static_cast<int>(cqe->flags >> IORING_TIMESTAMP_TYPE_SHIFT);
         result.hwts = cqe->flags & IORING_CQE_F_TSTAMP_HW;
-        result.ts = *reinterpret_cast<io_timespec *>(cqe + 1);
+        result.ts = reinterpret_cast<io_timespec &>(cqe->big_cqe);
         return {cqe->res, result};
     }
 };
