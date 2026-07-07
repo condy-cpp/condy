@@ -158,5 +158,19 @@ private:
     size_t maybe_submit_count_ = 0;
 };
 
+// Just for debugging, check if the CQE is big as expected
+inline bool check_cqe32(Ring &ring, [[maybe_unused]] io_uring_cqe *cqe) {
+    auto ring_flags = ring.ring()->flags;
+    if (ring_flags & IORING_SETUP_CQE32) {
+        return true;
+    }
+#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+    if (ring_flags & IORING_SETUP_CQE_MIXED) {
+        return cqe->flags & IORING_CQE_F_32;
+    }
+#endif
+    return false;
+}
+
 } // namespace detail
 } // namespace condy
