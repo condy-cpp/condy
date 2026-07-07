@@ -181,5 +181,18 @@ inline auto TaskBase<T, Allocator>::operator co_await() noexcept {
                                      Context::current().runtime());
 }
 
+struct [[nodiscard]] SwitchAwaiter {
+    bool await_ready() const noexcept { return false; }
+
+    template <typename PromiseType>
+    void await_suspend(std::coroutine_handle<PromiseType> handle) noexcept {
+        runtime_->schedule_internal(&handle.promise());
+    }
+
+    void await_resume() const noexcept {}
+
+    Runtime *runtime_;
+};
+
 } // namespace detail
 } // namespace condy
