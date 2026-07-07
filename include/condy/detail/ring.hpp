@@ -133,6 +133,19 @@ public:
     }
 #endif
 
+    bool check_cqe32([[maybe_unused]] io_uring_cqe *cqe) const noexcept {
+        auto ring_flags = ring_.flags;
+        if (ring_flags & IORING_SETUP_CQE32) {
+            return true;
+        }
+#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+        if (ring_flags & IORING_SETUP_CQE_MIXED) {
+            return cqe->flags & IORING_CQE_F_32;
+        }
+#endif
+        return false;
+    }
+
 private:
     template <io_uring_sqe *(*get_sqe)(struct io_uring *)>
     io_uring_sqe *get_sqe_() noexcept {
@@ -157,20 +170,6 @@ private:
     size_t submit_batch_;
     size_t maybe_submit_count_ = 0;
 };
-
-// Just for debugging, check if the CQE is big as expected
-inline bool check_cqe32(Ring &ring, [[maybe_unused]] io_uring_cqe *cqe) {
-    auto ring_flags = ring.ring()->flags;
-    if (ring_flags & IORING_SETUP_CQE32) {
-        return true;
-    }
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
-    if (ring_flags & IORING_SETUP_CQE_MIXED) {
-        return cqe->flags & IORING_CQE_F_32;
-    }
-#endif
-    return false;
-}
 
 } // namespace detail
 } // namespace condy

@@ -58,8 +58,8 @@ private:
 struct NVMePassthruCQEHandler {
     std::pair<int32_t, uint64_t> operator()(io_uring_cqe *cqe) noexcept {
         assert(
-            detail::check_cqe32(
-                detail::Context::current().runtime()->ring_internal(), cqe) &&
+            detail::Context::current().runtime()->ring_internal().check_cqe32(
+                cqe) &&
             "Expected big CQE for NVMe passthrough");
         return {cqe->res, cqe->big_cqe[0]};
     }
@@ -98,8 +98,8 @@ struct TxTimestampCQEHandler {
     std::pair<int32_t, TxTimestampResult>
     operator()(io_uring_cqe *cqe) noexcept {
         assert(
-            detail::check_cqe32(
-                detail::Context::current().runtime()->ring_internal(), cqe) &&
+            detail::Context::current().runtime()->ring_internal().check_cqe32(
+                cqe) &&
             "Expected big CQE for TX timestamp operations");
         TxTimestampResult result;
         result.tstype =
