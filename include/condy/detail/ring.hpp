@@ -133,6 +133,19 @@ public:
     }
 #endif
 
+    bool check_cqe32([[maybe_unused]] io_uring_cqe *cqe) const noexcept {
+        auto ring_flags = ring_.flags;
+        if (ring_flags & IORING_SETUP_CQE32) {
+            return true;
+        }
+#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+        if (ring_flags & IORING_SETUP_CQE_MIXED) {
+            return cqe->flags & IORING_CQE_F_32;
+        }
+#endif
+        return false;
+    }
+
 private:
     template <io_uring_sqe *(*get_sqe)(struct io_uring *)>
     io_uring_sqe *get_sqe_() noexcept {

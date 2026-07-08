@@ -17,25 +17,6 @@
 
 namespace condy {
 
-namespace detail {
-
-// Just for debugging, check if the CQE is big as expected
-inline bool check_cqe32([[maybe_unused]] io_uring_cqe *cqe) {
-    auto &ring = detail::Context::current().runtime()->ring_internal();
-    auto ring_flags = ring.ring()->flags;
-    if (ring_flags & IORING_SETUP_CQE32) {
-        return true;
-    }
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
-    if (ring_flags & IORING_SETUP_CQE_MIXED) {
-        return cqe->flags & IORING_CQE_F_32;
-    }
-#endif
-    return false;
-}
-
-} // namespace detail
-
 /**
  * @brief A simple CQE handler that extracts the result from the CQE without any
  * additional processing.
@@ -76,8 +57,10 @@ private:
  */
 struct NVMePassthruCQEHandler {
     std::pair<int32_t, uint64_t> operator()(io_uring_cqe *cqe) noexcept {
-        assert(detail::check_cqe32(cqe) &&
-               "Expected big CQE for NVMe passthrough");
+        assert(
+            detail::Context::current().runtime()->ring_internal().check_cqe32(
+                cqe) &&
+            "Expected big CQE for NVMe passthrough");
         return {cqe->res, cqe->big_cqe[0]};
     }
 };
@@ -114,8 +97,10 @@ struct TxTimestampResult {
 struct TxTimestampCQEHandler {
     std::pair<int32_t, TxTimestampResult>
     operator()(io_uring_cqe *cqe) noexcept {
-        assert(detail::check_cqe32(cqe) &&
-               "Expected big CQE for TX timestamp operations");
+        assert(
+            detail::Context::current().runtime()->ring_internal().check_cqe32(
+                cqe) &&
+            "Expected big CQE for TX timestamp operations");
         TxTimestampResult result;
         result.tstype =
             static_cast<int>(cqe->flags >> IORING_TIMESTAMP_TYPE_SHIFT);

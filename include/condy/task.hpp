@@ -125,23 +125,6 @@ inline Task<T, Allocator> co_spawn(Coro<T, Allocator> coro) {
     return co_spawn(*runtime, std::move(coro));
 }
 
-namespace detail {
-
-struct [[nodiscard]] SwitchAwaiter {
-    bool await_ready() const noexcept { return false; }
-
-    template <typename PromiseType>
-    void await_suspend(std::coroutine_handle<PromiseType> handle) noexcept {
-        runtime_->schedule_internal(&handle.promise());
-    }
-
-    void await_resume() const noexcept {}
-
-    Runtime *runtime_;
-};
-
-} // namespace detail
-
 /**
  * @brief Switch current coroutine task to the given runtime.
  * @param runtime The runtime to switch to.
