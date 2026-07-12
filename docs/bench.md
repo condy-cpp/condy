@@ -9,52 +9,42 @@ Test Environment:
 - **Storage**: SK Hynix HFS001TEJ9X115N (NVMe SSD, 1TB, PCIe 4.0 x4)
 - **Compiler**: clang version 18.1.3
 - **OS**: Linux Mint 22 Cinnamon
-- **Kernel**: 6.8.0-90-generic
+- **Kernel**: 7.0.0-14-generic
 
 Baselines:
 - **libaio**: The asynchronous file IO framework on Linux before io_uring.
 - **[liburing](https://github.com/axboe/liburing)**: io_uring itself. Since it is not wrapped with coroutines, it is slightly less convenient to use.
 - **[Asio](https://github.com/chriskohlhoff/asio)**: A popular IO framework in C++.
-- **[Monoio](https://github.com/bytedance/monoio)**: A Rust coroutine framework based on io_uring (has more stars than liburing on GitHub).
+- **[Monoio](https://github.com/bytedance/monoio)**: A Rust coroutine framework based on io_uring.
 - **[Compio](https://github.com/compio-rs/compio)**: Another Rust coroutine framework based on io_uring.
-
-## Sequential File Read
-
-We tested the performance of Condy in 64KB sequential reads on an 8GB file, collected throughput data, and compared it with baseline implementations using libaio and liburing.
-
-As shown in the figure, as the queue depth (number of concurrent tasks) increases, the read throughput gradually rises. When Direct IO is not enabled, Condy’s throughput is less than 3500MB/s. After registering files and buffers (marked as Fixed in the figure), Condy’s performance improves to some extent. With Direct IO enabled, Condy’s throughput increases significantly. At a queue depth of 4, Condy Direct IO is only slightly better than libaio. However, as the queue depth increases, Condy’s advantage becomes more pronounced, and at a queue depth of 32, throughput saturates (~6700MB/s). Further enabling IO Polling brings some throughput improvement at low queue depths, but as the queue depth increases, throughput is actually lower than with Direct IO alone. Monoio and Compio have lower throughput than libaio at all queue depths, and thus are also much lower than Condy. They did not fully utilize the performance potential of io_uring. Monoio performs slightly better than Compio.
-
-In addition, Condy’s performance is roughly the same as the baseline program implemented with liburing under the same configuration.
-
-<div align="center">
-  <img src="file_read_queue_depth.png" width="60%">
-</div>
 
 ## Random File Read
 
 We tested the performance of Condy in 4KB random reads on an 8GB file, collected IOPS data, and compared it with baseline implementations using libaio and liburing.
 
-As shown in the figure, as the queue depth (number of concurrent tasks) increases, the read IOPS gradually rises. When the queue depth is small (e.g., <=4), the performance of non-Direct IO is actually higher than that of libaio and Condy with Direct IO. Registering files and buffers on top of this provides a slight performance improvement, but the gain is not as significant as in sequential reads. When Direct IO is combined with IO Polling, Condy achieves optimal performance at small queue depths (<=8 in the figure).
+As shown in the figure, as the queue depth (number of concurrent tasks) increases, the read IOPS gradually rises. Condy without Direct IO saturates around 215K IOPS after QD=64, while Direct IO variants continue to scale linearly. At QD=128, Condy (Fixed + Direct + IOPoll) reaches **598K IOPS**, nearly identical to Uring (Fixed + Direct + IOPoll) at 601K IOPS.
 
-At larger queue depths, Direct IO achieves better performance. When the queue depth reaches 16, libaio achieves the best performance but also reaches the saturation IOPS of the framework. Condy, however, can achieve even better IOPS as the queue depth continues to increase. In this scenario, plain Condy Direct IO achieves the best performance, while IO Polling is slightly worse but still better than libaio.
+Aio saturates at approximately 200K IOPS after QD=32 and shows no further improvement. Under the same Direct IO configuration, Condy reaches 345K IOPS at QD=128, outperforming Monoio (310K, **1.11x**) and Compio (297K, **1.16x**). With further optimizations (fixed files, registered buffers, and IO Polling), Condy's best configuration achieves 598K IOPS — roughly **2x** ahead of Monoio and Compio, and a **3x** improvement over Aio.
 
-Monoio and Compio have lower throughput than libaio and Condy (with Direct IO) at all queue depths. The maximum performance gap between these frameworks and Condy is 50K IOPS (**1.25x** performance improvement). Monoio still performs slightly better than Compio.
-
-Similarly, Condy’s performance is roughly the same as the baseline program implemented with liburing under the same configuration.
+Similarly, Condy's performance is roughly the same as the baseline program implemented with liburing under the same configuration.
 
 <div align="center">
   <img src="file_random_read_queue_depth.png" width="60%">
 </div>
 
-## Echo Server
+## Network Receive Throughput
 
-We tested the throughput of a TCP echo-server implemented with Condy and other methods as the number of connections increases on a single machine. Since the test is conducted locally, it does not fully reflect the performance of a real network card. However, it still allows us to observe the basic overhead brought by different frameworks on network IO.
+We tested the single-machine TCP receive throughput of Condy, Raw io_uring, Asio, Epoll, Monoio, and Compio under varying message sizes, covering both single-shot and multi-shot modes. While Monoio does not support multi-shot recv, Compio provides built-in multi-shot support.
 
 <div align="center">
-  <img src="echo_server_num_connections.png" width="60%">
+  <img src="recv_message_size.png" width="60%">
 </div>
 
-As the number of connections increases, the throughput first rises and then falls. The later decline is mainly due to contention caused by an increased number of client threads. As shown in the figure, Condy outperforms Asio and Epoll. With file registration, Condy can achieve a small additional performance gain.
+As shown in the figure, throughput scales linearly with message size across all implementations. In multi-shot mode, Condy achieves **2610 MB/s** at 2048B, nearly identical to Raw io_uring (2560 MB/s) and slightly ahead of Compio multi-shot (2411 MB/s, **1.08×**). All three share a similar pooled buffer design, and Condy's io_uring abstraction introduces virtually no overhead.
+
+In the single-shot group, Condy reaches **2110 MB/s**, outperforming Compio (1758 MB/s, **1.20×**) and Monoio (1887 MB/s, **1.12×**) by clear margins. Asio (1588 MB/s) and Epoll (1734 MB/s) lag further behind due to the lack of io_uring support.
+
+The multi-shot advantage over single-shot is also pronounced: Condy multi-shot improves upon its single-shot baseline by **1.24×**, while Compio multi-shot improves by **1.37×**.
 
 ## Channel
 
@@ -68,7 +58,7 @@ We compared the performance of Condy, Asio, Monoio, and Compio Channels by varyi
   <img src="channel_task_pairs.png" width="60%">
 </div>
 
-As shown in the figures, as the number of messages and concurrent tasks increases, the total time for these frameworks increases linearly. In terms of execution time, Condy achieves a **20x** performance improvement over Asio. Compared to Monoio and Compio, there is also a **1.6x** performance improvement.
+As shown in the figures, as the number of messages and concurrent tasks increases, the total time for these frameworks increases linearly. In terms of execution time, Condy achieves a **15x** performance improvement over Asio (2M messages: 39ms vs 598ms; 32 task pairs: 626ms vs 9563ms). Compared to Monoio and Compio, there is also a **1.2x** performance improvement.
 
 ## Coroutine Spawn
 
@@ -78,7 +68,7 @@ We compared the efficiency of Condy, Asio, Monoio, and Compio in coroutine creat
   <img src="spawn_number_of_tasks.png" width="60%">
 </div>
 
-As shown in the figure, as the number of coroutines increases, the total time for these frameworks increases linearly. In terms of execution time, Condy achieves a **5x** performance improvement over Asio and Compio. Condy's performance is slightly inferior to Monoio. However, the average creation time per coroutine for Condy only increases by 19ns (compared to 55ns for Monoio).
+As shown in the figure, as the number of coroutines increases, the total time for these frameworks increases linearly. In terms of execution time, Condy achieves a **6.6x** performance improvement over Asio (4M tasks: 236ms vs 1566ms) and a **7.5x** improvement over Compio (236ms vs 1774ms). Condy's performance is on par with Monoio (236ms vs 242ms). The average creation time per coroutine for Condy is 56ns (compared to 58ns for Monoio and 373ns for Asio).
 
 ## Coroutine Switch
 
@@ -88,4 +78,4 @@ We compared the efficiency of Condy, Asio, and Monoio in coroutine context switc
   <img src="post_switch_times.png" width="60%">
 </div>
 
-As shown in the figure, as the number of switches increases, the total time for these frameworks increases linearly. In terms of execution time, Condy achieves a **15x** performance improvement over Asio. It also achieves performance results close to Monoio, with the maximum difference per switch not exceeding 0.8ns (about 3ns per switch).
+As shown in the figure, as the number of switches increases, the total time for these frameworks increases linearly. In terms of execution time, Condy achieves a **16x** performance improvement over Asio (8M switches: 28ms vs 449ms). It also achieves performance results close to Monoio (28ms vs 27ms), with the difference per switch not exceeding 0.2ns (about 3.3ns per switch).
