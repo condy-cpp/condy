@@ -20,11 +20,9 @@
 #define IO_URING_VERSION_MINOR 3
 #endif
 
-#ifndef IO_URING_CHECK_VERSION
-#define IO_URING_CHECK_VERSION(major, minor)                                   \
-    (major > IO_URING_VERSION_MAJOR ||                                         \
-     (major == IO_URING_VERSION_MAJOR && minor > IO_URING_VERSION_MINOR))
-#endif
+#define CONDY_URING_VERSION_GE(major, minor)                                   \
+    (IO_URING_VERSION_MAJOR > (major) ||                                       \
+     (IO_URING_VERSION_MAJOR == (major) && IO_URING_VERSION_MINOR >= (minor)))
 
 // Polyfill for io_uring_prep_uring_cmd (added in liburing 2.13)
 // Opcode exists since 2.3, only the helper function is missing
