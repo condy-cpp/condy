@@ -29,6 +29,13 @@ if(BUILD_EXAMPLES OR BUILD_BENCHMARKS OR BUILD_TESTS OR LINK_LIBURING)
     enable_language(C)
     include(ExternalProject)
 
+    # Use $(MAKE) for Make-based generators so -j flags are inherited automatically.
+    if(CMAKE_GENERATOR MATCHES "Make")
+        set(MAKE_EXECUTABLE $(MAKE))
+    else()
+        find_program(MAKE_EXECUTABLE NAMES gmake make REQUIRED)
+    endif()
+
     # liburing
     set(LIBURING_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/liburing)
     message(STATUS "Configuring liburing in ${LIBURING_SOURCE_DIR}")
@@ -37,7 +44,7 @@ if(BUILD_EXAMPLES OR BUILD_BENCHMARKS OR BUILD_TESTS OR LINK_LIBURING)
         liburing_ext
         SOURCE_DIR ${LIBURING_SOURCE_DIR}
         CONFIGURE_COMMAND ./configure --cc=${CMAKE_C_COMPILER} --cxx=${CMAKE_CXX_COMPILER}
-        BUILD_COMMAND $(MAKE) -C src
+        BUILD_COMMAND ${MAKE_EXECUTABLE} -C src
         BUILD_IN_SOURCE 1
         INSTALL_COMMAND ""
         BUILD_BYPRODUCTS ${LIBURING_SOURCE_DIR}/src/liburing.a
