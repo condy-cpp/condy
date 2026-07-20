@@ -66,7 +66,7 @@ inline auto async_readv(Fd fd, const struct iovec *iovecs, unsigned nr_vecs,
     return detail::maybe_flag_fixed_fd(std::move(op), fd);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 10) // >= 2.10
+#if CONDY_URING_VERSION_GE(2, 10) // >= 2.10
 /**
  * @brief See io_uring_prep_readv2
  */
@@ -91,7 +91,7 @@ inline auto async_writev(Fd fd, const struct iovec *iovecs,
     return detail::maybe_flag_fixed_fd(std::move(op), fd);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 10) // >= 2.10
+#if CONDY_URING_VERSION_GE(2, 10) // >= 2.10
 /**
  * @brief See io_uring_prep_writev2
  */
@@ -147,7 +147,7 @@ inline auto async_sendmsg_zc(Fd fd, const struct msghdr *msg, unsigned flags,
     return detail::maybe_flag_fixed_fd(std::move(op), fd);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 10) // >= 2.10
+#if CONDY_URING_VERSION_GE(2, 10) // >= 2.10
 /**
  * @brief See io_uring_prep_sendmsg_zc_fixed
  */
@@ -174,7 +174,7 @@ template <FdLike Fd> inline auto async_fsync(Fd fd, unsigned fsync_flags) {
  */
 inline auto async_nop() { return detail::make_op_awaiter(io_uring_prep_nop); }
 
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
 /**
  * @brief See io_uring_prep_nop128
  */
@@ -191,7 +191,7 @@ inline auto async_timeout(struct __kernel_timespec *ts, unsigned count,
     return detail::make_op_awaiter(io_uring_prep_timeout, ts, count, flags);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 4) // >= 2.4
+#if CONDY_URING_VERSION_GE(2, 4) // >= 2.4
 
 /**
  * @brief See io_uring_prep_timeout
@@ -377,7 +377,7 @@ inline auto async_read(Fd fd, Buffer &buf, __u64 offset) {
     return detail::maybe_flag_fixed_fd(std::move(op), fd);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 6) // >= 2.6
+#if CONDY_URING_VERSION_GE(2, 6) // >= 2.6
 /**
  * @brief See io_uring_prep_read_multishot
  */
@@ -432,7 +432,7 @@ inline auto async_fadvise(Fd fd, __u64 offset, off_t len, int advice) {
     return detail::maybe_flag_fixed_fd(std::move(op), fd);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 /**
  * @brief See io_uring_prep_fadvise64
  */
@@ -451,7 +451,7 @@ inline auto async_madvise(void *addr, __u32 length, int advice) {
     return detail::make_op_awaiter(io_uring_prep_madvise, addr, length, advice);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 /**
  * @brief See io_uring_prep_madvise64
  */
@@ -482,7 +482,7 @@ inline auto async_send(Fd sockfd, ProvidedBufferQueue &buf, int flags) {
     return detail::maybe_flag_fixed_fd(std::move(op), sockfd);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 /**
  * @brief See io_uring_prep_send
  */
@@ -517,7 +517,7 @@ inline auto async_sendto(Fd sockfd, ProvidedBufferQueue &buf, int flags,
     return detail::maybe_flag_fixed_fd(std::move(op), sockfd);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 /**
  * @brief See io_uring_prep_send and io_uring_prep_send_set_addr
  */
@@ -603,7 +603,7 @@ inline auto async_recv(Fd sockfd, Buffer &buf, int flags) {
     return detail::maybe_flag_fixed_fd(std::move(op), sockfd);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 /**
  * @brief See io_uring_prep_recv
  */
@@ -630,7 +630,7 @@ inline auto async_recv_multishot(Fd sockfd, Buffer &buf, int flags,
     return detail::maybe_flag_fixed_fd(std::move(op), sockfd);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 /**
  * @brief See io_uring_prep_recv_multishot
  */
@@ -648,7 +648,7 @@ inline auto async_recv_multishot(Fd sockfd, Buffer &buf, int flags,
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 15) // >= 2.15
+#if CONDY_URING_VERSION_GE(2, 15) // >= 2.15
 /**
  * @brief See https://docs.kernel.org/networking/iou-zcrx.html
  */
@@ -873,7 +873,7 @@ inline auto async_uring_cmd_multishot(int cmd_op, Fd fd, CmdFunc &&cmd_func,
     return detail::maybe_flag_fixed_fd(std::move(op), fd);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
 /**
  * @brief See io_uring_prep_uring_cmd128
  * @tparam CQEHandler Custom CQE handler for specific result processing.
@@ -898,7 +898,7 @@ inline auto async_uring_cmd128(int cmd_op, Fd fd, CmdFunc &&cmd_func) {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 5) // >= 2.5
+#if CONDY_URING_VERSION_GE(2, 5) // >= 2.5
 /**
  * @brief See io_uring_prep_cmd_sock
  */
@@ -911,7 +911,7 @@ inline auto async_cmd_sock(int cmd_op, Fd fd, int level, int optname,
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
 /**
  * @brief See io_uring_prep_cmd_getsockname
  */
@@ -924,7 +924,7 @@ inline auto async_cmd_getsockname(Fd fd, struct sockaddr *sockaddr,
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 6) // >= 2.6
+#if CONDY_URING_VERSION_GE(2, 6) // >= 2.6
 /**
  * @brief See io_uring_prep_waitid
  */
@@ -935,7 +935,7 @@ inline auto async_waitid(idtype_t idtype, id_t id, siginfo_t *infop,
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 6) // >= 2.6
+#if CONDY_URING_VERSION_GE(2, 6) // >= 2.6
 /**
  * @brief See io_uring_prep_futex_wake
  */
@@ -946,7 +946,7 @@ inline auto async_futex_wake(uint32_t *futex, uint64_t val, uint64_t mask,
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 6) // >= 2.6
+#if CONDY_URING_VERSION_GE(2, 6) // >= 2.6
 /**
  * @brief See io_uring_prep_futex_wait
  */
@@ -957,7 +957,7 @@ inline auto async_futex_wait(uint32_t *futex, uint64_t val, uint64_t mask,
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 6) // >= 2.6
+#if CONDY_URING_VERSION_GE(2, 6) // >= 2.6
 /**
  * @brief See io_uring_prep_futex_waitv
  */
@@ -968,7 +968,7 @@ inline auto async_futex_waitv(struct futex_waitv *futex, uint32_t nr_futex,
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 6) // >= 2.6
+#if CONDY_URING_VERSION_GE(2, 6) // >= 2.6
 /**
  * @brief See io_uring_prep_fixed_fd_install
  */
@@ -978,7 +978,7 @@ inline auto async_fixed_fd_install(int fixed_fd, unsigned int flags) {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 6) // >= 2.6
+#if CONDY_URING_VERSION_GE(2, 6) // >= 2.6
 /**
  * @brief See io_uring_prep_ftruncate
  */
@@ -988,7 +988,7 @@ template <FdLike Fd> inline auto async_ftruncate(Fd fd, loff_t len) {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
+#if CONDY_URING_VERSION_GE(2, 8) // >= 2.8
 /**
  * @brief See io_uring_prep_cmd_discard
  */
@@ -1000,7 +1000,7 @@ inline auto async_cmd_discard(Fd fd, uint64_t offset, uint64_t nbytes) {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 /**
  * @brief See io_uring_prep_bind
  */
@@ -1011,7 +1011,7 @@ inline auto async_bind(Fd fd, struct sockaddr *addr, socklen_t addrlen) {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 /**
  * @brief See io_uring_prep_listen
  */
@@ -1028,7 +1028,7 @@ inline auto async_epoll_ctl(int epfd, int fd, int op, struct epoll_event *ev) {
     return detail::make_op_awaiter(io_uring_prep_epoll_ctl, epfd, fd, op, ev);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 10) // >= 2.10
+#if CONDY_URING_VERSION_GE(2, 10) // >= 2.10
 /**
  * @brief See io_uring_prep_epoll_wait
  */
@@ -1039,7 +1039,7 @@ inline auto async_epoll_wait(int fd, struct epoll_event *events, int maxevents,
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 12) // >= 2.12
+#if CONDY_URING_VERSION_GE(2, 12) // >= 2.12
 /**
  * @brief See io_uring_prep_pipe
  */
@@ -1048,7 +1048,7 @@ inline auto async_pipe(int *fds, int pipe_flags) {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 12) // >= 2.12
+#if CONDY_URING_VERSION_GE(2, 12) // >= 2.12
 /**
  * @brief See io_uring_prep_pipe_direct
  */

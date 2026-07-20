@@ -28,7 +28,7 @@ auto make_op_awaiter(Func &&func, Args &&...args) {
     return build_op_awaiter<SimpleCQEHandler>(std::move(prep_func));
 }
 
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
 template <typename Func, typename... Args>
 auto make_op_awaiter128(Func &&func, Args &&...args) {
     auto prep_func = [func = std::forward<Func>(func),
@@ -89,7 +89,7 @@ auto make_multishot_select_buffer_op_awaiter(MultiShotFunc &&multishot_func,
         buffers);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 template <BufferRingLike Br, typename Func, typename... Args>
 auto make_bundle_select_buffer_op_awaiter(Br *buffers, Func &&func,
                                           Args &&...args) {
@@ -107,7 +107,7 @@ auto make_bundle_select_buffer_op_awaiter(Br *buffers, Func &&func,
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 template <typename MultiShotFunc, BufferRingLike Br, typename Func,
           typename... Args>
 auto make_multishot_bundle_select_buffer_op_awaiter(
@@ -191,7 +191,7 @@ inline void prep_sendto_zc_fixed(io_uring_sqe *sqe, int sockfd, const void *buf,
     sqe->buf_index = buf_index;
 }
 
-#if !IO_URING_CHECK_VERSION(2, 15) // >= 2.15
+#if CONDY_URING_VERSION_GE(2, 15) // >= 2.15
 inline void prep_recv_zc_multishot(io_uring_sqe *sqe, int fd,
                                    uint32_t zcrx_id) {
     io_uring_prep_rw(IORING_OP_RECV_ZC, sqe, fd, nullptr, 0, 0);

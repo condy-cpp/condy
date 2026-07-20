@@ -165,7 +165,7 @@ TEST_CASE("test async_operations - read fixed buffer") {
     close(pipe_fds[1]);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 10) // >= 2.10
+#if CONDY_URING_VERSION_GE(2, 10) // >= 2.10
 TEST_CASE("test async_operations - readv fixed buffer") {
     int pipe_fds[2];
     REQUIRE(pipe(pipe_fds) == 0);
@@ -233,7 +233,7 @@ TEST_CASE("test async_operations - read provided buffer") {
     close(pipe_fds[1]);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
+#if CONDY_URING_VERSION_GE(2, 8) // >= 2.8
 TEST_CASE("test async_operations - read incr provided buffer") {
     int pipe_fds[2];
     REQUIRE(pipe(pipe_fds) == 0);
@@ -266,7 +266,7 @@ TEST_CASE("test async_operations - read incr provided buffer") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
+#if CONDY_URING_VERSION_GE(2, 8) // >= 2.8
 TEST_CASE("test async_operations - provided buffer queue check - incr") {
     int sv[2];
     create_tcp_socketpair(sv);
@@ -322,7 +322,7 @@ TEST_CASE("test async_operations - provided buffer queue check - incr") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 TEST_CASE("test async_operations - provided buffer queue check - bundle") {
     int sv[2];
     create_tcp_socketpair(sv);
@@ -366,7 +366,7 @@ TEST_CASE("test async_operations - provided buffer queue check - bundle") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
+#if CONDY_URING_VERSION_GE(2, 8) // >= 2.8
 TEST_CASE("test async_operations - provided buffer queue check - bundle incr") {
     int sv[2];
     create_tcp_socketpair(sv);
@@ -415,7 +415,7 @@ TEST_CASE("test async_operations - provided buffer queue check - bundle incr") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
+#if CONDY_URING_VERSION_GE(2, 8) // >= 2.8
 TEST_CASE("test async_operations - provided buffer pool check - incr") {
     int sv[2];
     create_tcp_socketpair(sv);
@@ -469,7 +469,7 @@ TEST_CASE("test async_operations - provided buffer pool check - incr") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 TEST_CASE("test async_operations - provided buffer pool check - bundle") {
     int sv[2];
     create_tcp_socketpair(sv);
@@ -512,7 +512,7 @@ TEST_CASE("test async_operations - provided buffer pool check - bundle") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
+#if CONDY_URING_VERSION_GE(2, 8) // >= 2.8
 TEST_CASE("test async_operations - provided buffer pool check - bundle incr") {
     int sv[2];
     create_tcp_socketpair(sv);
@@ -576,7 +576,7 @@ TEST_CASE("test async_operations - provided buffer pool check - bundle incr") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 TEST_CASE("test async_operations - recv bundle provided buffer") {
     int sv[2];
     create_tcp_socketpair(sv);
@@ -606,7 +606,7 @@ TEST_CASE("test async_operations - recv bundle provided buffer") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
+#if CONDY_URING_VERSION_GE(2, 8) // >= 2.8
 TEST_CASE("test async_operations - recv incr and bundle provided buffer") {
     int sv[2];
     create_tcp_socketpair(sv);
@@ -693,7 +693,7 @@ TEST_CASE("test async_operations - write fixed buffer") {
     close(pipe_fds[1]);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 10) // >= 2.10
+#if CONDY_URING_VERSION_GE(2, 10) // >= 2.10
 TEST_CASE("test async_operations - writev fixed buffer") {
     int pipe_fds[2];
     REQUIRE(pipe(pipe_fds) == 0);
@@ -738,7 +738,7 @@ TEST_CASE("test async_operations - writev fixed buffer") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 TEST_CASE("test async_operations - send provided buffer") {
     int sv[2];
     create_tcp_socketpair(sv);
@@ -1033,7 +1033,7 @@ TEST_CASE("test async_operations - test readv - basic") {
     close(pipe_fds[1]);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 10) // >= 2.10
+#if CONDY_URING_VERSION_GE(2, 10) // >= 2.10
 TEST_CASE("test async_operations - test readv - fixed buffer") {
     ssize_t r;
     int pipe_fds[2];
@@ -1112,7 +1112,7 @@ TEST_CASE("test async_operations - test writev - basic") {
     close(pipe_fds[1]);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 10) // >= 2.10
+#if CONDY_URING_VERSION_GE(2, 10) // >= 2.10
 TEST_CASE("test async_operations - test writev - fixed buffer") {
     ssize_t r;
     int pipe_fds[2];

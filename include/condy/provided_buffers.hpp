@@ -137,7 +137,7 @@ public:
         };
 
         bool is_incr = false;
-#if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
+#if CONDY_URING_VERSION_GE(2, 8) // >= 2.8
         is_incr = br_flags_ & IOU_PBUF_RING_INC;
 #endif
 
@@ -313,7 +313,7 @@ public:
         assert(res > 0);
 
         bool is_incr = false;
-#if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
+#if CONDY_URING_VERSION_GE(2, 8) // >= 2.8
         is_incr = br_flags_ & IOU_PBUF_RING_INC;
 #endif
 

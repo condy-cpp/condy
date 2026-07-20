@@ -66,7 +66,7 @@ TEST_CASE("test ring_settings - probe") {
     REQUIRE(io_uring_opcode_supported(probe, IORING_OP_NOP));
 }
 
-#if !IO_URING_CHECK_VERSION(2, 6) // >= 2.6
+#if CONDY_URING_VERSION_GE(2, 6) // >= 2.6
 TEST_CASE("test ring_settings - napi") {
     condy::Runtime runtime;
     auto &settings = runtime.settings();
@@ -84,7 +84,7 @@ TEST_CASE("test ring_settings - napi") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
+#if CONDY_URING_VERSION_GE(2, 8) // >= 2.8
 TEST_CASE("test ring_settings - clock") {
     condy::Runtime runtime;
     auto &settings = runtime.settings();
@@ -94,7 +94,7 @@ TEST_CASE("test ring_settings - clock") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 10) // >= 2.10
+#if CONDY_URING_VERSION_GE(2, 10) // >= 2.10
 TEST_CASE("test ring_settings - iowait") {
     condy::Runtime runtime;
     auto &settings = runtime.settings();

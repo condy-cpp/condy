@@ -58,7 +58,7 @@ public:
         return *this;
     }
 
-#if !IO_URING_CHECK_VERSION(2, 9) // >= 2.9
+#if CONDY_URING_VERSION_GE(2, 9) // >= 2.9
     /**
      * @brief See IORING_SETUP_HYBRID_IOPOLL
      */
@@ -189,7 +189,7 @@ public:
         return *this;
     }
 
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
     /**
      * @brief See IORING_SETUP_SQE_MIXED
      */
@@ -202,7 +202,7 @@ public:
     }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
     /**
      * @brief See IORING_SETUP_CQE_MIXED
      */
@@ -215,7 +215,7 @@ public:
     }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 5) // >= 2.5
+#if CONDY_URING_VERSION_GE(2, 5) // >= 2.5
     /**
      * @brief See IORING_SETUP_NO_MMAP
      * @param buf Buffer pointer
@@ -229,7 +229,7 @@ public:
     }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 14) // >= 2.14
+#if CONDY_URING_VERSION_GE(2, 14) // >= 2.14
     /**
      * @brief See IORING_SETUP_SQ_REWIND
      */

@@ -130,7 +130,7 @@ public:
                                                     nullptr, nr_vecs);
     }
 
-#if !IO_URING_CHECK_VERSION(2, 10) // >= 2.10
+#if CONDY_URING_VERSION_GE(2, 10) // >= 2.10
 
     /**
      * @brief Clone buffers from another BufferTable into this one
@@ -219,7 +219,7 @@ public:
      */
     uint32_t get_features() const noexcept { return ring_.features; }
 
-#if !IO_URING_CHECK_VERSION(2, 6) // >= 2.6
+#if CONDY_URING_VERSION_GE(2, 6) // >= 2.6
     /**
      * @brief Apply NAPI settings to the io_uring instance.
      * @details See io_uring_register_napi for more details.
@@ -237,7 +237,7 @@ public:
     }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
+#if CONDY_URING_VERSION_GE(2, 8) // >= 2.8
     /**
      * @brief Set the clock registration for the io_uring instance.
      * @details See io_uring_register_clock for more details.
@@ -248,7 +248,7 @@ public:
     }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 9) // >= 2.9
+#if CONDY_URING_VERSION_GE(2, 9) // >= 2.9
     /**
      * @brief Resize the rings of the io_uring instance.
      * @details See io_uring_resize_rings for more details.
@@ -261,7 +261,7 @@ public:
     }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 10) // >= 2.10
+#if CONDY_URING_VERSION_GE(2, 10) // >= 2.10
     /**
      * @brief Enable or disable iowait for the io_uring instance.
      * @details See io_uring_set_iowait for more details.

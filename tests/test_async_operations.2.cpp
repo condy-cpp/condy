@@ -83,7 +83,7 @@ TEST_CASE("test async_operations - test sendmsg - zero copy") {
     close(sv[1]);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 10) // >= 2.10
+#if CONDY_URING_VERSION_GE(2, 10) // >= 2.10
 TEST_CASE("test async_operations - test sendmsg - zero copy fixed buffer") {
     int sv[2];
     create_tcp_socketpair(sv);
@@ -145,7 +145,7 @@ TEST_CASE("test async_operations - test nop") {
     condy::sync_wait(func());
 }
 
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
 TEST_CASE("test async_operations - test nop128 - sqe 128") {
     condy::Runtime runtime(condy::RuntimeOptions().enable_sqe128());
     auto func = [&]() -> condy::Coro<void> {
@@ -156,7 +156,7 @@ TEST_CASE("test async_operations - test nop128 - sqe 128") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
 TEST_CASE("test async_operations - test nop128 - sqe mixed") {
     condy::Runtime runtime(condy::RuntimeOptions().enable_sqe_mixed());
     auto func = [&]() -> condy::Coro<void> {
@@ -179,7 +179,7 @@ TEST_CASE("test async_operations - test timeout - basic") {
     condy::sync_wait(func());
 }
 
-#if !IO_URING_CHECK_VERSION(2, 4) // >= 2.4
+#if CONDY_URING_VERSION_GE(2, 4) // >= 2.4
 TEST_CASE("test async_operations - test timeout - multishot") {
     auto func = [&]() -> condy::Coro<void> {
         __kernel_timespec ts = {
@@ -798,7 +798,7 @@ TEST_CASE("test async_operations - test read - provided buffer") {
     close(pipe_fds[1]);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 6) // >= 2.6
+#if CONDY_URING_VERSION_GE(2, 6) // >= 2.6
 TEST_CASE("test async_operations - test read - multishot") {
     ssize_t r;
     int pipe_fds[2];

@@ -18,7 +18,7 @@
 #include <unistd.h>
 #include <vector>
 
-#if !IO_URING_CHECK_VERSION(2, 4) // >= 2.4
+#if CONDY_URING_VERSION_GE(2, 4) // >= 2.4
 
 size_t num_threads = 32;
 size_t packet_size = 128;

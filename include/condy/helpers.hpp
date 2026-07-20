@@ -12,7 +12,7 @@
 #include "condy/condy_uring.hpp"
 #include "condy/detail/helpers.hpp"
 
-#if !IO_URING_CHECK_VERSION(2, 4) // >= 2.4
+#if CONDY_URING_VERSION_GE(2, 4) // >= 2.4
 /**
  * @brief Placeholder to let io_uring allocate a direct file descriptor.
  */

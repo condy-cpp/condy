@@ -172,7 +172,7 @@ TEST_CASE("test buffers - provided buffer queue usage") {
     REQUIRE(std::memcmp(buf1, "test", 4) == 0);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
+#if CONDY_URING_VERSION_GE(2, 8) // >= 2.8
 TEST_CASE("test buffers - provided buffer queue usage incr") {
     condy::Runtime runtime;
     enable_runtime_ring(runtime);
@@ -279,7 +279,7 @@ TEST_CASE("test buffers - provided buffer queue usage bundle") {
     REQUIRE(queue.size() == 2);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
+#if CONDY_URING_VERSION_GE(2, 8) // >= 2.8
 TEST_CASE("test buffers - provided buffer queue usage bundle incr") {
     condy::Runtime runtime;
     enable_runtime_ring(runtime);
@@ -376,7 +376,7 @@ TEST_CASE("test buffers - provided buffer pool usage") {
     REQUIRE(std::memcmp(ret.data(), "test", 4) == 0);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
+#if CONDY_URING_VERSION_GE(2, 8) // >= 2.8
 TEST_CASE("test buffers - provided buffer pool usage incr") {
     condy::Runtime runtime;
     enable_runtime_ring(runtime);
@@ -472,7 +472,7 @@ TEST_CASE("test buffers - provided buffer pool usage bundle") {
     }
 }
 
-#if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
+#if CONDY_URING_VERSION_GE(2, 8) // >= 2.8
 TEST_CASE("test buffers - provided buffer pool usage bundle incr") {
     condy::Runtime runtime;
     enable_runtime_ring(runtime);
