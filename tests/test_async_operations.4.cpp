@@ -276,7 +276,7 @@ TEST_CASE("test async_operations - test socket - direct") {
 }
 
 // NOTE: cmd_sock available since 2.5
-#if !IO_URING_CHECK_VERSION(2, 5) // >= 2.5
+#if CONDY_URING_VERSION_GE(2, 5) // >= 2.5
 TEST_CASE("test async_operations - test uring_cmd - cmd sock - basic") {
     int listen_fd = socket(AF_INET, SOCK_STREAM, 0);
     REQUIRE(listen_fd >= 0);
@@ -295,7 +295,7 @@ TEST_CASE("test async_operations - test uring_cmd - cmd sock - basic") {
 #endif
 
 // NOTE: cmd_sock available since 2.5
-#if !IO_URING_CHECK_VERSION(2, 5) // >= 2.5
+#if CONDY_URING_VERSION_GE(2, 5) // >= 2.5
 TEST_CASE("test async_operations - test uring_cmd - cmd sock - fixed fd") {
     int listen_fd = create_accept_socket();
 
@@ -390,7 +390,7 @@ TEST_CASE(
     close(fd);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 12) // >= 2.12
+#if CONDY_URING_VERSION_GE(2, 12) // >= 2.12
 TEST_CASE("test async_operations - test uring_cmd_multishot - tx timestamp") {
     int r;
     int fd;
@@ -455,7 +455,7 @@ TEST_CASE("test async_operations - test uring_cmd_multishot - tx timestamp") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
 TEST_CASE("test async_operations - test uring_cmd128 - cmd sock - basic") {
     condy::Runtime runtime(
         condy::RuntimeOptions().enable_sqe_mixed().enable_cqe_mixed());
@@ -476,7 +476,7 @@ TEST_CASE("test async_operations - test uring_cmd128 - cmd sock - basic") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
 TEST_CASE("test async_operations - test uring_cmd128 - cmd sock - fixed fd") {
     condy::Runtime runtime(
         condy::RuntimeOptions().enable_sqe_mixed().enable_cqe_mixed());
@@ -502,7 +502,7 @@ TEST_CASE("test async_operations - test uring_cmd128 - cmd sock - fixed fd") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
 TEST_CASE(
     "test async_operations - test uring_cmd128 - nvme passthrough - basic") {
     const char *nvme_ng_device_path =
@@ -538,7 +538,7 @@ TEST_CASE(
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
 TEST_CASE(
     "test async_operations - test uring_cmd128 - nvme passthrough - fixed fd") {
     const char *nvme_ng_device_path =
@@ -579,7 +579,7 @@ TEST_CASE(
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 5) // >= 2.5
+#if CONDY_URING_VERSION_GE(2, 5) // >= 2.5
 TEST_CASE("test async_operations - test cmd_sock - basic") {
     int listen_fd = socket(AF_INET, SOCK_STREAM, 0);
     REQUIRE(listen_fd >= 0);
@@ -597,7 +597,7 @@ TEST_CASE("test async_operations - test cmd_sock - basic") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 5) // >= 2.5
+#if CONDY_URING_VERSION_GE(2, 5) // >= 2.5
 TEST_CASE("test async_operations - test cmd_sock - fixed fd") {
     int listen_fd = create_accept_socket();
 
@@ -618,7 +618,7 @@ TEST_CASE("test async_operations - test cmd_sock - fixed fd") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
 TEST_CASE("test async_operations - test cmd_getsockname - basic") {
     int listen_fd = create_accept_socket();
 
@@ -637,7 +637,7 @@ TEST_CASE("test async_operations - test cmd_getsockname - basic") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
 TEST_CASE("test async_operations - test cmd_getsockname - fixed fd") {
     int listen_fd = create_accept_socket();
 
@@ -661,7 +661,7 @@ TEST_CASE("test async_operations - test cmd_getsockname - fixed fd") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 6) // >= 2.6
+#if CONDY_URING_VERSION_GE(2, 6) // >= 2.6
 TEST_CASE("test async_operations - test waitid") {
     pid_t pid = fork();
     REQUIRE(pid >= 0);
@@ -683,7 +683,7 @@ TEST_CASE("test async_operations - test waitid") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 6) // >= 2.6
+#if CONDY_URING_VERSION_GE(2, 6) // >= 2.6
 TEST_CASE("test async_operations - test futex - wait/wake") {
     uint32_t futex_var = 0;
     bool woken = false;
@@ -708,7 +708,7 @@ TEST_CASE("test async_operations - test futex - wait/wake") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 6) // >= 2.6
+#if CONDY_URING_VERSION_GE(2, 6) // >= 2.6
 TEST_CASE("test async_operations - test futex - waitv") {
     uint32_t futex_var1 = 0;
     uint32_t futex_var2 = 0;
@@ -748,7 +748,7 @@ TEST_CASE("test async_operations - test futex - waitv") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 6) // >= 2.6
+#if CONDY_URING_VERSION_GE(2, 6) // >= 2.6
 TEST_CASE("test async_operations - test fixed_fd_install") {
     int sv[2];
     create_tcp_socketpair(sv);
@@ -780,7 +780,7 @@ TEST_CASE("test async_operations - test fixed_fd_install") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 6) // >= 2.6
+#if CONDY_URING_VERSION_GE(2, 6) // >= 2.6
 TEST_CASE("test async_operations - test ftruncate - basic") {
     char name[32] = "XXXXXX";
     int fd = mkstemp(name);
@@ -800,7 +800,7 @@ TEST_CASE("test async_operations - test ftruncate - basic") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 6) // >= 2.6
+#if CONDY_URING_VERSION_GE(2, 6) // >= 2.6
 TEST_CASE("test async_operations - test ftruncate - fixed fd") {
     char name[32] = "XXXXXX";
     int fd = mkstemp(name);
@@ -828,7 +828,7 @@ TEST_CASE("test async_operations - test ftruncate - fixed fd") {
 // TODO: Kernel 7.1 regression, uncomment after fixed
 // https://lore.kernel.org/linux-block/20260616155129.406057-1-yi1tang.yang@gmail.com/
 //
-// #if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
+// #if CONDY_URING_VERSION_GE(2, 8) // >= 2.8
 // TEST_CASE("test async_operations - test cmd_discard - basic") {
 //     BlkDevice blkdev;
 //     if (blkdev.path().empty()) {
@@ -848,7 +848,7 @@ TEST_CASE("test async_operations - test ftruncate - fixed fd") {
 // }
 // #endif
 
-// #if !IO_URING_CHECK_VERSION(2, 8) // >= 2.8
+// #if CONDY_URING_VERSION_GE(2, 8) // >= 2.8
 // TEST_CASE("test async_operations - test cmd_discard - fixed fd") {
 //     BlkDevice blkdev;
 //     if (blkdev.path().empty()) {
@@ -873,7 +873,7 @@ TEST_CASE("test async_operations - test ftruncate - fixed fd") {
 // }
 // #endif
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 TEST_CASE("test async_operations - test bind - basic") {
     int sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
     REQUIRE(sock_fd >= 0);
@@ -894,7 +894,7 @@ TEST_CASE("test async_operations - test bind - basic") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 TEST_CASE("test async_operations - test bind - fixed fd") {
     int sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
     REQUIRE(sock_fd >= 0);
@@ -920,7 +920,7 @@ TEST_CASE("test async_operations - test bind - fixed fd") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 TEST_CASE("test async_operations - test listen - basic") {
     int sock_fd = socket(AF_INET, SOCK_STREAM, 0);
     REQUIRE(sock_fd >= 0);
@@ -942,7 +942,7 @@ TEST_CASE("test async_operations - test listen - basic") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 TEST_CASE("test async_operations - test listen - fixed fd") {
     int sock_fd = socket(AF_INET, SOCK_STREAM, 0);
     REQUIRE(sock_fd >= 0);
@@ -991,7 +991,7 @@ TEST_CASE("test async_operations - test epoll_ctl") {
     close(pipe_fds[1]);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 10) // >= 2.10
+#if CONDY_URING_VERSION_GE(2, 10) // >= 2.10
 TEST_CASE("test async_operations - test epoll_wait") {
     int epoll_fd = epoll_create1(0);
     REQUIRE(epoll_fd >= 0);
@@ -1036,7 +1036,7 @@ TEST_CASE("test async_operations - test epoll_wait") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 12) // >= 2.12
+#if CONDY_URING_VERSION_GE(2, 12) // >= 2.12
 TEST_CASE("test async_operations - test pipe - basic") {
     int pipe_fds[2];
 
@@ -1060,7 +1060,7 @@ TEST_CASE("test async_operations - test pipe - basic") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 12) // >= 2.12
+#if CONDY_URING_VERSION_GE(2, 12) // >= 2.12
 TEST_CASE("test async_operations - test pipe - direct") {
     int pipe_fds[2];
 
@@ -1084,7 +1084,7 @@ TEST_CASE("test async_operations - test pipe - direct") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 15) // >= 2.15
+#if CONDY_URING_VERSION_GE(2, 15) // >= 2.15
 TEST_CASE("test async_operations - test recv - zc multishot") {
     int sv[2];
     create_tcp_socketpair(sv);

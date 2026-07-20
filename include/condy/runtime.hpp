@@ -229,7 +229,7 @@ private:
 
         if (options.enable_iopoll_) {
             params.flags |= IORING_SETUP_IOPOLL;
-#if !IO_URING_CHECK_VERSION(2, 9) // >= 2.9
+#if CONDY_URING_VERSION_GE(2, 9) // >= 2.9
             if (options.enable_hybrid_iopoll_) {
                 params.flags |= IORING_SETUP_HYBRID_IOPOLL;
             }
@@ -268,13 +268,13 @@ private:
             params.flags |= IORING_SETUP_CQE32;
         }
 
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
         if (options.enable_sqe_mixed_) {
             params.flags |= IORING_SETUP_SQE_MIXED;
         }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
         if (options.enable_cqe_mixed_) {
             params.flags |= IORING_SETUP_CQE_MIXED;
         }
@@ -282,7 +282,7 @@ private:
 
         void *buf = nullptr;
         size_t buf_size = 0;
-#if !IO_URING_CHECK_VERSION(2, 5) // >= 2.5
+#if CONDY_URING_VERSION_GE(2, 5) // >= 2.5
         if (options.enable_no_mmap_) {
             params.flags |= IORING_SETUP_NO_MMAP;
             buf = options.no_mmap_buf_;
@@ -290,7 +290,7 @@ private:
         }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 14) // >= 2.14
+#if CONDY_URING_VERSION_GE(2, 14) // >= 2.14
         if (options.enable_sq_rewind_) {
             params.flags |= IORING_SETUP_SQ_REWIND;
         }

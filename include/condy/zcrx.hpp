@@ -10,7 +10,7 @@
 
 namespace condy {
 
-#if !IO_URING_CHECK_VERSION(2, 15) // >= 2.15
+#if CONDY_URING_VERSION_GE(2, 15) // >= 2.15
 
 class ZeroCopyRxBufferPool;
 

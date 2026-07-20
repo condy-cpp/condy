@@ -140,7 +140,7 @@ private:
     std::string path_;
 };
 
-#if !IO_URING_CHECK_VERSION(2, 5) // >= 2.5
+#if CONDY_URING_VERSION_GE(2, 5) // >= 2.5
 template <bool SQE128 = false, condy::FdLike Fd>
 inline auto my_async_cmd_sock(int cmd_op, Fd fd, int level, int optname,
                               void *optval, int optlen) {
@@ -150,7 +150,7 @@ inline auto my_async_cmd_sock(int cmd_op, Fd fd, int level, int optname,
         sqe->optlen = optlen;
         sqe->level = level;
     };
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
     if constexpr (SQE128) {
         return condy::async_uring_cmd128(cmd_op, fd, cmd_func);
     } else {
@@ -185,7 +185,7 @@ inline auto my_cmd_nvme_read(Fd fd, void *buf, size_t buf_size,
         cmd->data_len = buf_size;
         cmd->nsid = nsid;
     };
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
     if constexpr (SQE128) {
         return condy::async_uring_cmd128<condy::NVMePassthruCQEHandler>(
             NVME_URING_CMD_IO, fd, cmd_func);
@@ -217,7 +217,7 @@ inline auto my_cmd_nvme_write(Fd fd, const void *buf, size_t buf_size,
         cmd->data_len = buf_size;
         cmd->nsid = nsid;
     };
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
     if constexpr (SQE128) {
         return condy::async_uring_cmd128<condy::NVMePassthruCQEHandler>(
             NVME_URING_CMD_IO, fd, cmd_func);

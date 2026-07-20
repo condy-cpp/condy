@@ -65,7 +65,7 @@ struct NVMePassthruCQEHandler {
     }
 };
 
-#if !IO_URING_CHECK_VERSION(2, 12) // >= 2.12
+#if CONDY_URING_VERSION_GE(2, 12) // >= 2.12
 /**
  * @brief Result for TX timestamp operations, containing timestamp information
  * from the socket error queue

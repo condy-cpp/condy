@@ -55,7 +55,7 @@ TEST_CASE("test runtime_options - enable_iopoll") {
 
     condy::RuntimeOptions options;
     options.enable_iopoll();
-#if !IO_URING_CHECK_VERSION(2, 9) // >= 2.9
+#if CONDY_URING_VERSION_GE(2, 9) // >= 2.9
     options.enable_hybrid_iopoll();
 #endif
     options.event_interval(std::numeric_limits<size_t>::max());
@@ -193,7 +193,7 @@ TEST_CASE("test runtime_options - enable_sqe128 & enable_cqe32") {
         for (int i = 0; i < 5; i++) {
             co_await condy::async_nop();
         }
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
         for (int i = 0; i < 5; i++) {
             co_await condy::async_nop128();
         }
@@ -215,7 +215,7 @@ TEST_CASE("test runtime_options - enable_sqe128 & enable_cqe32") {
     condy::sync_wait(runtime, func());
 }
 
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
 TEST_CASE("test runtime_options - enable_sqe_mixed & enable_cqe_mixed") {
     condy::RuntimeOptions options;
     options.enable_sqe_mixed().enable_cqe_mixed();
@@ -246,7 +246,7 @@ TEST_CASE("test runtime_options - enable_sqe_mixed & enable_cqe_mixed") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 5) // >= 2.5
+#if CONDY_URING_VERSION_GE(2, 5) // >= 2.5
 TEST_CASE("test runtime_options - enable_no_mmap") {
     void *data = mmap(nullptr, 4096l * 2, PROT_READ | PROT_WRITE,
                       MAP_PRIVATE | MAP_ANONYMOUS | MAP_POPULATE, -1, 0);
@@ -279,7 +279,7 @@ TEST_CASE("test runtime_options - enable_no_mmap") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 14) // >= 2.14
+#if CONDY_URING_VERSION_GE(2, 14) // >= 2.14
 TEST_CASE("test runtime_options - enable_sq_rewind") {
     condy::RuntimeOptions options;
     options.enable_sq_rewind().sq_size(8).cq_size(16);

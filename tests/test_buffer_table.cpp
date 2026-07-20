@@ -120,7 +120,7 @@ TEST_CASE("test buffer_table - use registered buffer") {
     condy::sync_wait(func());
 }
 
-#if !IO_URING_CHECK_VERSION(2, 10) // >= 2.10
+#if CONDY_URING_VERSION_GE(2, 10) // >= 2.10
 TEST_CASE("test buffer_table - clone buffer table") {
     io_uring_params params = {};
     condy::detail::Ring ring1(128, &params, nullptr, 0,
@@ -158,7 +158,7 @@ TEST_CASE("test buffer_table - clone buffer table") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 10) // >= 2.10
+#if CONDY_URING_VERSION_GE(2, 10) // >= 2.10
 TEST_CASE("test buffer_table - setup buffer before run") {
     condy::Runtime runtime1, runtime2;
     REQUIRE(runtime1.buffer_table().init(4) == 0);

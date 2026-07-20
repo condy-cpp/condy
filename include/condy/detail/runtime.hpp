@@ -42,7 +42,7 @@ private:
 };
 
 inline int sync_msg_ring(io_uring_sqe *sqe_data) noexcept {
-#if !IO_URING_CHECK_VERSION(2, 12) // >= 2.12
+#if CONDY_URING_VERSION_GE(2, 12) // >= 2.12
     return io_uring_register_sync_msg(sqe_data);
 #else
     auto *ring = ThreadLocalRing::current().ring();

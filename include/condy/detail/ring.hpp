@@ -24,7 +24,7 @@ public:
          size_t submit_batch)
         : submit_batch_(submit_batch) {
         int r;
-#if !IO_URING_CHECK_VERSION(2, 5) // >= 2.5
+#if CONDY_URING_VERSION_GE(2, 5) // >= 2.5
         if (params->flags & IORING_SETUP_NO_MMAP) {
             r = io_uring_queue_init_mem(entries, &ring_, params, buf, buf_size);
         } else {
@@ -74,7 +74,7 @@ public:
 
         io_uring_for_each_cqe(&ring_, head, cqe) {
             process_func(cqe);
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
             reaped += io_uring_cqe_nr(cqe);
 #else
             reaped++;
@@ -98,7 +98,7 @@ public:
         ssize_t reaped = 0;
         io_uring_for_each_cqe(&ring_, head, cqe) {
             process_func(cqe);
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
             reaped += io_uring_cqe_nr(cqe);
 #else
             reaped++;
@@ -123,7 +123,7 @@ public:
 
     io_uring_sqe *get_sqe() noexcept { return get_sqe_<io_uring_get_sqe>(); }
 
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
     io_uring_sqe *get_sqe128() noexcept {
         if (ring_.flags & (IORING_SETUP_SQE128 | IORING_SETUP_SQE_MIXED))
             [[likely]] {
@@ -138,7 +138,7 @@ public:
         if (ring_flags & IORING_SETUP_CQE32) {
             return true;
         }
-#if !IO_URING_CHECK_VERSION(2, 13) // >= 2.13
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
         if (ring_flags & IORING_SETUP_CQE_MIXED) {
             return cqe->flags & IORING_CQE_F_32;
         }

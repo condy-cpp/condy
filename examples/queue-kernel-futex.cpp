@@ -15,7 +15,7 @@
 #include <thread>
 #include <unistd.h>
 
-#if !IO_URING_CHECK_VERSION(2, 6) // >= 2.6
+#if CONDY_URING_VERSION_GE(2, 6) // >= 2.6
 
 long futex_wait(void *uaddr, unsigned long val, unsigned long mask,
                 unsigned int flags, const struct timespec *timeout,

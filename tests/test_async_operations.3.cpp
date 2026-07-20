@@ -66,7 +66,7 @@ TEST_CASE("test async_operations - test fadvise - fixed fd") {
     unlink(name);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 TEST_CASE("test async_operations - test fadvise64 - basic") {
     char name[32] = "XXXXXX";
     int fd = mkstemp(name);
@@ -88,7 +88,7 @@ TEST_CASE("test async_operations - test fadvise64 - basic") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 TEST_CASE("test async_operations - test fadvise64 - fixed fd") {
     char name[32] = "XXXXXX";
     int fd = mkstemp(name);
@@ -129,7 +129,7 @@ TEST_CASE("test async_operations - test madvise") {
     munmap(addr, 4096);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 TEST_CASE("test async_operations - test madvise64") {
     void *addr = mmap(nullptr, 4096, PROT_READ | PROT_WRITE,
                       MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
@@ -191,7 +191,7 @@ TEST_CASE("test async_operations - test send - fixed fd") {
     close(sv[1]);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 TEST_CASE("test async_operations - test send - provided buffer") {
     int sv[2];
     create_tcp_socketpair(sv);
@@ -224,7 +224,7 @@ TEST_CASE("test async_operations - test send - provided buffer") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 TEST_CASE("test async_operations - test send - bundled provided buffer") {
     int sv[2];
     create_tcp_socketpair(sv);
@@ -402,7 +402,7 @@ TEST_CASE("test async_operations - test sendto - fixed fd") {
     close(receiver_fd);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 TEST_CASE("test async_operations - test sendto - provided buffer") {
     int sender_fd = socket(AF_INET, SOCK_DGRAM, 0);
     REQUIRE(sender_fd >= 0);
@@ -453,7 +453,7 @@ TEST_CASE("test async_operations - test sendto - provided buffer") {
 }
 #endif
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 TEST_CASE("test async_operations - test sendto - bundled provided buffer") {
     int sender_fd = socket(AF_INET, SOCK_DGRAM, 0);
     REQUIRE(sender_fd >= 0);
@@ -682,7 +682,7 @@ TEST_CASE("test async_operations - test recv - provided buffer") {
     close(sv[1]);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 TEST_CASE("test async_operations - test recv - bundled provided buffer") {
     int sv[2];
     create_tcp_socketpair(sv);
@@ -763,7 +763,7 @@ TEST_CASE("test async_operations - test recv - multishot") {
     close(sv[0]);
 }
 
-#if !IO_URING_CHECK_VERSION(2, 7) // >= 2.7
+#if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 TEST_CASE("test async_operations - test recv - bundled multishot") {
     int sv[2];
     create_tcp_socketpair(sv);
