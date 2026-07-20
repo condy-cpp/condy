@@ -13,7 +13,7 @@ on:
       - "**.md"
 
 env:
-  LIBURING_VERSION: "2.6"
+  LIBURING_VERSION: "2.14"
 
 jobs:
   build-and-test:
@@ -41,6 +41,16 @@ jobs:
           git fetch --tags
           git checkout liburing-${{ env.LIBURING_VERSION }}
           cd ../../
+
+      # GCC 15 Regression https://gcc.gnu.org/bugzilla/show_bug.cgi?id=124584
+      - name: Install GCC 14
+        if: matrix.compiler.cc == 'gcc'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-14 g++-14
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
+          gcc --version
 
       - name: Configure CMake
         run: |
