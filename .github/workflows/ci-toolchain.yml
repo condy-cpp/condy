@@ -1,4 +1,4 @@
-name: CI (Versions)
+name: CI (Toolchain)
 
 on:
   push:
