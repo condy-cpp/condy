@@ -51,7 +51,7 @@ cmake -B build -S . \
     -DBUILD_BENCHMARKS=ON \
     -DBUILD_TESTS=ON \
     -DCMAKE_BUILD_TYPE=Release
-cmake --build build --config Release -j$(nproc)
+cmake --build build -j$(nproc)
 ```
 
 After building:
