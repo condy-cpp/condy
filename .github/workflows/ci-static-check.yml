@@ -13,7 +13,18 @@ on:
       - "**.md"
 
 jobs:
-  static-check:
+  formatting:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 2
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Formatting Check
+        run: bash ./scripts/format-all.sh
+
+  static-analysis:
     runs-on: ubuntu-26.04
     timeout-minutes: 10
 
@@ -22,10 +33,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: true
-
-      - name: Formatting Check
-        run: |
-          bash ./scripts/format-all.sh
 
       - name: Configure liburing
         run: |
@@ -44,5 +51,4 @@ jobs:
               -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
       - name: Static Analysis
-        run: |
-          bash ./scripts/check-all.sh
+        run: bash ./scripts/check-all.sh
