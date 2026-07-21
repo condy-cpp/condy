@@ -23,8 +23,8 @@ jobs:
         uses: the-pr-agent/pr-agent@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CONFIG.MODEL: "deepseek/deepseek-chat"
-          CONFIG.FALLBACK_MODELS: "['deepseek/deepseek-chat']"
+          CONFIG.MODEL: "deepseek/deepseek-v4-pro"
+          CONFIG.FALLBACK_MODELS: "['deepseek/deepseek-v4-flash']"
           DEEPSEEK.KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           PR_REVIEWER.ENABLE_REVIEW_LABELS_EFFORT: false
           PR_REVIEWER.ENABLE_REVIEW_LABELS_SECURITY: false
