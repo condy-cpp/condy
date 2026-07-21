@@ -26,7 +26,6 @@ jobs:
         compiler:
           - { cc: clang, cxx: clang++ }
           - { cc: gcc, cxx: g++ }
-        build-type: [ Debug, Release ]
         sanitizer: [ tsan, asan ]
 
     steps:
@@ -69,19 +68,17 @@ jobs:
               $SANITIZER_FLAG \
               -DCMAKE_C_COMPILER=${{matrix.compiler.cc}} \
               -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}} \
-              -DCMAKE_BUILD_TYPE=${{matrix.build-type}}
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo
 
       - name: Build
-        run: cmake --build ${{github.workspace}}/build --config ${{matrix.build-type}}
-          -j$(nproc)
+        run: cmake --build ${{github.workspace}}/build --config RelWithDebInfo -j$(nproc)
 
       - name: Run Tests
         timeout-minutes: 5
         working-directory: ${{github.workspace}}/build
-        run: ctest --verbose -C ${{matrix.build-type}}
+        run: ctest --verbose -C RelWithDebInfo
 
       - name: Run Benchmarks
         timeout-minutes: 5
-        if: matrix.build-type == 'Release'
         working-directory: ${{github.workspace}}
         run: bash scripts/run-bench.sh -t 60 build/benchmarks
