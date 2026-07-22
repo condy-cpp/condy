@@ -68,6 +68,42 @@ ctest --test-dir build
 ./build/examples/link-cp from.bin to.bin
 ```
 
+## C++20 Module Support
+
+Condy provides an optional C++20 module interface as an alternative to `#include <condy.hpp>`.
+
+```cpp
+import condy;
+```
+
+### Requirements
+
+- **CMake 3.28+** with **Ninja** generator
+- **GCC 14+** or **Clang 16+**
+
+### Building the Example
+
+```bash
+cmake -B build -S . -G Ninja \
+    -DBUILD_MODULE=ON \
+    -DBUILD_EXAMPLES=ON
+ninja -C build module-hello
+
+./build/examples/module-hello
+# Hello, Condy (via module)!
+```
+
+### Using in Your Project
+
+The module target is `condy_module`:
+
+```cmake
+set(BUILD_MODULE ON CACHE BOOL "")
+add_subdirectory(third_party/condy)
+add_executable(my_app src/main.cpp)
+target_link_libraries(my_app PRIVATE condy_module)
+```
+
 ## Version Compatibility
 
 Condy supports **liburing ≥ 2.3**. When building with a specific version of liburing, Condy assumes that all related interfaces provided by that version are already supported by your Linux kernel.

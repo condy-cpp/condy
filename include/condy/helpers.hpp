@@ -27,6 +27,11 @@
 namespace condy {
 
 /**
+ * @brief Placeholder to let io_uring allocate a direct file descriptor.
+ */
+inline constexpr unsigned file_index_alloc = CONDY_FILE_INDEX_ALLOC;
+
+/**
  * @brief Helper to build an invocable that spawns a coroutine on invocation.
  * @tparam CoroFunc Type of the coroutine function.
  * @param coro The coroutine function to be spawned.

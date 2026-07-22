@@ -57,3 +57,23 @@ jobs:
         timeout-minutes: 5
         working-directory: ${{github.workspace}}/build
         run: ctest --verbose
+
+      - name: Build module-hello
+        # liburing < 2.13 exposes TU-local entities that break GCC modules
+        # https://github.com/axboe/liburing/issues/1457
+        if: >
+          matrix.generator == 'Ninja'
+          && !(matrix.compiler.cc == 'gcc' && matrix.liburing-version == '2.3')
+        run: |
+          cmake -B ${{github.workspace}}/build_module -G Ninja \
+              -DBUILD_MODULE=ON \
+              -DBUILD_EXAMPLES=ON \
+              -DCMAKE_C_COMPILER=${{ matrix.compiler.cc }} \
+              -DCMAKE_CXX_COMPILER=${{ matrix.compiler.cxx }}
+          ninja -C ${{github.workspace}}/build_module module-hello
+
+      - name: Run module-hello
+        if: >
+          matrix.generator == 'Ninja'
+          && !(matrix.compiler.cc == 'gcc' && matrix.liburing-version == '2.3')
+        run: ${{github.workspace}}/build_module/examples/module-hello

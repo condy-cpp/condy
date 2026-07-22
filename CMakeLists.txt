@@ -5,6 +5,7 @@ project(condy LANGUAGES CXX)
 option(BUILD_EXAMPLES "Build examples" OFF)
 option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 option(BUILD_TESTS "Build tests" OFF)
+option(BUILD_MODULE "Build C++ module interface" OFF)
 option(ENABLE_CLANG_TIDY "Enable clang-tidy static analysis" OFF)
 option(TESTS_STATIC_LINK "Use static linking for tests" OFF)
 option(TESTS_TSAN "Enable thread sanitizer for tests" OFF)
@@ -25,7 +26,7 @@ add_library(condy INTERFACE)
 target_include_directories(condy INTERFACE include)
 target_compile_features(condy INTERFACE cxx_std_20)
 
-if(BUILD_EXAMPLES OR BUILD_BENCHMARKS OR BUILD_TESTS OR LINK_LIBURING)
+if(BUILD_EXAMPLES OR BUILD_BENCHMARKS OR BUILD_TESTS OR LINK_LIBURING OR BUILD_MODULE)
     enable_language(C)
     include(ExternalProject)
 
@@ -58,6 +59,12 @@ endif()
 
 if(LINK_LIBURING)
     target_link_libraries(condy INTERFACE uring)
+endif()
+
+if(BUILD_MODULE)
+    set(CMAKE_CXX_SCAN_FOR_MODULES ON)
+    message(STATUS "Configuring C++ module interface in ${CMAKE_CURRENT_SOURCE_DIR}/module")
+    add_subdirectory(module)
 endif()
 
 # Warnings as errors
