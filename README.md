@@ -5,11 +5,11 @@
 ![Release](https://img.shields.io/github/v/release/wokron/condy)
 ![Stars](https://img.shields.io/github/stars/wokron/condy?style=social)
 
-![CI (Main)](https://github.com/wokron/condy/actions/workflows/build-and-test.yml/badge.svg?branch=master)
-![CI (Latest Kernel)](https://github.com/wokron/condy/actions/workflows/build-and-test-latest-kernel.yml/badge.svg?branch=master)
-![CI (Versions)](https://github.com/wokron/condy/actions/workflows/build-and-test-liburing-versions.yml/badge.svg?branch=master)
-![CI (Static Check)](https://github.com/wokron/condy/actions/workflows/static-check.yml/badge.svg?branch=master)
-![Deploy Docs](https://github.com/wokron/condy/actions/workflows/deploy-gh-pages.yaml/badge.svg?branch=master)
+![CI (Main)](https://github.com/wokron/condy/actions/workflows/ci-main.yml/badge.svg?branch=master)
+![CI (Latest Kernel)](https://github.com/wokron/condy/actions/workflows/ci-latest-kernel.yml/badge.svg?branch=master)
+![CI (Toolchain)](https://github.com/wokron/condy/actions/workflows/ci-toolchain.yml/badge.svg?branch=master)
+![CI (Static Check)](https://github.com/wokron/condy/actions/workflows/ci-static-check.yml/badge.svg?branch=master)
+![Deploy Docs](https://github.com/wokron/condy/actions/workflows/deploy-docs.yml/badge.svg?branch=master)
 
 ***C++ Asynchronous System Call Layer for Linux, Powered by io_uring and C++20 Coroutines***
 

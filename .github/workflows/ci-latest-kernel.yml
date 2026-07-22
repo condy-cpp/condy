@@ -78,7 +78,7 @@ jobs:
               -DTESTS_STATIC_LINK=ON
 
       - name: Build
-        run: cmake --build ${{github.workspace}}/build --config Release -j$(nproc)
+        run: cmake --build ${{github.workspace}}/build -j$(nproc)
 
       - name: Run Tests on QEMU
         timeout-minutes: 15
