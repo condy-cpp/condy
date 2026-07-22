@@ -6,4 +6,4 @@ target_sources(condy_module
     FILES condy.cppm
 )
 target_compile_features(condy_module PUBLIC cxx_std_20)
-target_link_libraries(condy_module PUBLIC condy)
+target_link_libraries(condy_module PRIVATE condy)
