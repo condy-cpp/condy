@@ -1,3 +1,8 @@
+/**
+ * @file module-hello.cpp
+ * @brief Demonstrates using Condy as a C++20 module
+ */
+
 #include <coroutine>
 #include <string>
 #include <unistd.h>
