@@ -12,7 +12,7 @@
 /**
  * @brief Condy minor version.
  */
-#define CONDY_VERSION_MINOR 8
+#define CONDY_VERSION_MINOR 9
 
 namespace condy {
 
