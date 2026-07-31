@@ -20,5 +20,8 @@
 - [queue-kernel-futex.cpp](queue-kernel-futex_8cpp.html)
     Builds a producer-consumer queue through asynchronous futex syscalls (`condy::async_futex_wait()`), implementing an asynchronous semaphore for synchronization.
 
+- [ublk-loop.cpp](ublk-loop_8cpp.html)
+    A ublk loop block device server, using condy coroutines to express the fetch -> perform I/O -> commit loop as straight-line code.
+
 - [module-hello.cpp](module-hello_8cpp.html)
     Demonstrates using Condy as a C++20 module via `import condy;`. Requires CMake 3.28+, Ninja, and GCC 14+ or Clang 16+. Build with `-DBUILD_MODULE=ON`.
