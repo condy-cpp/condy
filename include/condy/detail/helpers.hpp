@@ -30,7 +30,6 @@ template <typename Channel> struct PushHelper {
 
 struct FixedFd {
     int value;
-    operator int() const { return value; }
 };
 
 template <typename T> struct FixedBuffer {
