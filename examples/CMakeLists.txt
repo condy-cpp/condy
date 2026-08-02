@@ -19,6 +19,9 @@ target_link_libraries(queue-condy-futex PRIVATE condy uring)
 add_executable(ublk-loop ublk-loop.cpp)
 target_link_libraries(ublk-loop PRIVATE condy uring)
 
+add_executable(fuse-prime-fs fuse-prime-fs.cpp)
+target_link_libraries(fuse-prime-fs PRIVATE condy uring)
+
 if(BUILD_MODULE)
     add_executable(module-hello module-hello.cpp)
     target_link_libraries(module-hello PRIVATE condy_module uring)
