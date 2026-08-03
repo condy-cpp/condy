@@ -1,3 +1,13 @@
+/**
+ * @file zcrx.hpp
+ * @brief Support for io_uring zero-copy receive (zcrx) buffers.
+ * @details This file provides support for the io_uring zcrx feature, which
+ * allows data to be received directly into user-space buffers without copying.
+ * It defines the ZeroCopyRxBufferPool class for registering a buffer pool with
+ * a network interface, and the ZeroCopyRxBuffer type for buffers obtained from
+ * the pool.
+ */
+
 #pragma once
 
 #include "condy/detail/buffers.hpp"
