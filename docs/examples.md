@@ -11,6 +11,9 @@
 - [file-server.cpp](file-server_8cpp.html)
     A simple HTTP file server using `condy::async_splice` for asynchronous file and network IO.
 
+- [fuse-prime-fs.cpp](fuse-prime-fs_8cpp.html)
+    A FUSE file system server using `condy::async_uring_cmd` for FUSE-over-io_uring. It serves a dynamic tree over the integers 2..n: prime numbers are regular files holding their own value, and composite numbers are directories recursively containing all smaller numbers.
+
 - [link-cp.cpp](link-cp_8cpp.html)
     Implements concurrent file copying using features like fixed file descriptors, fixed buffers, and link operations, supporting `O_DIRECT` IO. Achieves up to 2x performance improvement compared to `cp`.
 
