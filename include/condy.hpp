@@ -15,6 +15,7 @@
 #include "condy/channel.hpp"            // IWYU pragma: export
 #include "condy/coro.hpp"               // IWYU pragma: export
 #include "condy/cqe_handler.hpp"        // IWYU pragma: export
+#include "condy/execution.hpp"          // IWYU pragma: export
 #include "condy/futex.hpp"              // IWYU pragma: export
 #include "condy/helpers.hpp"            // IWYU pragma: export
 #include "condy/pmr.hpp"                // IWYU pragma: export
