@@ -1,0 +1,69 @@
+name: CI (Execution)
+
+on:
+  push:
+    branches: [ "master" ]
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+  pull_request:
+    branches: [ "master" ]
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+
+env:
+  LIBURING_VERSION: "2.14"
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [ STDEXEC, BEMAN ]
+        compiler:
+          - { cc: clang, cxx: clang++ }
+          - { cc: gcc, cxx: g++ }
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: |
+          COMPILER=$(${{matrix.compiler.cc}} --version | head -n 1)
+          echo "Using compiler: $COMPILER"
+          cmake -B ${{github.workspace}}/build \
+              -DCONDY_BUILD_TESTS=ON \
+              -DCONDY_LINK_LIBURING_VERSION=${{ env.LIBURING_VERSION }} \
+              -DCONDY_LINK_${{ matrix.backend }}=ON \
+              -DCMAKE_C_COMPILER=${{matrix.compiler.cc}} \
+              -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}} \
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo
+
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build -j$(nproc)
+
+      - name: Run Tests
+        timeout-minutes: 5
+        working-directory: ${{github.workspace}}/build
+        run: ctest --verbose
+
+      - name: Build module-hello
+        if: matrix.compiler.cc == 'clang'
+        run: |
+          cmake -B ${{github.workspace}}/build_module -G Ninja \
+              -DCONDY_BUILD_MODULE=ON \
+              -DCONDY_BUILD_EXAMPLES=ON \
+              -DCONDY_LINK_LIBURING_VERSION=${{ env.LIBURING_VERSION }} \
+              -DCONDY_LINK_${{ matrix.backend }}=ON \
+              -DCMAKE_C_COMPILER=${{ matrix.compiler.cc }} \
+              -DCMAKE_CXX_COMPILER=${{ matrix.compiler.cxx }}
+          ninja -C ${{github.workspace}}/build_module module-hello
+
+      - name: Run module-hello
+        if: matrix.compiler.cc == 'clang'
+        run: ${{github.workspace}}/build_module/examples/module-hello
