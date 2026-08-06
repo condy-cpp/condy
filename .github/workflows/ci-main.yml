@@ -57,6 +57,7 @@ jobs:
               -DCONDY_BUILD_BENCHMARKS=ON \
               -DCONDY_BUILD_TESTS=ON \
               -DCONDY_LINK_LIBURING_VERSION=${{ env.LIBURING_VERSION }} \
+              -DCONDY_ENABLE_STDEXEC=ON \
               $SANITIZER_FLAG \
               -DCMAKE_C_COMPILER=${{matrix.compiler.cc}} \
               -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}} \
