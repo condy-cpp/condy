@@ -23,7 +23,8 @@ option(CONDY_BUILD_DOCS "Build Doxygen documentation" OFF)
 option(CONDY_TESTS_STATIC_LINK "Use static linking for tests" OFF)
 option(CONDY_TESTS_TSAN "Enable thread sanitizer for tests" OFF)
 option(CONDY_TESTS_ASAN "Enable address and undefined behavior sanitizers for tests" OFF)
-option(CONDY_LINK_LIBURING "Use liburing from third_party and link it to condy" ON)
+option(CONDY_LINK_LIBURING "Use liburing and link it to condy" ON)
+set(CONDY_LINK_LIBURING_VERSION "2.15" CACHE STRING "liburing version to fetch and link")
 
 # Backward compatibility for the unprefixed option names.
 macro(condy_legacy_option legacy new)
@@ -46,6 +47,7 @@ include(FetchContent)
 
 set(DOXYGEN_AWESOME_CSS_VERSION v2.4.1)
 set(DOCTEST_VERSION v2.5.0)
+set(LIBURING_VERSION liburing-${CONDY_LINK_LIBURING_VERSION})
 
 FetchContent_Declare(
     doxygen-awesome-css
@@ -56,6 +58,11 @@ FetchContent_Declare(
     doctest
     URL https://raw.githubusercontent.com/doctest/doctest/${DOCTEST_VERSION}/doctest/doctest.h
     DOWNLOAD_NO_EXTRACT TRUE
+)
+FetchContent_Declare(
+    liburing
+    URL https://github.com/axboe/liburing/archive/refs/tags/${LIBURING_VERSION}.tar.gz
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 
 add_library(condy INTERFACE)
@@ -74,22 +81,22 @@ if(CONDY_BUILD_EXAMPLES OR CONDY_BUILD_BENCHMARKS OR CONDY_BUILD_TESTS OR CONDY_
     endif()
 
     # liburing
-    set(LIBURING_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/liburing)
-    message(STATUS "Configuring liburing in ${LIBURING_SOURCE_DIR}")
+    message(STATUS "Fetching liburing ${LIBURING_VERSION}")
+    FetchContent_MakeAvailable(liburing)
 
     ExternalProject_Add(
         liburing_ext
-        SOURCE_DIR ${LIBURING_SOURCE_DIR}
+        SOURCE_DIR ${liburing_SOURCE_DIR}
         CONFIGURE_COMMAND ./configure --cc=${CMAKE_C_COMPILER} --cxx=${CMAKE_CXX_COMPILER}
         BUILD_COMMAND ${MAKE_EXECUTABLE} -C src
         BUILD_IN_SOURCE 1
         INSTALL_COMMAND ""
-        BUILD_BYPRODUCTS ${LIBURING_SOURCE_DIR}/src/liburing.a
+        BUILD_BYPRODUCTS ${liburing_SOURCE_DIR}/src/liburing.a
     )
 
     add_library(uring STATIC IMPORTED GLOBAL)
-    set_target_properties(uring PROPERTIES IMPORTED_LOCATION ${LIBURING_SOURCE_DIR}/src/liburing.a)
-    target_include_directories(uring INTERFACE ${LIBURING_SOURCE_DIR}/src/include)
+    set_target_properties(uring PROPERTIES IMPORTED_LOCATION ${liburing_SOURCE_DIR}/src/liburing.a)
+    target_include_directories(uring INTERFACE ${liburing_SOURCE_DIR}/src/include)
     add_dependencies(uring liburing_ext)
 endif()
 

@@ -31,13 +31,6 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          submodules: true
-
-      - name: Configure liburing
-        run: |
-          cd third_party/liburing
-          ./configure --cc=clang --cxx=clang++
 
       - name: Configure CMake
         run: |
@@ -49,6 +42,9 @@ jobs:
               -DCMAKE_CXX_COMPILER=clang++ \
               -DCMAKE_BUILD_TYPE=Debug \
               -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Build liburing
+        run: cmake --build ${{github.workspace}}/build --target liburing_ext
 
       - name: Static Analysis
         run: bash ./scripts/check-all.sh
