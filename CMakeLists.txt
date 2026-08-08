@@ -42,6 +42,16 @@ condy_legacy_option(TESTS_TSAN CONDY_TESTS_TSAN)
 condy_legacy_option(TESTS_ASAN CONDY_TESTS_ASAN)
 condy_legacy_option(LINK_LIBURING CONDY_LINK_LIBURING)
 
+include(FetchContent)
+
+set(DOXYGEN_AWESOME_CSS_VERSION v2.4.1)
+
+FetchContent_Declare(
+    doxygen-awesome-css
+    URL https://raw.githubusercontent.com/jothepro/doxygen-awesome-css/${DOXYGEN_AWESOME_CSS_VERSION}/doxygen-awesome.css
+    DOWNLOAD_NO_EXTRACT TRUE
+)
+
 add_library(condy INTERFACE)
 target_include_directories(condy INTERFACE include)
 target_compile_features(condy INTERFACE cxx_std_20)
