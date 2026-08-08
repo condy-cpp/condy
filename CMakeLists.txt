@@ -1,6 +1,19 @@
 cmake_minimum_required(VERSION 3.13)
 
-project(condy LANGUAGES CXX)
+# Version is defined once in the version header.
+set(CONDY_VERSION_HEADER include/condy/version.hpp)
+file(READ ${CONDY_VERSION_HEADER} _condy_version_h)
+string(REGEX MATCH "#define CONDY_VERSION_MAJOR ([0-9]+)" _condy_ver_m "${_condy_version_h}")
+set(CONDY_VERSION_MAJOR ${CMAKE_MATCH_1})
+string(REGEX MATCH "#define CONDY_VERSION_MINOR ([0-9]+)" _condy_ver_m "${_condy_version_h}")
+set(CONDY_VERSION_MINOR ${CMAKE_MATCH_1})
+if(NOT CONDY_VERSION_MAJOR OR NOT CONDY_VERSION_MINOR)
+    message(FATAL_ERROR "Failed to parse version from ${CONDY_VERSION_HEADER}")
+endif()
+set(CONDY_VERSION_STRING "v${CONDY_VERSION_MAJOR}.${CONDY_VERSION_MINOR}")
+
+project(condy VERSION ${CONDY_VERSION_MAJOR}.${CONDY_VERSION_MINOR} LANGUAGES CXX)
+message(STATUS "Configuring condy ${CONDY_VERSION_STRING}")
 
 option(BUILD_EXAMPLES "Build examples" OFF)
 option(BUILD_BENCHMARKS "Build benchmarks" OFF)
