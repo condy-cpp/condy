@@ -8,7 +8,7 @@
 #include <atomic>
 #include <cerrno>
 #include <cstddef>
-#include <doctest/doctest.h>
+#include <doctest.h>
 
 namespace {
 

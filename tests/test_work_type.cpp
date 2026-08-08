@@ -1,5 +1,5 @@
 #include "condy/detail/work_type.hpp"
-#include <doctest/doctest.h>
+#include <doctest.h>
 
 namespace {
 

@@ -1,5 +1,5 @@
 #include "condy/detail/intrusive.hpp"
-#include <doctest/doctest.h>
+#include <doctest.h>
 #include <utility>
 
 TEST_CASE("test intrusive - single list") {

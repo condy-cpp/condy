@@ -2,7 +2,7 @@
 #include "condy/runtime.hpp"
 #include "condy/runtime_options.hpp"
 #include "condy/sync_wait.hpp"
-#include <doctest/doctest.h>
+#include <doctest.h>
 
 TEST_CASE("test sync_wait - with runtime") {
     bool finished = false;

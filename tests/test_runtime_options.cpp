@@ -4,7 +4,7 @@
 #include "condy/runtime.hpp"
 #include "condy/sync_wait.hpp"
 #include "condy/task.hpp"
-#include <doctest/doctest.h>
+#include <doctest.h>
 #include <fcntl.h>
 #include <limits>
 

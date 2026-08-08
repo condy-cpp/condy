@@ -4,7 +4,7 @@
 #include "condy/runtime_options.hpp"
 #include "condy/sync_wait.hpp"
 #include <cerrno>
-#include <doctest/doctest.h>
+#include <doctest.h>
 #include <fcntl.h>
 
 TEST_CASE("test ring_settings - iowq_aff") {

@@ -45,10 +45,16 @@ condy_legacy_option(LINK_LIBURING CONDY_LINK_LIBURING)
 include(FetchContent)
 
 set(DOXYGEN_AWESOME_CSS_VERSION v2.4.1)
+set(DOCTEST_VERSION v2.5.0)
 
 FetchContent_Declare(
     doxygen-awesome-css
     URL https://raw.githubusercontent.com/jothepro/doxygen-awesome-css/${DOXYGEN_AWESOME_CSS_VERSION}/doxygen-awesome.css
+    DOWNLOAD_NO_EXTRACT TRUE
+)
+FetchContent_Declare(
+    doctest
+    URL https://raw.githubusercontent.com/doctest/doctest/${DOCTEST_VERSION}/doctest/doctest.h
     DOWNLOAD_NO_EXTRACT TRUE
 )
 
@@ -119,8 +125,6 @@ if(CONDY_BUILD_BENCHMARKS)
 endif()
 
 if(CONDY_BUILD_TESTS)
-    # doctest
-    add_subdirectory(third_party/doctest)
     message(STATUS "Configuring tests in ${CMAKE_CURRENT_SOURCE_DIR}/tests")
     enable_testing()
     add_subdirectory(tests)

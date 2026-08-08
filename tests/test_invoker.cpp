@@ -1,5 +1,5 @@
 #include "condy/detail/invoker.hpp"
-#include <doctest/doctest.h>
+#include <doctest.h>
 
 namespace {
 

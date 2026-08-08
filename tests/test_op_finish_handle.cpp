@@ -3,7 +3,7 @@
 #include "condy/detail/finish_handles.hpp"
 #include "condy/runtime.hpp"
 #include <cstddef>
-#include <doctest/doctest.h>
+#include <doctest.h>
 
 namespace {
 

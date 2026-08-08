@@ -11,7 +11,7 @@
 #include <condy/helpers.hpp>
 #include <cstdint>
 #include <cstring>
-#include <doctest/doctest.h>
+#include <doctest.h>
 #include <fcntl.h>
 #include <linux/errqueue.h>
 #include <linux/futex.h>

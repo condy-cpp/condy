@@ -1,6 +1,6 @@
 #include <condy/detail/context.hpp>
 #include <condy/detail/utils.hpp>
-#include <doctest/doctest.h>
+#include <doctest.h>
 #include <limits>
 #include <memory>
 #include <string>

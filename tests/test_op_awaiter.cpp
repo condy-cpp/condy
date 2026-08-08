@@ -6,7 +6,7 @@
 #include <condy/coro.hpp>
 #include <cstddef>
 #include <cstring>
-#include <doctest/doctest.h>
+#include <doctest.h>
 
 TEST_CASE("test op_awaiter - basic routine") {
     size_t unfinished = 1;

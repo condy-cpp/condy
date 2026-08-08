@@ -9,7 +9,7 @@
 #include <cerrno>
 #include <cstddef>
 #include <cstring>
-#include <doctest/doctest.h>
+#include <doctest.h>
 #include <sys/mman.h>
 
 #if CONDY_URING_VERSION_GE(2, 15) // >= 2.15

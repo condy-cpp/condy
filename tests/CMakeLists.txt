@@ -1,6 +1,10 @@
+message(STATUS "Fetching doctest")
+FetchContent_MakeAvailable(doctest)
+
 file(GLOB SRC CONFIGURE_DEPENDS "*.cpp")
 add_executable(tests ${SRC})
-target_link_libraries(tests PRIVATE doctest condy uring)
+target_link_libraries(tests PRIVATE condy uring)
+target_include_directories(tests SYSTEM PRIVATE ${doctest_SOURCE_DIR})
 
 if (CONDY_TESTS_STATIC_LINK)
     message(STATUS "Configuring tests with static linking")
