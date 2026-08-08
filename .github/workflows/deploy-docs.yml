@@ -23,10 +23,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Checkout Doxygen Style
-        run: |
-          git submodule update --init --depth 1 ./third_party/doxygen-awesome-css
-
       - name: Install Doxygen
         run: |
           sudo apt-get update
@@ -36,14 +32,16 @@ jobs:
         id: pages
         uses: actions/configure-pages@v5
 
-      - name: Build with Doxygen
-        run: |
-          doxygen Doxyfile
+      - name: Configure CMake
+        run: cmake -B build -DCONDY_BUILD_DOCS=ON
+
+      - name: Build Documentation
+        run: cmake --build build --target docs
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./docs/html
+          path: ./build/docs/html
 
   deploy:
     needs: build

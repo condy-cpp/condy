@@ -11,7 +11,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <doctest/doctest.h>
+#include <doctest.h>
 #include <fcntl.h>
 #include <linux/futex.h>
 #include <netinet/in.h>

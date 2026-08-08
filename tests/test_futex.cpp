@@ -5,7 +5,7 @@
 #include "condy/task.hpp"
 #include <algorithm>
 #include <atomic>
-#include <doctest/doctest.h>
+#include <doctest.h>
 #include <queue>
 #include <thread>
 #include <vector>

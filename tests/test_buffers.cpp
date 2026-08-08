@@ -8,7 +8,7 @@
 #include "condy/sync_wait.hpp"
 #include <cerrno>
 #include <cstddef>
-#include <doctest/doctest.h>
+#include <doctest.h>
 
 namespace {
 

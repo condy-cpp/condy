@@ -5,7 +5,7 @@
 #include <condy/async_operations.hpp>
 #include <cstddef>
 #include <cstring>
-#include <doctest/doctest.h>
+#include <doctest.h>
 #include <fcntl.h>
 #include <linux/futex.h>
 #include <linux/nvme_ioctl.h>

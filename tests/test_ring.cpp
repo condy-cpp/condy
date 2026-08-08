@@ -4,7 +4,7 @@
 #include <cerrno>
 #include <cstddef>
 #include <cstring>
-#include <doctest/doctest.h>
+#include <doctest.h>
 #include <limits>
 #include <memory>
 #include <vector>

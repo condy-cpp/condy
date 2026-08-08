@@ -27,4 +27,4 @@
     A ublk loop block device server, using condy coroutines to express the fetch -> perform I/O -> commit loop as straight-line code.
 
 - [module-hello.cpp](module-hello_8cpp.html)
-    Demonstrates using Condy as a C++20 module via `import condy;`. Requires CMake 3.28+, Ninja, and GCC 14+ or Clang 16+. Build with `-DBUILD_MODULE=ON`.
+    Demonstrates using Condy as a C++20 module via `import condy;`. Requires CMake 3.28+, Ninja, and GCC 14+ or Clang 16+. Build with `-DCONDY_BUILD_MODULE=ON`.

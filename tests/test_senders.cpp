@@ -7,7 +7,7 @@
 #include <atomic>
 #include <cassert>
 #include <cerrno>
-#include <doctest/doctest.h>
+#include <doctest.h>
 #include <functional>
 #include <stdexcept>
 #include <stop_token>

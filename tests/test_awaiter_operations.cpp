@@ -6,7 +6,7 @@
 #include <condy/coro.hpp>
 #include <cstddef>
 #include <cstring>
-#include <doctest/doctest.h>
+#include <doctest.h>
 #include <stdexcept>
 
 using namespace condy::operators;

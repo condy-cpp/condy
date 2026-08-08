@@ -21,10 +21,8 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - name: Checkout Repository and Submodules
+      - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          submodules: true
 
       - name: Update Apt Packages
         run: sudo apt-get update
@@ -69,13 +67,13 @@ jobs:
       - name: Configure CMake
         run: |
           cmake -B ${{github.workspace}}/build \
-              -DBUILD_EXAMPLES=ON \
-              -DBUILD_BENCHMARKS=ON \
-              -DBUILD_TESTS=ON \
+              -DCONDY_BUILD_EXAMPLES=ON \
+              -DCONDY_BUILD_BENCHMARKS=ON \
+              -DCONDY_BUILD_TESTS=ON \
               -DCMAKE_C_COMPILER=clang \
               -DCMAKE_CXX_COMPILER=clang++ \
               -DCMAKE_BUILD_TYPE=Release \
-              -DTESTS_STATIC_LINK=ON
+              -DCONDY_TESTS_STATIC_LINK=ON
 
       - name: Build
         run: cmake --build ${{github.workspace}}/build -j$(nproc)

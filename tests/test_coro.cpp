@@ -1,7 +1,7 @@
 #include <condy/coro.hpp>
 #include <condy/pmr.hpp>
 #include <cstddef>
-#include <doctest/doctest.h>
+#include <doctest.h>
 #include <memory>
 #include <string>
 

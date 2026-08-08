@@ -7,7 +7,7 @@
 #include "condy/runtime.hpp"
 #include "condy/sync_wait.hpp"
 #include <cerrno>
-#include <doctest/doctest.h>
+#include <doctest.h>
 #include <stdexcept>
 #include <variant>
 

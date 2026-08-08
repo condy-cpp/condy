@@ -5,7 +5,7 @@
 #include "condy/runtime_options.hpp"
 #include "condy/task.hpp"
 #include <atomic>
-#include <doctest/doctest.h>
+#include <doctest.h>
 #include <thread>
 
 namespace {

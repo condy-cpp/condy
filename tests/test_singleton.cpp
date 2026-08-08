@@ -1,5 +1,5 @@
 #include "condy/detail/singleton.hpp"
-#include <doctest/doctest.h>
+#include <doctest.h>
 #include <thread>
 
 TEST_CASE("test singleton - ThreadLocalSingleton") {
