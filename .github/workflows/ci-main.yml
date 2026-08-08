@@ -57,14 +57,14 @@ jobs:
           echo "Using compiler: $COMPILER"
           SANITIZER_FLAG=""
           if [ "${{ matrix.sanitizer }}" = "tsan" ]; then
-            SANITIZER_FLAG="-DTESTS_TSAN=ON"
+            SANITIZER_FLAG="-DCONDY_TESTS_TSAN=ON"
           elif [ "${{ matrix.sanitizer }}" = "asan" ]; then
-            SANITIZER_FLAG="-DTESTS_ASAN=ON"
+            SANITIZER_FLAG="-DCONDY_TESTS_ASAN=ON"
           fi
           cmake -B ${{github.workspace}}/build \
-              -DBUILD_EXAMPLES=ON \
-              -DBUILD_BENCHMARKS=ON \
-              -DBUILD_TESTS=ON \
+              -DCONDY_BUILD_EXAMPLES=ON \
+              -DCONDY_BUILD_BENCHMARKS=ON \
+              -DCONDY_BUILD_TESTS=ON \
               $SANITIZER_FLAG \
               -DCMAKE_C_COMPILER=${{matrix.compiler.cc}} \
               -DCMAKE_CXX_COMPILER=${{matrix.compiler.cxx}} \

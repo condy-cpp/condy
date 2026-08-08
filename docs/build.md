@@ -38,8 +38,8 @@ target_link_libraries(my_app PRIVATE condy)
 > - C++20 is required for coroutine support.
 > - Condy depends on **liburing ≥ 2.3**.
 > - Both **GCC** and **Clang** compilers are supported.
-> - By default, Condy builds and links the bundled liburing in `third_party/liburing` (`LINK_LIBURING=ON`). If you need a specific version of liburing, you can manually check out the desired commit in that directory before building.
-> - To link against the system liburing, set `LINK_LIBURING=OFF` and install liburing manually.
+> - By default, Condy builds and links the bundled liburing in `third_party/liburing` (`CONDY_LINK_LIBURING=ON`). If you need a specific version of liburing, you can manually check out the desired commit in that directory before building.
+> - To link against the system liburing, set `CONDY_LINK_LIBURING=OFF` and install liburing manually.
 
 ## Building Examples / Benchmarks / Tests
 
@@ -47,9 +47,9 @@ Condy provides CMake options to build examples, benchmarks, and tests:
 
 ```bash
 cmake -B build -S . \
-    -DBUILD_EXAMPLES=ON \
-    -DBUILD_BENCHMARKS=ON \
-    -DBUILD_TESTS=ON \
+    -DCONDY_BUILD_EXAMPLES=ON \
+    -DCONDY_BUILD_BENCHMARKS=ON \
+    -DCONDY_BUILD_TESTS=ON \
     -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 ```
@@ -85,8 +85,8 @@ import condy;
 
 ```bash
 cmake -B build -S . -G Ninja \
-    -DBUILD_MODULE=ON \
-    -DBUILD_EXAMPLES=ON
+    -DCONDY_BUILD_MODULE=ON \
+    -DCONDY_BUILD_EXAMPLES=ON
 ninja -C build module-hello
 
 ./build/examples/module-hello
@@ -98,7 +98,7 @@ ninja -C build module-hello
 The module target is `condy_module`:
 
 ```cmake
-set(BUILD_MODULE ON CACHE BOOL "")
+set(CONDY_BUILD_MODULE ON CACHE BOOL "")
 add_subdirectory(third_party/condy)
 add_executable(my_app src/main.cpp)
 target_link_libraries(my_app PRIVATE condy_module)

@@ -43,9 +43,9 @@ jobs:
         run: |
           cmake -B ${{github.workspace}}/build \
               -G "${{ matrix.generator }}" \
-              -DBUILD_EXAMPLES=ON \
-              -DBUILD_BENCHMARKS=ON \
-              -DBUILD_TESTS=ON \
+              -DCONDY_BUILD_EXAMPLES=ON \
+              -DCONDY_BUILD_BENCHMARKS=ON \
+              -DCONDY_BUILD_TESTS=ON \
               -DCMAKE_C_COMPILER=${{ matrix.compiler.cc }} \
               -DCMAKE_CXX_COMPILER=${{ matrix.compiler.cxx }} \
               -DCMAKE_BUILD_TYPE=Debug
@@ -66,8 +66,8 @@ jobs:
           && !(matrix.compiler.cc == 'gcc' && matrix.liburing-version == '2.3')
         run: |
           cmake -B ${{github.workspace}}/build_module -G Ninja \
-              -DBUILD_MODULE=ON \
-              -DBUILD_EXAMPLES=ON \
+              -DCONDY_BUILD_MODULE=ON \
+              -DCONDY_BUILD_EXAMPLES=ON \
               -DCMAKE_C_COMPILER=${{ matrix.compiler.cc }} \
               -DCMAKE_CXX_COMPILER=${{ matrix.compiler.cxx }}
           ninja -C ${{github.workspace}}/build_module module-hello
