@@ -46,7 +46,7 @@ auto build_zero_copy_op_sender(PrepFunc &&func, FreeFunc &&free_func,
  * @param sender The operation to decorate.
  */
 template <unsigned int Flags, typename Sender> auto flag(Sender &&sender) {
-    return detail::FlaggedOpSender<Flags, std::decay_t<Sender>>(
+    return FlaggedOpSender<Flags, std::decay_t<Sender>>(
         std::forward<Sender>(sender));
 }
 
