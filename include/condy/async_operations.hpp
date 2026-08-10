@@ -839,10 +839,12 @@ inline auto async_socket_direct(int domain, int type, int protocol,
  * @tparam CQEHandler Custom CQE handler for specific result processing.
  * @param cmd_func Function to configure sqe for specific command. Signature:
  * void(io_uring_sqe *sqe).
+ * @param handler_args Arguments forwarded to CQEHandler constructor.
  */
 template <CQEHandlerLike CQEHandler = SimpleCQEHandler, FdLike Fd,
-          typename CmdFunc>
-inline auto async_uring_cmd(int cmd_op, Fd fd, CmdFunc &&cmd_func) {
+          typename CmdFunc, typename... Args>
+inline auto async_uring_cmd(int cmd_op, Fd fd, CmdFunc &&cmd_func,
+                            Args &&...handler_args) {
     auto prep_func = [cmd_op, fd = detail::unwrap_fixed(fd),
                       cmd_func =
                           std::forward<CmdFunc>(cmd_func)](detail::Ring *ring) {
@@ -851,7 +853,8 @@ inline auto async_uring_cmd(int cmd_op, Fd fd, CmdFunc &&cmd_func) {
         cmd_func(sqe);
         return sqe;
     };
-    auto op = build_op_awaiter<CQEHandler>(std::move(prep_func));
+    auto op = build_op_awaiter<CQEHandler>(std::move(prep_func),
+                                           std::forward<Args>(handler_args)...);
     return detail::maybe_flag_fixed_fd(std::move(op), fd);
 }
 
@@ -859,9 +862,10 @@ inline auto async_uring_cmd(int cmd_op, Fd fd, CmdFunc &&cmd_func) {
  * @copydoc async_uring_cmd
  */
 template <CQEHandlerLike CQEHandler = SimpleCQEHandler, FdLike Fd,
-          typename CmdFunc, typename MultiShotFunc>
+          typename CmdFunc, typename MultiShotFunc, typename... Args>
 inline auto async_uring_cmd_multishot(int cmd_op, Fd fd, CmdFunc &&cmd_func,
-                                      MultiShotFunc &&func) {
+                                      MultiShotFunc &&func,
+                                      Args &&...handler_args) {
     auto prep_func = [cmd_op, fd = detail::unwrap_fixed(fd),
                       cmd_func =
                           std::forward<CmdFunc>(cmd_func)](detail::Ring *ring) {
@@ -871,7 +875,8 @@ inline auto async_uring_cmd_multishot(int cmd_op, Fd fd, CmdFunc &&cmd_func,
         return sqe;
     };
     auto op = build_multishot_op_awaiter<CQEHandler>(
-        std::move(prep_func), std::forward<MultiShotFunc>(func));
+        std::move(prep_func), std::forward<MultiShotFunc>(func),
+        std::forward<Args>(handler_args)...);
     return detail::maybe_flag_fixed_fd(std::move(op), fd);
 }
 
@@ -881,10 +886,12 @@ inline auto async_uring_cmd_multishot(int cmd_op, Fd fd, CmdFunc &&cmd_func,
  * @tparam CQEHandler Custom CQE handler for specific result processing.
  * @param cmd_func Function to configure sqe for specific command. Signature:
  * void(io_uring_sqe *sqe).
+ * @param handler_args Arguments forwarded to CQEHandler constructor.
  */
 template <CQEHandlerLike CQEHandler = SimpleCQEHandler, FdLike Fd,
-          typename CmdFunc>
-inline auto async_uring_cmd128(int cmd_op, Fd fd, CmdFunc &&cmd_func) {
+          typename CmdFunc, typename... Args>
+inline auto async_uring_cmd128(int cmd_op, Fd fd, CmdFunc &&cmd_func,
+                               Args &&...handler_args) {
     auto prep_func = [cmd_op, fd = detail::unwrap_fixed(fd),
                       cmd_func =
                           std::forward<CmdFunc>(cmd_func)](detail::Ring *ring) {
@@ -896,7 +903,8 @@ inline auto async_uring_cmd128(int cmd_op, Fd fd, CmdFunc &&cmd_func) {
         cmd_func(sqe);
         return sqe;
     };
-    auto op = build_op_awaiter<CQEHandler>(std::move(prep_func));
+    auto op = build_op_awaiter<CQEHandler>(std::move(prep_func),
+                                           std::forward<Args>(handler_args)...);
     return detail::maybe_flag_fixed_fd(std::move(op), fd);
 }
 #endif
