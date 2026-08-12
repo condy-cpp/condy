@@ -1,3 +1,4 @@
+#include "condy/async_operations.hpp"
 #include "condy/coro.hpp"
 #include "condy/detail/async_operations.hpp"
 #include "condy/detail/invoker.hpp"
@@ -6,6 +7,7 @@
 #include "condy/task.hpp"
 #include <atomic>
 #include <doctest.h>
+#include <memory>
 #include <thread>
 
 namespace {
@@ -300,4 +302,25 @@ TEST_CASE("test runtime - cross-thread schedule between runs") {
     runtime.run();
 
     REQUIRE(invoker.finished);
+}
+
+TEST_CASE("test runtime - runtime destroyed on another runtime") {
+    condy::Runtime runtime_a(options);
+
+    auto func = [&]() -> condy::Coro<void> {
+        {
+            auto runtime_b = std::make_unique<condy::Runtime>(options);
+            std::thread thread_b([&]() {
+                runtime_b->allow_exit();
+                runtime_b->run();
+            });
+            thread_b.join();
+        }
+
+        co_await condy::async_nop();
+    };
+
+    condy::co_spawn(runtime_a, func()).detach();
+    runtime_a.allow_exit();
+    runtime_a.run();
 }
