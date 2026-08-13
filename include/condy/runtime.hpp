@@ -158,15 +158,15 @@ public:
                 flush_global_queue_();
                 ring_enabled_.store(true, std::memory_order_relaxed);
             }
-
-            if (!disable_register_ring_fd_) {
-                io_uring_register_ring_fd(ring_.ring());
-            }
         } else if (run_thread_id_ == std::this_thread::get_id()) {
             flush_ring_();
         } else {
             throw std::runtime_error(
                 "Runtime::run() can only be called from the same thread");
+        }
+
+        if (!disable_register_ring_fd_) {
+            io_uring_register_ring_fd(ring_.ring());
         }
 
         while (true) {
@@ -187,6 +187,10 @@ public:
                 break;
             }
             flush_ring_wait_();
+        }
+
+        if (!disable_register_ring_fd_) {
+            io_uring_unregister_ring_fd(ring_.ring());
         }
 
         tick_count_ = 0;
