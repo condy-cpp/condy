@@ -82,9 +82,15 @@ jobs:
         timeout-minutes: 15
         run: |
           bash ./scripts/vm-run.sh \
-            -c "CONDY_TEST_NVME_DEVICE_PATH=/dev/nvme0n1 CONDY_TEST_NVME_NG_DEVICE_PATH=/dev/ng0n1 ./tests" \
+            -c '
+              CONDY_TEST_NVME_DEVICE_PATH=/dev/nvme0n1 \
+              CONDY_TEST_NVME_NG_DEVICE_PATH=/dev/ng0n1 \
+              CONDY_TEST_BSG_DEVICE_PATH=/dev/bsg/0:0:0:0 \
+              ./tests
+            ' \
             ./.cache/bzImage ./build/tests/tests \
             2>&1 | tee vm-run.log
+
           if grep -q "SUCCESS!" vm-run.log; then
             echo "::notice:: All tests passed"
           else
