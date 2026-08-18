@@ -63,6 +63,8 @@ using condy::ZeroCopyRxDMABufArea;
 
 // cqe_handler.hpp
 using condy::NVMePassthruCQEHandler;
+using condy::SCSIBsgPassthruCQEHandler;
+using condy::SCSIBsgResult;
 using condy::SelectBufferCQEHandler;
 using condy::SimpleCQEHandler;
 #if CONDY_URING_VERSION_GE(2, 12) // >= 2.12
