@@ -18,6 +18,7 @@
 #include <bit>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <stdexcept>
 #include <sys/mman.h>
 #include <sys/types.h>
@@ -54,10 +55,16 @@ protected:
         : runtime_(runtime), capacity_(std::bit_ceil(capacity)),
           mask_(io_uring_buf_ring_mask(capacity_)), buf_lens_(capacity_, 0),
           br_flags_(flags) {
+        bool ok = false;
+        auto d = detail::defer([&]() {
+            if (!ok) {
+                cleanup_();
+            }
+        });
+
         auto &bgid_pool = runtime_->bgid_pool_internal();
 
         bgid_ = bgid_pool.allocate();
-        auto d = detail::defer([&]() { bgid_pool.recycle(bgid_); });
 
         int err = 0;
         br_ = io_uring_setup_buf_ring(runtime_->ring_internal().ring(),
@@ -66,18 +73,10 @@ protected:
             throw detail::make_system_error("io_uring_setup_buf_ring", -err);
         }
 
-        d.dismiss();
+        ok = true;
     }
 
-    ~BundledProvidedBufferQueue() {
-        assert(br_ != nullptr);
-        [[maybe_unused]] int r = io_uring_free_buf_ring(
-            runtime_->ring_internal().ring(), br_, capacity_, bgid_);
-        assert(r == 0);
-        if (r == 0) {
-            runtime_->bgid_pool_internal().recycle(bgid_);
-        }
-    }
+    ~BundledProvidedBufferQueue() { cleanup_(); }
 
 public:
     CONDY_DELETE_COPY_MOVE(BundledProvidedBufferQueue);
@@ -165,12 +164,25 @@ public:
     }
 
 private:
+    void cleanup_() noexcept {
+        if (br_ != nullptr) {
+            [[maybe_unused]] int r = io_uring_free_buf_ring(
+                runtime_->ring_internal().ring(), br_, capacity_, bgid_);
+            assert(r == 0);
+            br_ = nullptr;
+        }
+        if (bgid_ != std::numeric_limits<uint16_t>::max()) {
+            runtime_->bgid_pool_internal().recycle(bgid_);
+        }
+    }
+
+private:
     Runtime *runtime_;
     io_uring_buf_ring *br_ = nullptr;
     uint32_t size_ = 0;
     uint32_t capacity_;
     int mask_;
-    uint16_t bgid_;
+    uint16_t bgid_ = std::numeric_limits<uint16_t>::max();
     std::vector<uint32_t> buf_lens_;
     unsigned int br_flags_;
 };
@@ -245,16 +257,22 @@ class BundledProvidedBufferPool {
 protected:
     BundledProvidedBufferPool(Runtime *runtime, void *buffer_data,
                               uint32_t num_buffers, size_t buffer_size,
-                              unsigned int flags)
+                              unsigned int flags, bool owns_buffers)
         : runtime_(runtime), buffers_base_(static_cast<char *>(buffer_data)),
           num_buffers_(std::bit_ceil(num_buffers)),
           mask_(io_uring_buf_ring_mask(num_buffers_)),
           buffer_size_(buffer_size), curr_buf_len_(buffer_size),
-          br_flags_(flags) {
+          br_flags_(flags), owns_buffers_(owns_buffers) {
+        bool ok = false;
+        auto d = detail::defer([&]() {
+            if (!ok) {
+                cleanup_();
+            }
+        });
+
         auto &bgid_pool = runtime_->bgid_pool_internal();
 
         bgid_ = bgid_pool.allocate();
-        auto d = detail::defer([&]() { bgid_pool.recycle(bgid_); });
 
         int err = 0;
         br_ = io_uring_setup_buf_ring(runtime_->ring_internal().ring(),
@@ -270,18 +288,10 @@ protected:
         }
         io_uring_buf_ring_advance(br_, static_cast<int>(num_buffers_));
 
-        d.dismiss();
+        ok = true;
     }
 
-    ~BundledProvidedBufferPool() {
-        assert(br_ != nullptr);
-        [[maybe_unused]] int r = io_uring_free_buf_ring(
-            runtime_->ring_internal().ring(), br_, num_buffers_, bgid_);
-        assert(r == 0);
-        if (r == 0) {
-            runtime_->bgid_pool_internal().recycle(bgid_);
-        }
-    }
+    ~BundledProvidedBufferPool() { cleanup_(); }
 
 public:
     CONDY_DELETE_COPY_MOVE(BundledProvidedBufferPool);
@@ -365,7 +375,27 @@ private:
 
     void advance_io_uring_buf_() noexcept { br_head_++; }
 
-protected:
+    void cleanup_() noexcept {
+        [[maybe_unused]] int r;
+        if (br_ != nullptr) {
+            r = io_uring_free_buf_ring(runtime_->ring_internal().ring(), br_,
+                                       num_buffers_, bgid_);
+            assert(r == 0);
+            br_ = nullptr;
+        }
+        if (bgid_ != std::numeric_limits<uint16_t>::max()) {
+            runtime_->bgid_pool_internal().recycle(bgid_);
+        }
+        if (owns_buffers_) {
+            r = munmap(buffers_base_,
+                       static_cast<size_t>(num_buffers_) * buffer_size_);
+            assert(r == 0);
+            owns_buffers_ = false;
+            buffers_base_ = nullptr;
+        }
+    }
+
+private:
     Runtime *runtime_;
     io_uring_buf_ring *br_ = nullptr;
     char *buffers_base_ = nullptr;
@@ -373,9 +403,10 @@ protected:
     int mask_;
     uint32_t buffer_size_;
     uint32_t curr_buf_len_;
-    uint16_t bgid_;
+    uint16_t bgid_ = std::numeric_limits<uint16_t>::max();
     uint16_t br_head_ = 0;
     unsigned int br_flags_;
+    bool owns_buffers_;
 };
 
 } // namespace detail
@@ -420,8 +451,7 @@ public:
         : BundledProvidedBufferPool(
               &runtime,
               alloc_buffer_data_(std::bit_ceil(num_buffers) * buffer_size),
-              num_buffers, buffer_size, flags),
-          external_memory_(false) {}
+              num_buffers, buffer_size, flags, true) {}
 
     /**
      * @brief Construct with externally provided buffer memory.
@@ -448,14 +478,7 @@ public:
                        uint32_t num_buffers, size_t buffer_size,
                        unsigned int flags = 0)
         : BundledProvidedBufferPool(&runtime, buffer_data, num_buffers,
-                                    buffer_size, flags),
-          external_memory_(true) {}
-
-    ~ProvidedBufferPool() {
-        if (!external_memory_) {
-            munmap(buffers_base_, capacity() * buffer_size());
-        }
-    }
+                                    buffer_size, flags, false) {}
 
 public:
     ProvidedBuffer handle_finish(io_uring_cqe *cqe) noexcept {
@@ -477,8 +500,6 @@ private:
         }
         return buf_data;
     }
-
-    bool external_memory_ = false;
 };
 
 /**

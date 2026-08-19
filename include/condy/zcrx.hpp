@@ -131,6 +131,13 @@ public:
     ZeroCopyRxBufferPool(Runtime &runtime, uint32_t if_idx, uint32_t if_rxq,
                          uint32_t rq_entries, const ZeroCopyRxDMABufArea &area)
         : ring_(&runtime.ring_internal()), flags_(0) {
+        bool ok = false;
+        auto d = detail::defer([&]() {
+            if (!ok) {
+                cleanup_();
+            }
+        });
+
         area_size_ = 0;
         area_ptr_ = nullptr;
 
@@ -141,21 +148,10 @@ public:
 
         register_ifq_(if_idx, if_rxq, rq_entries, area_reg,
                       sysconf(_SC_PAGESIZE));
+        ok = true;
     }
 
-    ~ZeroCopyRxBufferPool() {
-        [[maybe_unused]] int r;
-        if (area_size_ > 0) {
-            assert(area_ptr_ != nullptr);
-            r = munmap(area_ptr_, area_size_);
-            assert(r == 0);
-        }
-        assert(rq_ring_.ring_ptr != nullptr);
-        r = munmap(rq_ring_.ring_ptr, ring_size_);
-        assert(r == 0);
-        // TODO: Unregister ifq. For now there's no way to unregister ifq, so we
-        // just leak the registration.
-    }
+    ~ZeroCopyRxBufferPool() { cleanup_(); }
 
     CONDY_DELETE_COPY_MOVE(ZeroCopyRxBufferPool);
 
@@ -164,6 +160,13 @@ private:
                          uint32_t rq_entries, const ZeroCopyRxArea &area,
                          uint32_t flags)
         : ring_(&ring), flags_(flags) {
+        bool ok = false;
+        auto d = detail::defer([&]() {
+            if (!ok) {
+                cleanup_();
+            }
+        });
+
         const size_t page_size = sysconf(_SC_PAGESIZE);
 
         if (area.addr == nullptr) {
@@ -173,7 +176,6 @@ private:
             if (area_ptr_ == MAP_FAILED) {
                 throw detail::make_system_error("mmap");
             }
-            auto d = detail::defer([&]() { munmap(area_ptr_, area_size_); });
 
             io_uring_zcrx_area_reg area_reg = {};
             area_reg.addr = reinterpret_cast<uint64_t>(area_ptr_);
@@ -181,8 +183,6 @@ private:
             area_reg.flags = 0;
 
             register_ifq_(if_idx, if_rxq, rq_entries, area_reg, page_size);
-
-            d.dismiss();
         } else {
             // Not owned, so we don't track the size for unmapping
             area_size_ = 0;
@@ -195,6 +195,8 @@ private:
 
             register_ifq_(if_idx, if_rxq, rq_entries, area_reg, page_size);
         }
+
+        ok = true;
     }
 
 public:
@@ -220,6 +222,20 @@ public:
     }
 
 private:
+    void cleanup_() noexcept {
+        [[maybe_unused]] int r;
+        if (area_ptr_ != nullptr && area_size_ > 0) {
+            r = munmap(area_ptr_, area_size_);
+            assert(r == 0);
+        }
+        if (rq_ring_.ring_ptr != nullptr) {
+            r = munmap(rq_ring_.ring_ptr, ring_size_);
+            assert(r == 0);
+        }
+        // TODO: Unregister ifq. For now there's no way to unregister ifq, so we
+        // just leak the registration.
+    }
+
     void register_ifq_(uint32_t if_idx, uint32_t if_rxq, uint32_t rq_entries,
                        io_uring_zcrx_area_reg &area_reg, size_t page_size) {
         rq_entries = std::bit_ceil(rq_entries);
@@ -303,10 +319,10 @@ private:
 
 private:
     detail::Ring *ring_;
-    void *area_ptr_;
-    size_t area_size_;
-    size_t ring_size_;
-    io_uring_zcrx_rq rq_ring_;
+    size_t area_size_ = 0;
+    void *area_ptr_ = nullptr;
+    size_t ring_size_ = 0;
+    io_uring_zcrx_rq rq_ring_ = {};
     uint32_t zcrx_id_;
     uint64_t area_token_;
     uint32_t flags_;
