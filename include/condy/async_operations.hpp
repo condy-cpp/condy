@@ -475,6 +475,17 @@ inline auto async_send(Fd sockfd, const Buffer &buf, int flags) {
 /**
  * @brief See io_uring_prep_send
  */
+template <FdLike Fd, BufferLike Buffer>
+inline auto async_send(Fd sockfd, detail::FixedBuffer<Buffer> buf, int flags) {
+    auto op = detail::make_op_awaiter(detail::prep_send_fixed, sockfd,
+                                      buf.value.data(), buf.value.size(), flags,
+                                      buf.buf_index);
+    return detail::maybe_flag_fixed_fd(std::move(op), sockfd);
+}
+
+/**
+ * @brief See io_uring_prep_send
+ */
 template <FdLike Fd>
 inline auto async_send(Fd sockfd, ProvidedBufferQueue &buf, int flags) {
     auto op = detail::make_select_buffer_op_awaiter(&buf, io_uring_prep_send,
@@ -503,6 +514,18 @@ inline auto async_sendto(Fd sockfd, const Buffer &buf, int flags,
                          const struct sockaddr *addr, socklen_t addrlen) {
     auto op = detail::make_op_awaiter(detail::prep_sendto, sockfd, buf.data(),
                                       buf.size(), flags, addr, addrlen);
+    return detail::maybe_flag_fixed_fd(std::move(op), sockfd);
+}
+
+/**
+ * @brief See io_uring_prep_send and io_uring_prep_send_set_addr
+ */
+template <FdLike Fd, BufferLike Buffer>
+inline auto async_sendto(Fd sockfd, detail::FixedBuffer<Buffer> buf, int flags,
+                         const struct sockaddr *addr, socklen_t addrlen) {
+    auto op = detail::make_op_awaiter(detail::prep_sendto_fixed, sockfd,
+                                      buf.value.data(), buf.value.size(), flags,
+                                      addr, addrlen, buf.buf_index);
     return detail::maybe_flag_fixed_fd(std::move(op), sockfd);
 }
 
@@ -590,6 +613,17 @@ template <FdLike Fd, BufferLike Buffer>
 inline auto async_recv(Fd sockfd, const Buffer &buf, int flags) {
     auto op = detail::make_op_awaiter(io_uring_prep_recv, sockfd, buf.data(),
                                       buf.size(), flags);
+    return detail::maybe_flag_fixed_fd(std::move(op), sockfd);
+}
+
+/**
+ * @brief See io_uring_prep_recv
+ */
+template <FdLike Fd, BufferLike Buffer>
+inline auto async_recv(Fd sockfd, detail::FixedBuffer<Buffer> buf, int flags) {
+    auto op = detail::make_op_awaiter(detail::prep_recv_fixed, sockfd,
+                                      buf.value.data(), buf.value.size(), flags,
+                                      buf.buf_index);
     return detail::maybe_flag_fixed_fd(std::move(op), sockfd);
 }
 
