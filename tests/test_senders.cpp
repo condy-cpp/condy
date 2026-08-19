@@ -6,9 +6,7 @@
 #include "condy/sync_wait.hpp"
 #include <atomic>
 #include <cassert>
-#include <cerrno>
 #include <doctest.h>
-#include <functional>
 #include <stdexcept>
 #include <stop_token>
 #include <thread>

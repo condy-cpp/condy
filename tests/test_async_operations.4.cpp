@@ -1,31 +1,15 @@
 #include "condy/buffers.hpp"
 #include "condy/channel.hpp"
 #include "condy/cqe_handler.hpp"
+#include "condy/helpers.hpp"
 #include "condy/runtime.hpp"
 #include "condy/runtime_options.hpp"
 #include "condy/sync_wait.hpp"
 #include "condy/zcrx.hpp"
 #include "helpers.hpp"
-#include <cerrno>
-#include <condy/async_operations.hpp>
-#include <condy/helpers.hpp>
-#include <cstdint>
-#include <cstring>
-#include <doctest.h>
-#include <fcntl.h>
 #include <linux/errqueue.h>
-#include <linux/futex.h>
 #include <linux/net_tstamp.h>
-#include <linux/nvme_ioctl.h>
-#include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <string_view>
-#include <sys/epoll.h>
-#include <sys/socket.h>
-#include <sys/syscall.h>
-#include <sys/types.h>
-#include <sys/xattr.h>
-#include <unistd.h>
 #include <variant>
 
 TEST_CASE("test async_operations - test mkdirat") {

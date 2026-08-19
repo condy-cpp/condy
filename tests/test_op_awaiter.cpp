@@ -1,11 +1,8 @@
+#include "condy/awaiter_operations.hpp"
+#include "condy/awaiters.hpp"
 #include "condy/detail/async_operations.hpp"
 #include "condy/provided_buffers.hpp"
 #include "condy/sync_wait.hpp"
-#include <condy/awaiter_operations.hpp>
-#include <condy/awaiters.hpp>
-#include <condy/coro.hpp>
-#include <cstddef>
-#include <cstring>
 #include <doctest.h>
 
 TEST_CASE("test op_awaiter - basic routine") {

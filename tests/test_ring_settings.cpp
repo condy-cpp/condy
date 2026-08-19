@@ -3,7 +3,6 @@
 #include "condy/runtime.hpp"
 #include "condy/runtime_options.hpp"
 #include "condy/sync_wait.hpp"
-#include <cerrno>
 #include <doctest.h>
 #include <fcntl.h>
 

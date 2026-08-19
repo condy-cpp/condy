@@ -1,5 +1,4 @@
 #include "condy/async_operations.hpp"
-#include "condy/coro.hpp"
 #include "condy/detail/async_operations.hpp"
 #include "condy/detail/invoker.hpp"
 #include "condy/runtime.hpp"
@@ -7,7 +6,6 @@
 #include "condy/task.hpp"
 #include <atomic>
 #include <doctest.h>
-#include <memory>
 #include <thread>
 
 namespace {

@@ -6,8 +6,6 @@
 #include "condy/sync_wait.hpp"
 #include "condy/task.hpp"
 #include <atomic>
-#include <cerrno>
-#include <cstddef>
 #include <doctest.h>
 
 namespace {
