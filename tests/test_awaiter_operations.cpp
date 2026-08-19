@@ -1,11 +1,7 @@
+#include "condy/awaiter_operations.hpp"
+#include "condy/awaiters.hpp"
 #include "condy/detail/async_operations.hpp"
 #include "condy/sync_wait.hpp"
-#include <cerrno>
-#include <condy/awaiter_operations.hpp>
-#include <condy/awaiters.hpp>
-#include <condy/coro.hpp>
-#include <cstddef>
-#include <cstring>
 #include <doctest.h>
 #include <stdexcept>
 

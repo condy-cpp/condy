@@ -1,6 +1,6 @@
 #include "condy/async_operations.hpp"
 #include "condy/buffers.hpp"
-#include "condy/coro.hpp"
+#include "condy/detail/ring.hpp"
 #include "condy/runtime.hpp"
 #include "condy/sync_wait.hpp"
 #include "condy/task.hpp"

@@ -1,5 +1,4 @@
 #include "condy/async_operations.hpp"
-#include "condy/coro.hpp"
 #include "condy/futex.hpp"
 #include "condy/sync_wait.hpp"
 #include "condy/task.hpp"
