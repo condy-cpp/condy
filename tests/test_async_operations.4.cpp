@@ -390,6 +390,60 @@ TEST_CASE(
     close(fd);
 }
 
+TEST_CASE("test async_operations - test uring_cmd - scsi bsg - basic") {
+    const char *bsg_device_path = std::getenv("CONDY_TEST_BSG_DEVICE_PATH");
+    if (bsg_device_path == nullptr) {
+        MESSAGE("CONDY_TEST_BSG_DEVICE_PATH not set, skipping");
+        return;
+    }
+
+    int fd = open(bsg_device_path, O_RDWR);
+    REQUIRE(fd >= 0);
+
+    condy::Runtime runtime(
+        condy::RuntimeOptions().enable_sqe128().enable_cqe32());
+
+    auto func = [&]() -> condy::Coro<void> {
+        auto [status, result] = co_await my_cmd_scsi_test_unit_ready(fd);
+        REQUIRE(status == 0);
+        REQUIRE(result.device_status() == 0);
+        REQUIRE(result.host_status() == 0);
+    };
+    condy::sync_wait(runtime, func());
+
+    close(fd);
+}
+
+TEST_CASE("test async_operations - test uring_cmd - scsi bsg - fixed fd") {
+    const char *bsg_device_path = std::getenv("CONDY_TEST_BSG_DEVICE_PATH");
+    if (bsg_device_path == nullptr) {
+        MESSAGE("CONDY_TEST_BSG_DEVICE_PATH not set, skipping");
+        return;
+    }
+
+    int fd = open(bsg_device_path, O_RDWR);
+    REQUIRE(fd >= 0);
+
+    condy::Runtime runtime(
+        condy::RuntimeOptions().enable_sqe128().enable_cqe32());
+
+    auto func = [&]() -> condy::Coro<void> {
+        auto &fd_table = condy::current_runtime().fd_table();
+        fd_table.init(1);
+        int r = co_await condy::async_files_update(&fd, 1, 0);
+        REQUIRE(r == 1);
+
+        auto [status, result] =
+            co_await my_cmd_scsi_test_unit_ready(condy::fixed(0));
+        REQUIRE(status == 0);
+        REQUIRE(result.device_status() == 0);
+        REQUIRE(result.host_status() == 0);
+    };
+    condy::sync_wait(runtime, func());
+
+    close(fd);
+}
+
 #if CONDY_URING_VERSION_GE(2, 12) // >= 2.12
 TEST_CASE("test async_operations - test uring_cmd_multishot - tx timestamp") {
     int r;
@@ -572,6 +626,60 @@ TEST_CASE(
         REQUIRE(status2 == 0);
         REQUIRE(result2 == 0);
         REQUIRE(std::string_view(buffer, msg.size()) == msg);
+    };
+    condy::sync_wait(runtime, func());
+
+    close(fd);
+}
+
+TEST_CASE("test async_operations - test uring_cmd128 - scsi bsg - basic") {
+    const char *bsg_device_path = std::getenv("CONDY_TEST_BSG_DEVICE_PATH");
+    if (bsg_device_path == nullptr) {
+        MESSAGE("CONDY_TEST_BSG_DEVICE_PATH not set, skipping");
+        return;
+    }
+
+    int fd = open(bsg_device_path, O_RDWR);
+    REQUIRE(fd >= 0);
+
+    condy::Runtime runtime(
+        condy::RuntimeOptions().enable_sqe_mixed().enable_cqe_mixed());
+
+    auto func = [&]() -> condy::Coro<void> {
+        auto [status, result] = co_await my_cmd_scsi_test_unit_ready<true>(fd);
+        REQUIRE(status == 0);
+        REQUIRE(result.device_status() == 0);
+        REQUIRE(result.host_status() == 0);
+    };
+    condy::sync_wait(runtime, func());
+
+    close(fd);
+}
+
+TEST_CASE("test async_operations - test uring_cmd128 - scsi bsg - fixed fd") {
+    const char *bsg_device_path = std::getenv("CONDY_TEST_BSG_DEVICE_PATH");
+    if (bsg_device_path == nullptr) {
+        MESSAGE("CONDY_TEST_BSG_DEVICE_PATH not set, skipping");
+        return;
+    }
+
+    int fd = open(bsg_device_path, O_RDWR);
+    REQUIRE(fd >= 0);
+
+    condy::Runtime runtime(
+        condy::RuntimeOptions().enable_sqe_mixed().enable_cqe_mixed());
+
+    auto func = [&]() -> condy::Coro<void> {
+        auto &fd_table = condy::current_runtime().fd_table();
+        fd_table.init(1);
+        int r = co_await condy::async_files_update(&fd, 1, 0);
+        REQUIRE(r == 1);
+
+        auto [status, result] =
+            co_await my_cmd_scsi_test_unit_ready<true>(condy::fixed(0));
+        REQUIRE(status == 0);
+        REQUIRE(result.device_status() == 0);
+        REQUIRE(result.host_status() == 0);
     };
     condy::sync_wait(runtime, func());
 
