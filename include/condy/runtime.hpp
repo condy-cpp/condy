@@ -143,7 +143,7 @@ public:
      */
     void run() {
         detail::Context::current().init(this);
-        auto d = detail::defer([]() { detail::Context::current().reset(); });
+        auto d = detail::defer([] { detail::Context::current().reset(); });
 
         if (run_thread_id_ == std::thread::id()) {
             int r = io_uring_enable_rings(ring_.ring());
@@ -168,7 +168,16 @@ public:
         if (!disable_register_ring_fd_) {
             io_uring_register_ring_fd(ring_.ring());
         }
+        auto d2 = detail::defer([&] {
+            if (!disable_register_ring_fd_) {
+                io_uring_unregister_ring_fd(ring_.ring());
+            }
+        });
 
+        auto d3 = detail::defer([&] {
+            tick_count_ = 0;
+            exit_allowed_.store(false, std::memory_order_release);
+        });
         while (true) {
             tick_count_++;
 
@@ -188,13 +197,6 @@ public:
             }
             flush_ring_wait_();
         }
-
-        if (!disable_register_ring_fd_) {
-            io_uring_unregister_ring_fd(ring_.ring());
-        }
-
-        tick_count_ = 0;
-        exit_allowed_.store(false, std::memory_order_release);
     }
 
     /**
