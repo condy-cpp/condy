@@ -13,7 +13,7 @@ on:
       - "**.md"
 
 env:
-  KERNEL_ARCHIVE_URL: "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.1.5.tar.xz"
+  KERNEL_ARCHIVE_URL: "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.2.tar.xz"
 
 jobs:
   build-and-test:
