@@ -42,8 +42,7 @@ inline Scheduler get_scheduler(Runtime &runtime) { return Scheduler{runtime}; }
  */
 template <typename Sender> auto wait_sender(Sender &&sender) {
     auto &runtime = current_runtime();
-    auto sched = get_scheduler(runtime);
-    auto s = std::forward<Sender>(sender) | std::execution::continues_on(sched);
+    auto s = std::forward<Sender>(sender) | std::execution::affine();
     return detail::WaitSenderAwaiter<decltype(s)>(std::move(s), runtime);
 }
 
