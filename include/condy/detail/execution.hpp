@@ -124,6 +124,9 @@ public:
             this->connect_impl(ReceiverWrapper<Receiver>{std::move(receiver)})};
     }
 
+    // All condy senders are affine
+    auto affine() && noexcept { return std::move(*this); }
+
 private:
     template <typename Receiver> struct ReceiverWrapper {
         Receiver receiver;
