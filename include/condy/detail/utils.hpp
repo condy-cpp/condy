@@ -71,26 +71,19 @@ inline void tsan_release([[maybe_unused]] void *addr) noexcept {
 #endif
 }
 
-template <typename Func> class [[nodiscard]] Defer {
-public:
-    Defer(Func func) : func_(std::move(func)) {}
-    ~Defer() {
-        if (active_)
-            func_();
-    }
-
-    CONDY_DELETE_COPY_MOVE(Defer);
-
-public:
-    void dismiss() noexcept { active_ = false; }
-
-private:
-    Func func_;
-    bool active_ = true;
-};
-
 template <typename Func> auto defer(Func &&func) {
-    return Defer<std::decay_t<Func>>(std::forward<Func>(func));
+    using F = std::decay_t<Func>;
+    class [[nodiscard]] Defer {
+    public:
+        Defer(F func) : func_(std::move(func)) {}
+        ~Defer() { func_(); }
+
+        CONDY_DELETE_COPY_MOVE(Defer);
+
+    private:
+        F func_;
+    };
+    return Defer(std::forward<Func>(func));
 }
 
 template <typename T, T From = 0, T To = std::numeric_limits<T>::max()>
