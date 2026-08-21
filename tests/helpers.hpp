@@ -152,12 +152,15 @@ inline auto my_async_cmd_sock(int cmd_op, Fd fd, int level, int optname,
     };
 #if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
     if constexpr (SQE128) {
-        return condy::async_uring_cmd128(cmd_op, fd, cmd_func);
+        return condy::async_uring_cmd128(cmd_op, fd, cmd_func,
+                                         condy::SimpleCQEHandler{});
     } else {
-        return condy::async_uring_cmd(cmd_op, fd, cmd_func);
+        return condy::async_uring_cmd(cmd_op, fd, cmd_func,
+                                      condy::SimpleCQEHandler{});
     }
 #else
-    return condy::async_uring_cmd(cmd_op, fd, cmd_func);
+    return condy::async_uring_cmd(cmd_op, fd, cmd_func,
+                                  condy::SimpleCQEHandler{});
 #endif
 }
 #endif
@@ -187,15 +190,15 @@ inline auto my_cmd_nvme_read(Fd fd, void *buf, size_t buf_size,
     };
 #if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
     if constexpr (SQE128) {
-        return condy::async_uring_cmd128<condy::NVMePassthruCQEHandler>(
-            NVME_URING_CMD_IO, fd, cmd_func);
+        return condy::async_uring_cmd128(NVME_URING_CMD_IO, fd, cmd_func,
+                                         condy::NVMePassthruCQEHandler{});
     } else {
-        return condy::async_uring_cmd<condy::NVMePassthruCQEHandler>(
-            NVME_URING_CMD_IO, fd, cmd_func);
+        return condy::async_uring_cmd(NVME_URING_CMD_IO, fd, cmd_func,
+                                      condy::NVMePassthruCQEHandler{});
     }
 #else
-    return condy::async_uring_cmd<condy::NVMePassthruCQEHandler>(
-        NVME_URING_CMD_IO, fd, cmd_func);
+    return condy::async_uring_cmd(NVME_URING_CMD_IO, fd, cmd_func,
+                                  condy::NVMePassthruCQEHandler{});
 #endif
 }
 
@@ -219,15 +222,15 @@ inline auto my_cmd_nvme_write(Fd fd, const void *buf, size_t buf_size,
     };
 #if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
     if constexpr (SQE128) {
-        return condy::async_uring_cmd128<condy::NVMePassthruCQEHandler>(
-            NVME_URING_CMD_IO, fd, cmd_func);
+        return condy::async_uring_cmd128(NVME_URING_CMD_IO, fd, cmd_func,
+                                         condy::NVMePassthruCQEHandler{});
     } else {
-        return condy::async_uring_cmd<condy::NVMePassthruCQEHandler>(
-            NVME_URING_CMD_IO, fd, cmd_func);
+        return condy::async_uring_cmd(NVME_URING_CMD_IO, fd, cmd_func,
+                                      condy::NVMePassthruCQEHandler{});
     }
 #else
-    return condy::async_uring_cmd<condy::NVMePassthruCQEHandler>(
-        NVME_URING_CMD_IO, fd, cmd_func);
+    return condy::async_uring_cmd(NVME_URING_CMD_IO, fd, cmd_func,
+                                  condy::NVMePassthruCQEHandler{});
 #endif
 }
 
@@ -268,15 +271,15 @@ inline auto my_cmd_scsi_test_unit_ready(Fd fd) {
     };
 #if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
     if constexpr (SQE128) {
-        return condy::async_uring_cmd128<condy::SCSIBsgPassthruCQEHandler>(
-            0, fd, cmd_func);
+        return condy::async_uring_cmd128(0, fd, cmd_func,
+                                         condy::SCSIBsgPassthruCQEHandler{});
     } else {
-        return condy::async_uring_cmd<condy::SCSIBsgPassthruCQEHandler>(
-            0, fd, cmd_func);
+        return condy::async_uring_cmd(0, fd, cmd_func,
+                                      condy::SCSIBsgPassthruCQEHandler{});
     }
 #else
-    return condy::async_uring_cmd<condy::SCSIBsgPassthruCQEHandler>(0, fd,
-                                                                    cmd_func);
+    return condy::async_uring_cmd(0, fd, cmd_func,
+                                  condy::SCSIBsgPassthruCQEHandler{});
 #endif
 }
 

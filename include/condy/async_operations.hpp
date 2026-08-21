@@ -879,8 +879,8 @@ inline auto async_socket_direct(int domain, int type, int protocol,
  */
 template <CQEHandlerLike CQEHandler = SimpleCQEHandler, FdLike Fd,
           typename CmdFunc, typename... Args>
-inline auto async_uring_cmd(int cmd_op, Fd fd, CmdFunc &&cmd_func,
-                            Args &&...handler_args) {
+[[deprecated]] inline auto
+async_uring_cmd(int cmd_op, Fd fd, CmdFunc &&cmd_func, Args &&...handler_args) {
     return async_uring_cmd(cmd_op, fd, std::forward<CmdFunc>(cmd_func),
                            CQEHandler(std::forward<Args>(handler_args)...));
 }
@@ -918,9 +918,9 @@ inline auto async_uring_cmd(int cmd_op, Fd fd, CmdFunc &&cmd_func,
  */
 template <CQEHandlerLike CQEHandler = SimpleCQEHandler, FdLike Fd,
           typename CmdFunc, typename MultiShotFunc, typename... Args>
-inline auto async_uring_cmd_multishot(int cmd_op, Fd fd, CmdFunc &&cmd_func,
-                                      MultiShotFunc &&func,
-                                      Args &&...handler_args) {
+[[deprecated]] inline auto
+async_uring_cmd_multishot(int cmd_op, Fd fd, CmdFunc &&cmd_func,
+                          MultiShotFunc &&func, Args &&...handler_args) {
     return async_uring_cmd_multishot(
         cmd_op, fd, std::forward<CmdFunc>(cmd_func),
         CQEHandler(std::forward<Args>(handler_args)...),
@@ -964,8 +964,9 @@ inline auto async_uring_cmd_multishot(int cmd_op, Fd fd, CmdFunc &&cmd_func,
  */
 template <CQEHandlerLike CQEHandler = SimpleCQEHandler, FdLike Fd,
           typename CmdFunc, typename... Args>
-inline auto async_uring_cmd128(int cmd_op, Fd fd, CmdFunc &&cmd_func,
-                               Args &&...handler_args) {
+[[deprecated]] inline auto async_uring_cmd128(int cmd_op, Fd fd,
+                                              CmdFunc &&cmd_func,
+                                              Args &&...handler_args) {
     return async_uring_cmd128(cmd_op, fd, std::forward<CmdFunc>(cmd_func),
                               CQEHandler(std::forward<Args>(handler_args)...));
 }
