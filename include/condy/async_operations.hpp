@@ -871,6 +871,7 @@ inline auto async_socket_direct(int domain, int type, int protocol,
 
 /**
  * @brief See io_uring_prep_uring_cmd
+ * @deprecated Use the overload accepting a CQEHandler instance instead.
  * @tparam CQEHandler Custom CQE handler for specific result processing.
  * @param cmd_func Function to configure sqe for specific command. Signature:
  * void(io_uring_sqe *sqe).
@@ -884,6 +885,12 @@ inline auto async_uring_cmd(int cmd_op, Fd fd, CmdFunc &&cmd_func,
                            CQEHandler(std::forward<Args>(handler_args)...));
 }
 
+/**
+ * @brief See io_uring_prep_uring_cmd
+ * @param cmd_func Function to configure sqe for specific command. Signature:
+ * void(io_uring_sqe *sqe).
+ * @param cqe_handler CQE handler for specific result processing.
+ */
 template <FdLike Fd, typename CmdFunc, CQEHandlerLike CQEHandler>
 inline auto async_uring_cmd(int cmd_op, Fd fd, CmdFunc &&cmd_func,
                             CQEHandler &&cqe_handler) {
@@ -901,7 +908,13 @@ inline auto async_uring_cmd(int cmd_op, Fd fd, CmdFunc &&cmd_func,
 }
 
 /**
- * @copydoc async_uring_cmd
+ * @brief See io_uring_prep_uring_cmd
+ * @deprecated Use the overload accepting a CQEHandler instance instead.
+ * @tparam CQEHandler Custom CQE handler for specific result processing.
+ * @param cmd_func Function to configure sqe for specific command. Signature:
+ * void(io_uring_sqe *sqe).
+ * @param func Callback invoked on each completion except the last one.
+ * @param handler_args Arguments forwarded to CQEHandler constructor.
  */
 template <CQEHandlerLike CQEHandler = SimpleCQEHandler, FdLike Fd,
           typename CmdFunc, typename MultiShotFunc, typename... Args>
@@ -914,6 +927,13 @@ inline auto async_uring_cmd_multishot(int cmd_op, Fd fd, CmdFunc &&cmd_func,
         std::forward<MultiShotFunc>(func));
 }
 
+/**
+ * @brief See io_uring_prep_uring_cmd (multi-shot variant)
+ * @param cmd_func Function to configure sqe for specific command. Signature:
+ * void(io_uring_sqe *sqe).
+ * @param cqe_handler CQE handler for specific result processing.
+ * @param func Callback invoked on each completion except the last one.
+ */
 template <FdLike Fd, typename CmdFunc, CQEHandlerLike CQEHandler,
           typename MultiShotFunc>
 inline auto async_uring_cmd_multishot(int cmd_op, Fd fd, CmdFunc &&cmd_func,
@@ -936,6 +956,7 @@ inline auto async_uring_cmd_multishot(int cmd_op, Fd fd, CmdFunc &&cmd_func,
 #if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
 /**
  * @brief See io_uring_prep_uring_cmd128
+ * @deprecated Use the overload accepting a CQEHandler instance instead.
  * @tparam CQEHandler Custom CQE handler for specific result processing.
  * @param cmd_func Function to configure sqe for specific command. Signature:
  * void(io_uring_sqe *sqe).
@@ -949,6 +970,12 @@ inline auto async_uring_cmd128(int cmd_op, Fd fd, CmdFunc &&cmd_func,
                               CQEHandler(std::forward<Args>(handler_args)...));
 }
 
+/**
+ * @brief See io_uring_prep_uring_cmd128
+ * @param cmd_func Function to configure sqe for specific command. Signature:
+ * void(io_uring_sqe *sqe).
+ * @param cqe_handler CQE handler for specific result processing.
+ */
 template <FdLike Fd, typename CmdFunc, CQEHandlerLike CQEHandler>
 inline auto async_uring_cmd128(int cmd_op, Fd fd, CmdFunc &&cmd_func,
                                CQEHandler &&cqe_handler) {
