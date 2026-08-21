@@ -696,9 +696,10 @@ inline auto async_recv_multishot(Fd sockfd, ZeroCopyRxBufferPool &pool,
         detail::prep_recv_zc_multishot(sqe, sockfd, zcrx_id);
         return sqe;
     };
-    auto op = build_multishot_op_awaiter<
-        SelectBufferCQEHandler<ZeroCopyRxBufferPool>>(
-        std::move(prep_func), std::forward<MultiShotFunc>(func), &pool);
+    auto op = build_multishot_op_awaiter(
+        std::move(prep_func),
+        SelectBufferCQEHandler<ZeroCopyRxBufferPool>(&pool),
+        std::forward<MultiShotFunc>(func));
     return detail::maybe_flag_fixed_fd(std::move(op), sockfd);
 }
 #endif
@@ -887,8 +888,8 @@ inline auto async_uring_cmd(int cmd_op, Fd fd, CmdFunc &&cmd_func,
         cmd_func(sqe);
         return sqe;
     };
-    auto op = build_op_awaiter<CQEHandler>(std::move(prep_func),
-                                           std::forward<Args>(handler_args)...);
+    auto op = build_op_awaiter(std::move(prep_func),
+                               CQEHandler(std::forward<Args>(handler_args)...));
     return detail::maybe_flag_fixed_fd(std::move(op), fd);
 }
 
@@ -908,9 +909,9 @@ inline auto async_uring_cmd_multishot(int cmd_op, Fd fd, CmdFunc &&cmd_func,
         cmd_func(sqe);
         return sqe;
     };
-    auto op = build_multishot_op_awaiter<CQEHandler>(
-        std::move(prep_func), std::forward<MultiShotFunc>(func),
-        std::forward<Args>(handler_args)...);
+    auto op = build_multishot_op_awaiter(
+        std::move(prep_func), CQEHandler(std::forward<Args>(handler_args)...),
+        std::forward<MultiShotFunc>(func));
     return detail::maybe_flag_fixed_fd(std::move(op), fd);
 }
 
@@ -937,8 +938,8 @@ inline auto async_uring_cmd128(int cmd_op, Fd fd, CmdFunc &&cmd_func,
         cmd_func(sqe);
         return sqe;
     };
-    auto op = build_op_awaiter<CQEHandler>(std::move(prep_func),
-                                           std::forward<Args>(handler_args)...);
+    auto op = build_op_awaiter(std::move(prep_func),
+                               CQEHandler(std::forward<Args>(handler_args)...));
     return detail::maybe_flag_fixed_fd(std::move(op), fd);
 }
 #endif
