@@ -880,6 +880,13 @@ template <CQEHandlerLike CQEHandler = SimpleCQEHandler, FdLike Fd,
           typename CmdFunc, typename... Args>
 inline auto async_uring_cmd(int cmd_op, Fd fd, CmdFunc &&cmd_func,
                             Args &&...handler_args) {
+    return async_uring_cmd(cmd_op, fd, std::forward<CmdFunc>(cmd_func),
+                           CQEHandler(std::forward<Args>(handler_args)...));
+}
+
+template <FdLike Fd, typename CmdFunc, CQEHandlerLike CQEHandler>
+inline auto async_uring_cmd(int cmd_op, Fd fd, CmdFunc &&cmd_func,
+                            CQEHandler &&cqe_handler) {
     auto prep_func = [cmd_op, fd = detail::unwrap_fixed(fd),
                       cmd_func =
                           std::forward<CmdFunc>(cmd_func)](detail::Ring *ring) {
@@ -889,7 +896,7 @@ inline auto async_uring_cmd(int cmd_op, Fd fd, CmdFunc &&cmd_func,
         return sqe;
     };
     auto op = build_op_awaiter(std::move(prep_func),
-                               CQEHandler(std::forward<Args>(handler_args)...));
+                               std::forward<CQEHandler>(cqe_handler));
     return detail::maybe_flag_fixed_fd(std::move(op), fd);
 }
 
@@ -901,6 +908,17 @@ template <CQEHandlerLike CQEHandler = SimpleCQEHandler, FdLike Fd,
 inline auto async_uring_cmd_multishot(int cmd_op, Fd fd, CmdFunc &&cmd_func,
                                       MultiShotFunc &&func,
                                       Args &&...handler_args) {
+    return async_uring_cmd_multishot(
+        cmd_op, fd, std::forward<CmdFunc>(cmd_func),
+        CQEHandler(std::forward<Args>(handler_args)...),
+        std::forward<MultiShotFunc>(func));
+}
+
+template <FdLike Fd, typename CmdFunc, CQEHandlerLike CQEHandler,
+          typename MultiShotFunc>
+inline auto async_uring_cmd_multishot(int cmd_op, Fd fd, CmdFunc &&cmd_func,
+                                      CQEHandler &&cqe_handler,
+                                      MultiShotFunc &&func) {
     auto prep_func = [cmd_op, fd = detail::unwrap_fixed(fd),
                       cmd_func =
                           std::forward<CmdFunc>(cmd_func)](detail::Ring *ring) {
@@ -909,9 +927,9 @@ inline auto async_uring_cmd_multishot(int cmd_op, Fd fd, CmdFunc &&cmd_func,
         cmd_func(sqe);
         return sqe;
     };
-    auto op = build_multishot_op_awaiter(
-        std::move(prep_func), CQEHandler(std::forward<Args>(handler_args)...),
-        std::forward<MultiShotFunc>(func));
+    auto op = build_multishot_op_awaiter(std::move(prep_func),
+                                         std::forward<CQEHandler>(cqe_handler),
+                                         std::forward<MultiShotFunc>(func));
     return detail::maybe_flag_fixed_fd(std::move(op), fd);
 }
 
@@ -927,6 +945,13 @@ template <CQEHandlerLike CQEHandler = SimpleCQEHandler, FdLike Fd,
           typename CmdFunc, typename... Args>
 inline auto async_uring_cmd128(int cmd_op, Fd fd, CmdFunc &&cmd_func,
                                Args &&...handler_args) {
+    return async_uring_cmd128(cmd_op, fd, std::forward<CmdFunc>(cmd_func),
+                              CQEHandler(std::forward<Args>(handler_args)...));
+}
+
+template <FdLike Fd, typename CmdFunc, CQEHandlerLike CQEHandler>
+inline auto async_uring_cmd128(int cmd_op, Fd fd, CmdFunc &&cmd_func,
+                               CQEHandler &&cqe_handler) {
     auto prep_func = [cmd_op, fd = detail::unwrap_fixed(fd),
                       cmd_func =
                           std::forward<CmdFunc>(cmd_func)](detail::Ring *ring) {
@@ -939,7 +964,7 @@ inline auto async_uring_cmd128(int cmd_op, Fd fd, CmdFunc &&cmd_func,
         return sqe;
     };
     auto op = build_op_awaiter(std::move(prep_func),
-                               CQEHandler(std::forward<Args>(handler_args)...));
+                               std::forward<CQEHandler>(cqe_handler));
     return detail::maybe_flag_fixed_fd(std::move(op), fd);
 }
 #endif
