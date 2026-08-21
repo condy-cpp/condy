@@ -221,5 +221,31 @@ inline void prep_recv_zc_multishot(io_uring_sqe *sqe, int fd,
 }
 #endif
 
+inline void prep_read(io_uring_sqe *sqe, int fd, void *buf, unsigned nbytes,
+                      __u64 offset, int flags) noexcept {
+    io_uring_prep_read(sqe, fd, buf, nbytes, offset);
+    sqe->rw_flags = flags;
+}
+
+inline void prep_read_fixed(io_uring_sqe *sqe, int fd, void *buf,
+                            unsigned nbytes, __u64 offset, int flags,
+                            int buf_index) noexcept {
+    io_uring_prep_read_fixed(sqe, fd, buf, nbytes, offset, buf_index);
+    sqe->rw_flags = flags;
+}
+
+inline void prep_write(io_uring_sqe *sqe, int fd, const void *buf,
+                       unsigned nbytes, __u64 offset, int flags) noexcept {
+    io_uring_prep_write(sqe, fd, buf, nbytes, offset);
+    sqe->rw_flags = flags;
+}
+
+inline void prep_write_fixed(io_uring_sqe *sqe, int fd, const void *buf,
+                             unsigned nbytes, __u64 offset, int flags,
+                             int buf_index) noexcept {
+    io_uring_prep_write_fixed(sqe, fd, buf, nbytes, offset, buf_index);
+    sqe->rw_flags = flags;
+}
+
 } // namespace detail
 } // namespace condy
