@@ -65,6 +65,47 @@ struct NVMePassthruCQEHandler {
     }
 };
 
+/**
+ * @brief Result for SCSI BSG passthrough commands.
+ * @details Contains the raw res2 from the CQE. Use the member functions
+ * to extract individual fields.
+ */
+struct SCSIBsgResult {
+    /** @brief Raw res2 from the CQE. */
+    uint64_t res2;
+
+    /** @brief Extract SCSI device status byte. */
+    uint8_t device_status() noexcept { return res2 & 0xff; }
+
+    /** @brief Extract driver status. */
+    uint8_t driver_status() noexcept { return (res2 >> 8) & 0xff; }
+
+    /** @brief Extract host status. */
+    uint8_t host_status() noexcept { return (res2 >> 16) & 0xff; }
+
+    /** @brief Extract sense data length. */
+    uint8_t sense_len() noexcept { return (res2 >> 24) & 0xff; }
+
+    /** @brief Extract residual transfer length. */
+    uint32_t resid_len() noexcept { return res2 >> 32; }
+};
+
+/**
+ * @brief A CQE handler for SCSI BSG passthrough commands that extracts the
+ * SCSI status and result from the CQE.
+ * @return std::pair<int32_t, SCSIBsgResult> A pair containing the result of
+ * the operation (the value of `cqe->res`) and the raw SCSI status.
+ */
+struct SCSIBsgPassthruCQEHandler {
+    std::pair<int32_t, SCSIBsgResult> operator()(io_uring_cqe *cqe) noexcept {
+        assert(
+            detail::Context::current().runtime()->ring_internal().check_cqe32(
+                cqe) &&
+            "Expected big CQE for SCSI BSG passthrough");
+        return {cqe->res, SCSIBsgResult{cqe->big_cqe[0]}};
+    }
+};
+
 #if CONDY_URING_VERSION_GE(2, 12) // >= 2.12
 /**
  * @brief Result for TX timestamp operations, containing timestamp information

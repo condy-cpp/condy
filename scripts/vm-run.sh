@@ -82,11 +82,18 @@ bash "$LIGHT_INITRD_SCRIPT" -o "$TEMP_DIR/$INITRD_OUTPUT" -s "/root/init.sh" $FI
 echo "Initrd image created at $TEMP_DIR/$INITRD_OUTPUT"
 
 # Simulate NVMe SSD with a tmpfs-backed disk image
-SSD_IMG="/dev/shm/vm-ssd.img.$$"
-truncate -s 1G "$SSD_IMG"
-trap "rm -f '$SSD_IMG'; rm -rf $TEMP_DIR" EXIT
-SSD_DRIVE="-drive file=$SSD_IMG,if=none,id=ssd0,format=raw,cache=none,aio=io_uring"
-SSD_DEVICE="-device nvme,drive=ssd0,serial=ssd0"
+NVME_IMG="/dev/shm/vm-nvme.img.$$"
+truncate -s 1G "$NVME_IMG"
+trap "rm -f '$NVME_IMG'; rm -rf $TEMP_DIR" EXIT
+NVME_DRIVE="-drive file=$NVME_IMG,if=none,id=nvme0,format=raw,cache=none,aio=io_uring"
+NVME_DEVICE="-device nvme,drive=nvme0,serial=nvme0"
+
+# Simulate SCSI disk for BSG testing
+SCSI_IMG="/dev/shm/vm-scsi.img.$$"
+truncate -s 16M "$SCSI_IMG"
+trap "rm -f '$NVME_IMG' '$SCSI_IMG'; rm -rf $TEMP_DIR" EXIT
+SCSI_DRIVE="-drive file=$SCSI_IMG,if=none,id=scsi0,format=raw"
+SCSI_DEVICE="-device virtio-scsi-pci,id=scsi0 -device scsi-hd,drive=scsi0,bus=scsi0.0"
 
 KVM_FLAG=""
 if [ "$KVM_ENABLED" = true ]; then
@@ -114,5 +121,7 @@ qemu-system-x86_64 \
     -initrd "$TEMP_DIR/$INITRD_OUTPUT" \
     -append "$KERNEL_ARGS" \
     -nographic \
-    $SSD_DRIVE \
-    $SSD_DEVICE
+    $NVME_DRIVE \
+    $NVME_DEVICE \
+    $SCSI_DRIVE \
+    $SCSI_DEVICE
