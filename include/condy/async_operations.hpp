@@ -350,9 +350,9 @@ inline auto async_close(detail::FixedFd fd) {
  * @brief See io_uring_prep_read
  */
 template <FdLike Fd, BufferLike Buffer>
-inline auto async_read(Fd fd, const Buffer &buf, __u64 offset) {
-    auto op = detail::make_op_awaiter(io_uring_prep_read, fd, buf.data(),
-                                      buf.size(), offset);
+inline auto async_read(Fd fd, const Buffer &buf, __u64 offset, int flags = 0) {
+    auto op = detail::make_op_awaiter(detail::prep_read, fd, buf.data(),
+                                      buf.size(), offset, flags);
     return detail::maybe_flag_fixed_fd(std::move(op), fd);
 }
 
@@ -360,10 +360,11 @@ inline auto async_read(Fd fd, const Buffer &buf, __u64 offset) {
  * @brief See io_uring_prep_read_fixed
  */
 template <FdLike Fd, BufferLike Buffer>
-inline auto async_read(Fd fd, detail::FixedBuffer<Buffer> buf, __u64 offset) {
+inline auto async_read(Fd fd, detail::FixedBuffer<Buffer> buf, __u64 offset,
+                       int flags = 0) {
     auto op =
-        detail::make_op_awaiter(io_uring_prep_read_fixed, fd, buf.value.data(),
-                                buf.value.size(), offset, buf.buf_index);
+        detail::make_op_awaiter(detail::prep_read_fixed, fd, buf.value.data(),
+                                buf.value.size(), offset, flags, buf.buf_index);
     return detail::maybe_flag_fixed_fd(std::move(op), fd);
 }
 
@@ -396,9 +397,9 @@ inline auto async_read_multishot(Fd fd, Buffer &buf, __u64 offset,
  * @brief See io_uring_prep_write
  */
 template <FdLike Fd, BufferLike Buffer>
-inline auto async_write(Fd fd, const Buffer &buf, __u64 offset) {
-    auto op = detail::make_op_awaiter(io_uring_prep_write, fd, buf.data(),
-                                      buf.size(), offset);
+inline auto async_write(Fd fd, const Buffer &buf, __u64 offset, int flags = 0) {
+    auto op = detail::make_op_awaiter(detail::prep_write, fd, buf.data(),
+                                      buf.size(), offset, flags);
     return detail::maybe_flag_fixed_fd(std::move(op), fd);
 }
 
@@ -406,10 +407,11 @@ inline auto async_write(Fd fd, const Buffer &buf, __u64 offset) {
  * @brief See io_uring_prep_write_fixed
  */
 template <FdLike Fd, BufferLike Buffer>
-inline auto async_write(Fd fd, detail::FixedBuffer<Buffer> buf, __u64 offset) {
+inline auto async_write(Fd fd, detail::FixedBuffer<Buffer> buf, __u64 offset,
+                        int flags = 0) {
     auto op =
-        detail::make_op_awaiter(io_uring_prep_write_fixed, fd, buf.value.data(),
-                                buf.value.size(), offset, buf.buf_index);
+        detail::make_op_awaiter(detail::prep_write_fixed, fd, buf.value.data(),
+                                buf.value.size(), offset, flags, buf.buf_index);
     return detail::maybe_flag_fixed_fd(std::move(op), fd);
 }
 

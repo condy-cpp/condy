@@ -251,6 +251,26 @@ TEST_CASE("test async_operations - read incr provided buffer") {
 }
 #endif
 
+TEST_CASE("test async_operations - test read - rw_flags") {
+    int pipe_fds[2];
+    REQUIRE(pipe(pipe_fds) == 0);
+
+    int fl = fcntl(pipe_fds[0], F_GETFL, 0);
+    REQUIRE(fl >= 0);
+    REQUIRE(fcntl(pipe_fds[0], F_SETFL, fl | O_NONBLOCK) == 0);
+
+    auto func = [&]() -> condy::Coro<void> {
+        char buf[64] = {0};
+        ssize_t n = co_await condy::async_read(
+            pipe_fds[0], condy::buffer(buf, 64), 0, RWF_NOWAIT);
+        REQUIRE(n == -EAGAIN);
+    };
+    condy::sync_wait(func());
+
+    close(pipe_fds[0]);
+    close(pipe_fds[1]);
+}
+
 #if CONDY_URING_VERSION_GE(2, 8) // >= 2.8
 TEST_CASE("test async_operations - provided buffer queue check - incr") {
     int sv[2];
@@ -722,6 +742,29 @@ TEST_CASE("test async_operations - writev fixed buffer") {
     close(pipe_fds[1]);
 }
 #endif
+
+TEST_CASE("test async_operations - test write - rw_flags") {
+    int pipe_fds[2];
+    REQUIRE(pipe(pipe_fds) == 0);
+
+    const char *msg = "Hello, condy write dsync!";
+    size_t msg_len = std::strlen(msg);
+
+    auto func = [&]() -> condy::Coro<void> {
+        ssize_t n = co_await condy::async_write(
+            pipe_fds[1], condy::buffer(msg, msg_len), 0, RWF_DSYNC);
+        REQUIRE(n == static_cast<ssize_t>(msg_len));
+    };
+    condy::sync_wait(func());
+
+    char read_buf[64];
+    ssize_t n = ::read(pipe_fds[0], read_buf, sizeof(read_buf));
+    REQUIRE(n == static_cast<ssize_t>(msg_len));
+    REQUIRE(std::memcmp(read_buf, msg, msg_len) == 0);
+
+    close(pipe_fds[0]);
+    close(pipe_fds[1]);
+}
 
 #if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 TEST_CASE("test async_operations - send provided buffer") {
