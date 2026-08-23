@@ -49,7 +49,7 @@ include(FetchContent)
 set(DOXYGEN_AWESOME_CSS_VERSION v2.4.1)
 set(DOCTEST_VERSION v2.5.0)
 set(LIBURING_VERSION liburing-${CONDY_LINK_LIBURING_VERSION})
-set(STDEXEC_VERSION 0a6c3fc4324aed2ce291d49dd228cc3619b24dad)
+set(STDEXEC_VERSION cc721c4)
 
 FetchContent_Declare(
     doxygen-awesome-css
@@ -68,7 +68,7 @@ FetchContent_Declare(
 )
 FetchContent_Declare(
     stdexec
-    URL https://github.com/NVIDIA/stdexec/archive/${STDEXEC_VERSION}.tar.gz
+    URL https://github.com/bemanproject/execution/archive/${STDEXEC_VERSION}.tar.gz
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 
