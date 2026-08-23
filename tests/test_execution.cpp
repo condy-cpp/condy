@@ -7,11 +7,10 @@
 #include "condy/sender_operations.hpp"
 #include "condy/sync_wait.hpp"
 #include <doctest.h>
-#include <exec/when_any.hpp>
 #include <stdexcept>
 #include <tuple>
 
-namespace ex = stdexec;
+namespace ex = beman::execution;
 
 TEST_CASE("test execution - schedule") {
     condy::Runtime runtime;
