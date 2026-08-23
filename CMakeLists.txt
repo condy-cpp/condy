@@ -122,6 +122,7 @@ if(CONDY_ENABLE_STDEXEC)
     target_include_directories(stdexec SYSTEM INTERFACE ${stdexec_SOURCE_DIR}/include)
     target_link_libraries(condy INTERFACE stdexec)
     target_compile_definitions(condy INTERFACE CONDY_HAS_STDEXEC)
+    target_compile_features(condy INTERFACE cxx_std_23)
 endif()
 
 if(CONDY_BUILD_MODULE)

@@ -26,6 +26,11 @@ public:
         return runtime_ == other.runtime_;
     }
 
+    beman::execution::forward_progress_guarantee
+    query(beman::execution::get_forward_progress_guarantee_t) const noexcept {
+        return beman::execution::forward_progress_guarantee::weakly_parallel;
+    }
+
     /**
      * @brief Schedule a task that runs on the runtime's event loop.
      * @return A sender that completes on the runtime thread.
@@ -68,6 +73,12 @@ private:
 
         using completion_signatures = beman::execution::completion_signatures<
             beman::execution::set_value_t()>;
+
+        template <typename...>
+        static consteval auto get_completion_signatures() noexcept
+            -> completion_signatures {
+            return {};
+        }
 
         ScheduleSender(Runtime &runtime) : runtime_(runtime) {}
 
@@ -115,6 +126,12 @@ public:
         set_value_traits_t<typename SenderImpl::ReturnType>,
         beman::execution::set_error_t(std::error_code),
         beman::execution::set_stopped_t()>;
+
+    template <typename...>
+    static consteval auto get_completion_signatures() noexcept
+        -> completion_signatures {
+        return {};
+    }
 
     template <typename Receiver> auto connect(Receiver receiver) noexcept {
         using OpState = decltype(this->connect_impl(

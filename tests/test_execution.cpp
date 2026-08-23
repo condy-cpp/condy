@@ -210,11 +210,18 @@ TEST_CASE("test execution - spawn with simple_counting_scope") {
 namespace {
 
 struct StoppedSender {
-    using sender_concept = ex::sender_t;
+    using sender_concept = ex::sender_tag;
     using completion_signatures =
         ex::completion_signatures<ex::set_value_t(int), ex::set_stopped_t()>;
 
+    template <typename...>
+    static consteval auto get_completion_signatures() noexcept
+        -> completion_signatures {
+        return {};
+    }
+
     template <typename Receiver> struct OperationState {
+        using operation_state_concept = ex::operation_state_tag;
         Receiver receiver;
         void start() noexcept { ex::set_stopped(std::move(receiver)); }
     };
