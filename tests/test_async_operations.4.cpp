@@ -494,6 +494,26 @@ TEST_CASE("test async_operations - test uring_cmd_multishot - tx timestamp") {
 #endif
 
 #if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
+TEST_CASE("test async_operations - test uring_cmd128 - no sqe128") {
+    condy::Runtime runtime;
+
+    int listen_fd = socket(AF_INET, SOCK_STREAM, 0);
+    REQUIRE(listen_fd >= 0);
+
+    auto func = [&]() -> condy::Coro<void> {
+        int val = 1;
+        int r = co_await my_async_cmd_sock<true>(
+            SOCKET_URING_OP_SETSOCKOPT, listen_fd, SOL_SOCKET, SO_REUSEADDR,
+            &val, sizeof(val));
+        REQUIRE(r == -EINVAL);
+    };
+    condy::sync_wait(runtime, func());
+
+    close(listen_fd);
+}
+#endif
+
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
 TEST_CASE("test async_operations - test uring_cmd128 - cmd sock - basic") {
     condy::Runtime runtime(
         condy::RuntimeOptions().enable_sqe_mixed().enable_cqe_mixed());

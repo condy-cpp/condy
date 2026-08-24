@@ -152,6 +152,17 @@ TEST_CASE("test async_operations - test nop128 - sqe mixed") {
 }
 #endif
 
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
+TEST_CASE("test async_operations - test nop128 - no sqe128") {
+    condy::Runtime runtime;
+    auto func = [&]() -> condy::Coro<void> {
+        int r = co_await condy::async_nop128();
+        REQUIRE(r == -EINVAL);
+    };
+    condy::sync_wait(runtime, func());
+}
+#endif
+
 TEST_CASE("test async_operations - test timeout - basic") {
     auto func = [&]() -> condy::Coro<void> {
         __kernel_timespec ts = {
