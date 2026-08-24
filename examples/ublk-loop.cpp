@@ -50,15 +50,17 @@ off_t io_desc_offset(size_t q_id) {
 }
 
 auto ublk_ctrl_cmd(int fd, int cmd_op, const ublksrv_ctrl_cmd &ctrl) {
-    return condy::async_uring_cmd(cmd_op, fd, [&](io_uring_sqe *sqe) {
-        std::memcpy(sqe->cmd, &ctrl, sizeof(ctrl));
-    });
+    return condy::async_uring_cmd(
+        cmd_op, fd,
+        [&](io_uring_sqe *sqe) { std::memcpy(sqe->cmd, &ctrl, sizeof(ctrl)); },
+        condy::SimpleCQEHandler{});
 }
 
 auto ublk_io_cmd(int cmd_op, const ublksrv_io_cmd &cmd) {
     return condy::async_uring_cmd(
         cmd_op, condy::fixed(FIXED_FD),
-        [&](io_uring_sqe *sqe) { std::memcpy(sqe->cmd, &cmd, sizeof(cmd)); });
+        [&](io_uring_sqe *sqe) { std::memcpy(sqe->cmd, &cmd, sizeof(cmd)); },
+        condy::SimpleCQEHandler{});
 }
 
 condy::Coro<void> setup_device() {

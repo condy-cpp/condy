@@ -11,32 +11,29 @@
 
 namespace condy {
 
-template <CQEHandlerLike CQEHandler, PrepFuncLike PrepFunc, typename... Args>
-auto build_op_sender(PrepFunc &&prep_func, Args &&...args) {
-    return OpSender<std::decay_t<PrepFunc>, CQEHandler>(
+template <PrepFuncLike PrepFunc, CQEHandlerLike CQEHandler>
+auto build_op_sender(PrepFunc &&prep_func, CQEHandler &&cqe_handler) {
+    return OpSender<std::decay_t<PrepFunc>, std::decay_t<CQEHandler>>(
         std::forward<PrepFunc>(prep_func),
-        CQEHandler(std::forward<Args>(args)...));
+        std::forward<CQEHandler>(cqe_handler));
 }
 
-template <CQEHandlerLike CQEHandler, PrepFuncLike PrepFunc,
-          typename MultiShotFunc, typename... Args>
-auto build_multishot_op_sender(PrepFunc &&func, MultiShotFunc &&multishot_func,
-                               Args &&...handler_args) {
-    return MultiShotOpSender<std::decay_t<PrepFunc>, CQEHandler,
+template <PrepFuncLike PrepFunc, CQEHandlerLike CQEHandler,
+          typename MultiShotFunc>
+auto build_multishot_op_sender(PrepFunc &&func, CQEHandler &&cqe_handler,
+                               MultiShotFunc &&multishot_func) {
+    return MultiShotOpSender<std::decay_t<PrepFunc>, std::decay_t<CQEHandler>,
                              std::decay_t<MultiShotFunc>>(
-        std::forward<PrepFunc>(func),
-        CQEHandler(std::forward<Args>(handler_args)...),
+        std::forward<PrepFunc>(func), std::forward<CQEHandler>(cqe_handler),
         std::forward<MultiShotFunc>(multishot_func));
 }
 
-template <CQEHandlerLike CQEHandler, PrepFuncLike PrepFunc, typename FreeFunc,
-          typename... Args>
-auto build_zero_copy_op_sender(PrepFunc &&func, FreeFunc &&free_func,
-                               Args &&...handler_args) {
-    return ZeroCopyOpSender<std::decay_t<PrepFunc>, CQEHandler,
+template <PrepFuncLike PrepFunc, CQEHandlerLike CQEHandler, typename FreeFunc>
+auto build_zero_copy_op_sender(PrepFunc &&func, CQEHandler &&cqe_handler,
+                               FreeFunc &&free_func) {
+    return ZeroCopyOpSender<std::decay_t<PrepFunc>, std::decay_t<CQEHandler>,
                             std::decay_t<FreeFunc>>(
-        std::forward<PrepFunc>(func),
-        CQEHandler(std::forward<Args>(handler_args)...),
+        std::forward<PrepFunc>(func), std::forward<CQEHandler>(cqe_handler),
         std::forward<FreeFunc>(free_func));
 }
 

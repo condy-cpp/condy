@@ -32,7 +32,7 @@ auto make_op_awaiter(Func &&func, Args &&...args) {
         func(sqe, args...);
         return sqe;
     };
-    return build_op_awaiter<SimpleCQEHandler>(std::move(prep_func));
+    return build_op_awaiter(std::move(prep_func), SimpleCQEHandler{});
 }
 
 #if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
@@ -48,7 +48,7 @@ auto make_op_awaiter128(Func &&func, Args &&...args) {
         func(sqe, args...);
         return sqe;
     };
-    return build_op_awaiter<SimpleCQEHandler>(std::move(prep_func));
+    return build_op_awaiter(std::move(prep_func), SimpleCQEHandler{});
 }
 #endif
 
@@ -62,8 +62,9 @@ auto make_multishot_op_awaiter(MultiShotFunc &&multishot_func, Func &&func,
         func(sqe, args...);
         return sqe;
     };
-    return build_multishot_op_awaiter<SimpleCQEHandler>(
-        std::move(prep_func), std::forward<MultiShotFunc>(multishot_func));
+    return build_multishot_op_awaiter(
+        std::move(prep_func), SimpleCQEHandler{},
+        std::forward<MultiShotFunc>(multishot_func));
 }
 
 template <BufferRingLike Br, typename Func, typename... Args>
@@ -77,8 +78,8 @@ auto make_select_buffer_op_awaiter(Br *buffers, Func &&func, Args &&...args) {
         sqe->buf_group = bgid;
         return sqe;
     };
-    return build_op_awaiter<SelectBufferCQEHandler<Br>>(std::move(prep_func),
-                                                        buffers);
+    return build_op_awaiter(std::move(prep_func),
+                            SelectBufferCQEHandler<Br>(buffers));
 }
 
 template <typename MultiShotFunc, BufferRingLike Br, typename Func,
@@ -95,9 +96,9 @@ auto make_multishot_select_buffer_op_awaiter(MultiShotFunc &&multishot_func,
         sqe->buf_group = bgid;
         return sqe;
     };
-    return build_multishot_op_awaiter<SelectBufferCQEHandler<Br>>(
-        std::move(prep_func), std::forward<MultiShotFunc>(multishot_func),
-        buffers);
+    return build_multishot_op_awaiter(
+        std::move(prep_func), SelectBufferCQEHandler<Br>(buffers),
+        std::forward<MultiShotFunc>(multishot_func));
 }
 
 #if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
@@ -114,8 +115,8 @@ auto make_bundle_select_buffer_op_awaiter(Br *buffers, Func &&func,
         sqe->ioprio |= IORING_RECVSEND_BUNDLE;
         return sqe;
     };
-    return build_op_awaiter<SelectBufferCQEHandler<Br>>(std::move(prep_func),
-                                                        buffers);
+    return build_op_awaiter(std::move(prep_func),
+                            SelectBufferCQEHandler<Br>(buffers));
 }
 #endif
 
@@ -134,9 +135,9 @@ auto make_multishot_bundle_select_buffer_op_awaiter(
         sqe->ioprio |= IORING_RECVSEND_BUNDLE;
         return sqe;
     };
-    return build_multishot_op_awaiter<SelectBufferCQEHandler<Br>>(
-        std::move(prep_func), std::forward<MultiShotFunc>(multishot_func),
-        buffers);
+    return build_multishot_op_awaiter(
+        std::move(prep_func), SelectBufferCQEHandler<Br>(buffers),
+        std::forward<MultiShotFunc>(multishot_func));
 }
 #endif
 
@@ -150,8 +151,8 @@ auto make_zero_copy_op_awaiter(FreeFunc &&free_func, Func &&func,
         func(sqe, args...);
         return sqe;
     };
-    return build_zero_copy_op_awaiter<SimpleCQEHandler>(
-        std::move(prep_func), std::forward<FreeFunc>(free_func));
+    return build_zero_copy_op_awaiter(std::move(prep_func), SimpleCQEHandler{},
+                                      std::forward<FreeFunc>(free_func));
 }
 
 template <typename Awaiter>

@@ -16,62 +16,57 @@ namespace condy {
 
 /**
  * @brief Build a single-shot operation awaiter with custom CQE handler.
- * @tparam CQEHandler Type of CQE handler.
  * @tparam PrepFunc Type of preparation function.
- * @tparam Args Additional arguments for CQE handler construction.
+ * @tparam CQEHandler Type of CQE handler.
  * @param func Preparation function that accepts `Ring*` and returns
  * `io_uring_sqe*`.
- * @param handler_args Arguments forwarded to CQE handler constructor.
+ * @param cqe_handler CQE handler instance.
  * @return OpAwaiter The constructed awaiter.
  */
-template <CQEHandlerLike CQEHandler, PrepFuncLike PrepFunc, typename... Args>
-auto build_op_awaiter(PrepFunc &&func, Args &&...handler_args) {
-    return build_op_sender<CQEHandler>(std::forward<PrepFunc>(func),
-                                       std::forward<Args>(handler_args)...);
+template <PrepFuncLike PrepFunc, CQEHandlerLike CQEHandler>
+auto build_op_awaiter(PrepFunc &&func, CQEHandler &&cqe_handler) {
+    return build_op_sender(std::forward<PrepFunc>(func),
+                           std::forward<CQEHandler>(cqe_handler));
 }
 
 /**
  * @brief Build a multi-shot operation awaiter with custom CQE handler.
- * @tparam CQEHandler Type of CQE handler.
  * @tparam PrepFunc Type of preparation function.
+ * @tparam CQEHandler Type of CQE handler.
  * @tparam MultiShotFunc Type of callback function for multi-shot operations.
- * @tparam Args Additional arguments for CQE handler construction.
  * @param func Preparation function that accepts `Ring*` and returns
  * `io_uring_sqe*`.
+ * @param cqe_handler CQE handler instance.
  * @param multishot_func Callback invoked on each completion except the last
  * one.
- * @param handler_args Arguments forwarded to CQE handler constructor.
  * @return MultiShotOpAwaiter The constructed awaiter.
  */
-template <CQEHandlerLike CQEHandler, PrepFuncLike PrepFunc,
-          typename MultiShotFunc, typename... Args>
-auto build_multishot_op_awaiter(PrepFunc &&func, MultiShotFunc &&multishot_func,
-                                Args &&...handler_args) {
-    return build_multishot_op_sender<CQEHandler>(
-        std::forward<PrepFunc>(func),
-        std::forward<MultiShotFunc>(multishot_func),
-        std::forward<Args>(handler_args)...);
+template <PrepFuncLike PrepFunc, CQEHandlerLike CQEHandler,
+          typename MultiShotFunc>
+auto build_multishot_op_awaiter(PrepFunc &&func, CQEHandler &&cqe_handler,
+                                MultiShotFunc &&multishot_func) {
+    return build_multishot_op_sender(
+        std::forward<PrepFunc>(func), std::forward<CQEHandler>(cqe_handler),
+        std::forward<MultiShotFunc>(multishot_func));
 }
 
 /**
  * @brief Build a zero-copy operation awaiter with custom CQE handler.
- * @tparam CQEHandler Type of CQE handler.
  * @tparam PrepFunc Type of preparation function.
+ * @tparam CQEHandler Type of CQE handler.
  * @tparam FreeFunc Type of resource cleanup function.
- * @tparam Args Additional arguments for CQE handler construction.
  * @param func Preparation function that accepts `Ring*` and returns
  * `io_uring_sqe*`.
+ * @param cqe_handler CQE handler instance.
  * @param free_func Cleanup function invoked when resource no longer needed.
- * @param handler_args Arguments forwarded to CQE handler constructor.
  * @return ZeroCopyOpAwaiter The constructed awaiter.
  */
-template <CQEHandlerLike CQEHandler, PrepFuncLike PrepFunc, typename FreeFunc,
-          typename... Args>
-auto build_zero_copy_op_awaiter(PrepFunc &&func, FreeFunc &&free_func,
-                                Args &&...handler_args) {
-    return build_zero_copy_op_sender<CQEHandler>(
-        std::forward<PrepFunc>(func), std::forward<FreeFunc>(free_func),
-        std::forward<Args>(handler_args)...);
+template <PrepFuncLike PrepFunc, CQEHandlerLike CQEHandler, typename FreeFunc>
+auto build_zero_copy_op_awaiter(PrepFunc &&func, CQEHandler &&cqe_handler,
+                                FreeFunc &&free_func) {
+    return build_zero_copy_op_sender(std::forward<PrepFunc>(func),
+                                     std::forward<CQEHandler>(cqe_handler),
+                                     std::forward<FreeFunc>(free_func));
 }
 
 } // namespace condy

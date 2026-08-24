@@ -200,7 +200,8 @@ auto fuse_register_cmd(iovec iov[2], uint16_t qid) {
             auto *cmd = reinterpret_cast<fuse_uring_cmd_req *>(sqe->cmd);
             *cmd = {};
             cmd->qid = qid;
-        });
+        },
+        condy::SimpleCQEHandler{});
 }
 
 auto fuse_commit_and_fetch_cmd(uint16_t qid, uint64_t commit_id) {
@@ -211,7 +212,8 @@ auto fuse_commit_and_fetch_cmd(uint16_t qid, uint64_t commit_id) {
             *cmd = {};
             cmd->qid = qid;
             cmd->commit_id = commit_id;
-        });
+        },
+        condy::SimpleCQEHandler{});
 }
 
 class FuseServer {
