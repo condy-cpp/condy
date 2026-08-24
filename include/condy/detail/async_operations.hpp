@@ -42,10 +42,9 @@ auto make_op_awaiter128(Func &&func, Args &&...args) {
                       ... args =
                           unwrap_fixed(std::forward<Args>(args))](Ring *ring) {
         auto *sqe = ring->get_sqe128();
-        if (!sqe) {
-            panic_on("SQE128 not enabled in the ring");
+        if (sqe) {
+            func(sqe, args...);
         }
-        func(sqe, args...);
         return sqe;
     };
     return build_op_awaiter<SimpleCQEHandler>(std::move(prep_func));

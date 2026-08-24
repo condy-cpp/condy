@@ -33,9 +33,14 @@ public:
     void start(unsigned int flags) noexcept {
         auto &context = Context::current();
         auto &ring = context.runtime()->ring_internal();
-        context.runtime()->pend_work_internal();
         io_uring_sqe *sqe = prep_func_(&ring);
-        assert(sqe && "prep_func must return a valid sqe");
+        if (sqe == nullptr) {
+            io_uring_cqe cqe = {};
+            cqe.res = -EINVAL;
+            finish_handle_.get().handle(&cqe);
+            return;
+        }
+        context.runtime()->pend_work_internal();
         io_uring_sqe_set_flags(sqe, sqe->flags | flags);
         auto work = encode_work(&finish_handle_.get(), WorkType::Common);
         io_uring_sqe_set_data64(sqe, work);
