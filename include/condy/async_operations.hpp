@@ -986,11 +986,10 @@ inline auto async_uring_cmd128(int cmd_op, Fd fd, CmdFunc &&cmd_func,
                       cmd_func =
                           std::forward<CmdFunc>(cmd_func)](detail::Ring *ring) {
         auto *sqe = ring->get_sqe128();
-        if (!sqe) {
-            detail::panic_on("SQE128 not enabled in the ring");
+        if (sqe) {
+            io_uring_prep_uring_cmd128(sqe, cmd_op, fd);
+            cmd_func(sqe);
         }
-        io_uring_prep_uring_cmd128(sqe, cmd_op, fd);
-        cmd_func(sqe);
         return sqe;
     };
     auto op = build_op_awaiter(std::move(prep_func),
