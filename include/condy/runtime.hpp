@@ -346,6 +346,11 @@ private:
         schedule_msg_ring_(
             curr_runtime,
             detail::encode_work(nullptr, detail::WorkType::Ignore));
+        if (curr_runtime != nullptr) {
+            // Ensure the wakeup msg is submitted. Since user may call
+            // thread.join() after allow_exit()
+            curr_runtime->ring_.submit();
+        }
     }
 
     void flush_global_queue_() noexcept {

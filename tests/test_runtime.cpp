@@ -5,6 +5,7 @@
 #include "condy/runtime_options.hpp"
 #include "condy/task.hpp"
 #include <atomic>
+#include <chrono>
 #include <doctest.h>
 #include <thread>
 
@@ -316,6 +317,24 @@ TEST_CASE("test runtime - runtime destroyed on another runtime") {
         }
 
         co_await condy::async_nop();
+    };
+
+    condy::co_spawn(runtime_a, func()).detach();
+    runtime_a.allow_exit();
+    runtime_a.run();
+}
+
+TEST_CASE("test runtime - runtime join on another runtime") {
+    condy::Runtime runtime_a(options);
+
+    auto func = [&]() -> condy::Coro<void> {
+        auto runtime_b = std::make_unique<condy::Runtime>(options);
+        std::thread thread_b([&]() { runtime_b->run(); });
+        // wait runtime_b call submit_and_wait
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        runtime_b->allow_exit();
+        thread_b.join();
+        co_return;
     };
 
     condy::co_spawn(runtime_a, func()).detach();
