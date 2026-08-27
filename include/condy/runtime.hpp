@@ -91,19 +91,13 @@ public:
             return;
         }
 
-        detail::CancelRequest request(data);
-        detail::tsan_release(&request);
-        schedule_msg_ring_(
-            curr_runtime,
-            detail::encode_work(&request, detail::WorkType::Cancel));
+        // Potential address reuse problem?
+        schedule_msg_ring_(curr_runtime, detail::encode_work_ptr(
+                                             data, detail::WorkType::Cancel));
         if (curr_runtime != nullptr) {
             // Ensure the cancel msg is submitted.
             curr_runtime->ring_.submit();
         }
-        // Block until the runtime thread has submitted the cancel SQE. This is
-        // important to prevent address reuse of the same data pointer, which
-        // can lead to incorrect cancellation or other bugs.
-        request.wait();
     }
 
     void pend_work_internal() noexcept {
@@ -403,12 +397,8 @@ private:
                 (*work)();
             }
         } else if (type == detail::WorkType::Cancel) {
-            detail::CancelRequest *request =
-                static_cast<detail::CancelRequest *>(data);
-            detail::tsan_acquire(request);
             io_uring_sqe *sqe = ring_.get_sqe();
-            prep_cancel_(sqe, request->data());
-            request->notify();
+            prep_cancel_(sqe, reinterpret_cast<uintptr_t>(data));
         } else if (type == detail::WorkType::Common) {
             auto *handle = static_cast<detail::OpFinishHandleBase *>(data);
             auto op_finish = handle->handle(cqe);

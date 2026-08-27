@@ -59,28 +59,6 @@ inline int sync_msg_ring(io_uring_sqe *sqe_data) noexcept {
 #endif
 }
 
-class CancelRequest {
-public:
-    CancelRequest(uintptr_t data) : data_(data) {}
-
-    void wait() noexcept {
-        while (!finished_.load(std::memory_order_acquire)) {
-            finished_.wait(false, std::memory_order_relaxed);
-        }
-    }
-
-    void notify() noexcept {
-        finished_.store(true, std::memory_order_release);
-        finished_.notify_one();
-    }
-
-    uintptr_t data() const noexcept { return data_; }
-
-private:
-    uintptr_t data_;
-    std::atomic_bool finished_ = false;
-};
-
 class OpFinishHandleBase {
 public:
     using HandleFunc = bool (*)(void *, io_uring_cqe *) noexcept;
