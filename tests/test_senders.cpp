@@ -1,3 +1,4 @@
+#include "condy/async_operations.hpp"
 #include "condy/awaiter_operations.hpp"
 #include "condy/channel.hpp"
 #include "condy/detail/async_operations.hpp"
@@ -6,7 +7,9 @@
 #include "condy/sync_wait.hpp"
 #include <atomic>
 #include <cassert>
+#include <cerrno>
 #include <doctest.h>
+#include <optional>
 #include <stdexcept>
 #include <stop_token>
 #include <thread>
@@ -557,4 +560,46 @@ TEST_CASE("test senders - cancel from other runtime thread") {
     condy::sync_wait(cancel_task());
 
     t1.join();
+}
+
+TEST_CASE("test senders - start without runtime") {
+    auto coro = []() -> condy::Coro<int> {
+        int r = co_await condy::async_nop();
+        REQUIRE(r == -EINVAL);
+        co_return r;
+    }();
+    auto handle = coro.release();
+
+    REQUIRE(!handle.done());
+    handle.resume();
+    REQUIRE(handle.done());
+    REQUIRE(handle.promise().value() == -EINVAL);
+
+    handle.destroy();
+}
+
+#if CONDY_URING_VERSION_GE(2, 13) // >= 2.13
+TEST_CASE("test senders - start without sqe128 support") {
+    auto func = []() -> condy::Coro<void> {
+        int r = co_await condy::async_nop128();
+        REQUIRE(r == -EINVAL);
+    };
+    condy::sync_wait(func());
+}
+#endif
+
+TEST_CASE("test senders - start with stopped token") {
+    using condy::operators::operator||;
+
+    auto func = []() -> condy::Coro<void> {
+        condy::Channel<int> ch(1);
+        REQUIRE(ch.try_push(42) == 0);
+
+        auto res = co_await (ch.pop() || condy::async_nop());
+        REQUIRE(res.index() == 0);
+        auto [r, item] = std::get<0>(res);
+        REQUIRE(r == 0);
+        REQUIRE(item == 42);
+    };
+    condy::sync_wait(func());
 }
