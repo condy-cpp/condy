@@ -36,6 +36,10 @@ public:
             fail_(-EINVAL);
             return;
         }
+        if (finish_handle_.get().stop_requested()) {
+            fail_(-ECANCELED);
+            return;
+        }
         auto &ring = runtime->ring_internal();
         io_uring_sqe *sqe = prep_func_(&ring);
         if (sqe == nullptr) {
