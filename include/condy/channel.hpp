@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <version>
+
 #include "condy/detail/context.hpp"
 #include "condy/detail/intrusive.hpp"
 #include "condy/detail/invoker.hpp"
@@ -20,6 +22,9 @@
 #include <new>
 #include <optional>
 #include <type_traits>
+#if defined(__cpp_lib_senders)
+#include "condy/detail/execution.hpp"
+#endif
 
 namespace condy {
 
@@ -51,6 +56,11 @@ public:
     }
 
     CONDY_DELETE_COPY_MOVE(Channel);
+
+private:
+    class [[nodiscard]] MovePushSenderImpl;
+    class [[nodiscard]] CopyPushSenderImpl;
+    class [[nodiscard]] PopSenderImpl;
 
 public:
     /**
@@ -111,7 +121,11 @@ public:
         push_awaiters_.push_back(fake_handle);
     }
 
-    class [[nodiscard]] MovePushSender;
+#if defined(__cpp_lib_senders)
+    using MovePushSender = detail::StandardSender<MovePushSenderImpl>;
+#else
+    using MovePushSender = MovePushSenderImpl;
+#endif
     /**
      * @brief Push an item into the channel, awaiting if necessary.
      * @param item The item to be pushed into the channel.
@@ -126,7 +140,11 @@ public:
      */
     MovePushSender push(T &&item) noexcept { return {*this, std::move(item)}; }
 
-    class [[nodiscard]] CopyPushSender;
+#if defined(__cpp_lib_senders)
+    using CopyPushSender = detail::StandardSender<CopyPushSenderImpl>;
+#else
+    using CopyPushSender = CopyPushSenderImpl;
+#endif
     /**
      * @brief Push an item into the channel, awaiting if necessary.
      * @param item The item to be pushed into the channel.
@@ -140,7 +158,11 @@ public:
         return {*this, item};
     }
 
-    class [[nodiscard]] PopSender;
+#if defined(__cpp_lib_senders)
+    using PopSender = detail::StandardSender<PopSenderImpl>;
+#else
+    using PopSender = PopSenderImpl;
+#endif
     /**
      * @brief Pop an item from the channel, awaiting if necessary.
      * @return std::pair<int32_t, T> 0 and the popped item if successful; -EPIPE
@@ -529,12 +551,12 @@ private:
     std::optional<StopCallbackType> stop_callback_;
 };
 
-template <typename T, size_t N> class Channel<T, N>::MovePushSender {
+template <typename T, size_t N> class Channel<T, N>::MovePushSenderImpl {
 public:
     using CondySender = void;
     using ReturnType = int32_t;
 
-    MovePushSender(Channel &channel, T &&item)
+    MovePushSenderImpl(Channel &channel, T &&item)
         : channel_(channel), item_(std::move(item)) {}
 
     template <typename Receiver> auto connect_impl(Receiver receiver) noexcept {
@@ -562,12 +584,12 @@ private:
     T &&item_;
 };
 
-template <typename T, size_t N> class Channel<T, N>::CopyPushSender {
+template <typename T, size_t N> class Channel<T, N>::CopyPushSenderImpl {
 public:
     using CondySender = void;
     using ReturnType = int32_t;
 
-    CopyPushSender(Channel &channel, const T &item)
+    CopyPushSenderImpl(Channel &channel, const T &item)
         : channel_(channel), item_(item) {}
 
     template <typename Receiver> auto connect_impl(Receiver receiver) noexcept {
@@ -598,12 +620,12 @@ private:
     const T &item_;
 };
 
-template <typename T, size_t N> class Channel<T, N>::PopSender {
+template <typename T, size_t N> class Channel<T, N>::PopSenderImpl {
 public:
     using CondySender = void;
     using ReturnType = std::pair<int32_t, T>;
 
-    PopSender(Channel &channel) : channel_(channel) {}
+    PopSenderImpl(Channel &channel) : channel_(channel) {}
 
     template <typename Receiver> auto connect_impl(Receiver receiver) noexcept {
         return OperationState<Receiver>(channel_, std::move(receiver));

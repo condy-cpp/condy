@@ -30,6 +30,13 @@ using condy::Task;
 using condy::default_runtime_options;
 using condy::sync_wait;
 
+// execution.hpp
+#ifdef CONDY_HAS_STDEXEC
+using condy::get_scheduler;
+using condy::Scheduler;
+using condy::wait_sender;
+#endif
+
 // buffers.hpp
 using condy::buffer;
 using condy::ConstBuffer;
