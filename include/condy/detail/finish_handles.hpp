@@ -32,6 +32,11 @@ public:
     CONDY_DELETE_COPY_MOVE(OpFinishHandle);
 
 public:
+    bool stop_requested() noexcept {
+        auto stop_token = receiver_.get_stop_token();
+        return stop_token.stop_requested();
+    }
+
     void maybe_set_cancel(Runtime *runtime) noexcept {
         auto stop_token = receiver_.get_stop_token();
         if (stop_token.stop_possible()) {

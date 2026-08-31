@@ -31,22 +31,36 @@ public:
 
 public:
     void start(unsigned int flags) noexcept {
-        auto &context = Context::current();
-        auto &ring = context.runtime()->ring_internal();
-        io_uring_sqe *sqe = prep_func_(&ring);
-        if (sqe == nullptr) {
-            io_uring_cqe cqe = {};
-            cqe.res = -EINVAL;
-            finish_handle_.get().handle(&cqe);
+        auto *runtime = Context::current().runtime();
+        if (runtime == nullptr) {
+            fail_(-EINVAL);
             return;
         }
-        context.runtime()->pend_work_internal();
+        if (finish_handle_.get().stop_requested()) {
+            fail_(-ECANCELED);
+            return;
+        }
+        auto &ring = runtime->ring_internal();
+        io_uring_sqe *sqe = prep_func_(&ring);
+        if (sqe == nullptr) {
+            fail_(-EINVAL);
+            return;
+        }
+        runtime->pend_work_internal();
         io_uring_sqe_set_flags(sqe, sqe->flags | flags);
         auto work = encode_work(&finish_handle_.get(), WorkType::Common);
         io_uring_sqe_set_data64(sqe, work);
         ring.maybe_submit();
 
-        finish_handle_.get().maybe_set_cancel(context.runtime());
+        finish_handle_.get().maybe_set_cancel(runtime);
+    }
+
+private:
+    void fail_(int32_t res) noexcept {
+        assert(res < 0);
+        io_uring_cqe cqe[2] = {};
+        cqe[0].res = res;
+        finish_handle_.get().handle(cqe);
     }
 
 private:

@@ -203,8 +203,6 @@ public:
     uint32_t zcrx_id() const noexcept { return zcrx_id_; }
 
     ZeroCopyRxBuffer handle_finish(io_uring_cqe *cqe) noexcept {
-        assert(ring_->check_cqe32(cqe) && "Expected big CQE for ZeroCopyRx");
-
         if (cqe->res < 0) {
             return ZeroCopyRxBuffer();
         }
