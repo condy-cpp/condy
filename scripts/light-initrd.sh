@@ -109,6 +109,7 @@ done
 
 # Create the initrd image
 OUTPUT_FILE_REAL=$(realpath "$OUTPUT_FILE")
+chmod 755 "$WORK_DIR"
 cd "$WORK_DIR"
 find . | cpio -o -H newc -R 0:0 | gzip -9 > "$OUTPUT_FILE_REAL"
 echo "Created initrd image: $OUTPUT_FILE"
