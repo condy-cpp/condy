@@ -145,6 +145,7 @@ public:
         area_reg.addr = area.offset;
         area_reg.len = area.size;
         area_reg.flags = IORING_ZCRX_AREA_DMABUF;
+        area_reg.dmabuf_fd = area.dmabuf_fd;
 
         register_ifq_(if_idx, if_rxq, rq_entries, area_reg,
                       sysconf(_SC_PAGESIZE));
