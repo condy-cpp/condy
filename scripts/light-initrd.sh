@@ -68,13 +68,14 @@ cat << 'EOF' > "$WORK_DIR/init"
 set -euo pipefail
 
 # Initialize minimal directories
-busybox mkdir -p /etc /proc /root /sbin /sys /usr/bin /usr/sbin /dev/pts
+busybox mkdir -p /etc /proc /root /sbin /sys /usr/bin /usr/sbin /dev
 
 # Mount necessary filesystems
 busybox mount -t proc proc /proc
 busybox mount -t sysfs sys /sys
+busybox mount -t devtmpfs devtmpfs /dev
+busybox mkdir -p /dev/pts
 busybox mount -t devpts devpts /dev/pts
-busybox mdev -s
 
 # Install busybox applets
 busybox --install -s
