@@ -55,8 +55,6 @@ struct ZeroCopyRxArea {
 struct ZeroCopyRxDMABufArea {
     /** @brief File descriptor of the DMA-BUF to use. */
     int dmabuf_fd;
-    /** @brief Offset into the DMA-BUF where the buffer area starts. */
-    size_t offset;
     /** @brief Size of the buffer area within the DMA-BUF, in bytes. */
     size_t size;
 };
@@ -142,7 +140,6 @@ public:
         area_ptr_ = nullptr;
 
         io_uring_zcrx_area_reg area_reg = {};
-        area_reg.addr = area.offset;
         area_reg.len = area.size;
         area_reg.flags = IORING_ZCRX_AREA_DMABUF;
         area_reg.dmabuf_fd = area.dmabuf_fd;
