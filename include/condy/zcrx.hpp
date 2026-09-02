@@ -246,6 +246,11 @@ private:
     }
 
 public:
+    // TODO: Implement this after liburing sync kernel uapi
+    // void add_area(const ZeroCopyRxArea &area);
+    // void add_area(const ZeroCopyRxDMABufArea &area);
+
+public:
     uint32_t zcrx_id() const noexcept { return zcrx_id_; }
 
     ZeroCopyRxBuffer handle_finish(io_uring_cqe *cqe) noexcept {
