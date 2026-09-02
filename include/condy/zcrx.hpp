@@ -17,6 +17,7 @@
 #include <bit>
 #include <cstddef>
 #include <sys/mman.h>
+#include <unordered_map>
 #include <utility>
 
 namespace condy {
@@ -255,10 +256,13 @@ public:
         }
         io_uring_zcrx_cqe *rcqe =
             reinterpret_cast<io_uring_zcrx_cqe *>(cqe->big_cqe);
-        void *data = static_cast<char *>(area_.ptr) +
+        const uint64_t token = rcqe->off & IORING_ZCRX_AREA_MASK;
+        Area *area = find_area_(token);
+        assert(area != nullptr);
+        void *data = static_cast<char *>(area->ptr) +
                      (rcqe->off & ~IORING_ZCRX_AREA_MASK);
         size_t size = static_cast<size_t>(cqe->res);
-        return ZeroCopyRxBuffer(data, size, this, area_.token);
+        return ZeroCopyRxBuffer(data, size, this, token);
     }
 
     void add_buffer_back(void *ptr, size_t size, uint64_t area_token) noexcept {
@@ -269,6 +273,9 @@ public:
 private:
     void cleanup_() noexcept {
         area_.maybe_cleanup();
+        for (auto &&[_, area] : other_areas_) {
+            area.maybe_cleanup();
+        }
         if (rq_ring_.ring_ptr != nullptr) {
             [[maybe_unused]] int r = munmap(rq_ring_.ring_ptr, ring_size_);
             assert(r == 0);
@@ -332,12 +339,14 @@ private:
     }
 
     void rq_enqueue_(void *ptr, size_t size, uint64_t area_token) noexcept {
+        Area *area = find_area_(area_token);
+        assert(area != nullptr);
         assert(rq_nr_queued_() < rq_ring_.ring_entries);
         io_uring_zcrx_rqe *rqe;
         unsigned rq_mask = rq_ring_.ring_entries - 1;
         rqe = &rq_ring_.rqes[rq_ring_.rq_tail & rq_mask];
-        rqe->off = (static_cast<char *>(ptr) - static_cast<char *>(area_.ptr)) |
-                   area_token;
+        rqe->off = (static_cast<char *>(ptr) - static_cast<char *>(area->ptr)) |
+                   area->token;
         rqe->len = static_cast<uint32_t>(size);
         io_uring_smp_store_release(rq_ring_.ktail, ++rq_ring_.rq_tail);
     }
@@ -372,8 +381,20 @@ private:
         }
     };
 
+    Area *find_area_(uint64_t area_token) noexcept {
+        if (area_.token == area_token) {
+            return &area_;
+        }
+        auto it = other_areas_.find(area_token);
+        if (it != other_areas_.end()) {
+            return &it->second;
+        }
+        return nullptr;
+    }
+
     detail::Ring *ring_;
     Area area_;
+    std::unordered_map<uint64_t, Area> other_areas_;
     size_t ring_size_ = 0;
     io_uring_zcrx_rq rq_ring_ = {};
     uint32_t zcrx_id_;
