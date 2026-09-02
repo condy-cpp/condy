@@ -187,9 +187,6 @@ public:
             }
         });
 
-        area_size_ = 0;
-        area_ptr_ = nullptr;
-
         io_uring_zcrx_area_reg area_reg = {};
         area_reg.len = area.size;
         area_reg.flags = IORING_ZCRX_AREA_DMABUF;
@@ -219,26 +216,25 @@ private:
         const size_t page_size = sysconf(_SC_PAGESIZE);
 
         if (area.addr == nullptr) {
-            area_size_ = detail::align_up(area.size, page_size);
-            area_ptr_ = mmap(nullptr, area_size_, PROT_READ | PROT_WRITE,
+            area_.size = detail::align_up(area.size, page_size);
+            area_.ptr = mmap(nullptr, area_.size, PROT_READ | PROT_WRITE,
                              MAP_ANONYMOUS | MAP_PRIVATE, 0, 0);
-            if (area_ptr_ == MAP_FAILED) {
+            if (area_.ptr == MAP_FAILED) {
                 throw detail::make_system_error("mmap");
             }
 
             io_uring_zcrx_area_reg area_reg = {};
-            area_reg.addr = reinterpret_cast<uint64_t>(area_ptr_);
-            area_reg.len = area_size_;
+            area_reg.addr = reinterpret_cast<uint64_t>(area_.ptr);
+            area_reg.len = area_.size;
             area_reg.flags = 0;
 
             register_ifq_(if_idx, if_rxq, rq_entries, area_reg, page_size);
         } else {
             // Not owned, so we don't track the size for unmapping
-            area_size_ = 0;
-            area_ptr_ = area.addr;
+            area_.ptr = area.addr;
 
             io_uring_zcrx_area_reg area_reg = {};
-            area_reg.addr = reinterpret_cast<uint64_t>(area_ptr_);
+            area_reg.addr = reinterpret_cast<uint64_t>(area_.ptr);
             area_reg.len = area.size;
             area_reg.flags = 0;
 
@@ -259,10 +255,10 @@ public:
         }
         io_uring_zcrx_cqe *rcqe =
             reinterpret_cast<io_uring_zcrx_cqe *>(cqe->big_cqe);
-        void *data = static_cast<char *>(area_ptr_) +
+        void *data = static_cast<char *>(area_.ptr) +
                      (rcqe->off & ~IORING_ZCRX_AREA_MASK);
         size_t size = static_cast<size_t>(cqe->res);
-        return ZeroCopyRxBuffer(data, size, this, area_token_);
+        return ZeroCopyRxBuffer(data, size, this, area_.token);
     }
 
     void add_buffer_back(void *ptr, size_t size, uint64_t area_token) noexcept {
@@ -272,13 +268,9 @@ public:
 
 private:
     void cleanup_() noexcept {
-        [[maybe_unused]] int r;
-        if (area_ptr_ != nullptr && area_size_ > 0) {
-            r = munmap(area_ptr_, area_size_);
-            assert(r == 0);
-        }
+        area_.maybe_cleanup();
         if (rq_ring_.ring_ptr != nullptr) {
-            r = munmap(rq_ring_.ring_ptr, ring_size_);
+            [[maybe_unused]] int r = munmap(rq_ring_.ring_ptr, ring_size_);
             assert(r == 0);
         }
         // TODO: Unregister ifq. For now there's no way to unregister ifq, so we
@@ -324,7 +316,7 @@ private:
         rq_ring_.ring_ptr = ring_ptr;
 
         zcrx_id_ = reg.zcrx_id;
-        area_token_ = area_reg.rq_area_token;
+        area_.token = area_reg.rq_area_token;
     }
 
     static size_t get_refill_ring_size_(uint32_t rq_entries,
@@ -344,7 +336,7 @@ private:
         io_uring_zcrx_rqe *rqe;
         unsigned rq_mask = rq_ring_.ring_entries - 1;
         rqe = &rq_ring_.rqes[rq_ring_.rq_tail & rq_mask];
-        rqe->off = (static_cast<char *>(ptr) - static_cast<char *>(area_ptr_)) |
+        rqe->off = (static_cast<char *>(ptr) - static_cast<char *>(area_.ptr)) |
                    area_token;
         rqe->len = static_cast<uint32_t>(size);
         io_uring_smp_store_release(rq_ring_.ktail, ++rq_ring_.rq_tail);
@@ -367,13 +359,24 @@ private:
     }
 
 private:
+    struct Area {
+        void *ptr = nullptr;
+        size_t size = 0;
+        uint64_t token = 0;
+
+        void maybe_cleanup() noexcept {
+            if (ptr != nullptr && size > 0) {
+                [[maybe_unused]] int r = munmap(ptr, size);
+                assert(r == 0);
+            }
+        }
+    };
+
     detail::Ring *ring_;
-    size_t area_size_ = 0;
-    void *area_ptr_ = nullptr;
+    Area area_;
     size_t ring_size_ = 0;
     io_uring_zcrx_rq rq_ring_ = {};
     uint32_t zcrx_id_;
-    uint64_t area_token_;
     uint32_t flags_;
 };
 
