@@ -38,18 +38,21 @@ public:
     using CondyBuffer = void;
 
     ZeroCopyRxBuffer() = default;
-    ZeroCopyRxBuffer(void *data, size_t size, ZeroCopyRxBufferPool *pool)
-        : data_(data), size_(size), pool_(pool) {}
+    ZeroCopyRxBuffer(void *data, size_t size, ZeroCopyRxBufferPool *pool,
+                     uint64_t area_token)
+        : data_(data), size_(size), pool_(pool), area_token_(area_token) {}
     ZeroCopyRxBuffer(ZeroCopyRxBuffer &&other) noexcept
         : data_(std::exchange(other.data_, nullptr)),
           size_(std::exchange(other.size_, 0)),
-          pool_(std::exchange(other.pool_, nullptr)) {}
+          pool_(std::exchange(other.pool_, nullptr)),
+          area_token_(std::exchange(other.area_token_, 0)) {}
     ZeroCopyRxBuffer &operator=(ZeroCopyRxBuffer &&other) noexcept {
         if (this != &other) {
             reset();
             data_ = std::exchange(other.data_, nullptr);
             size_ = std::exchange(other.size_, 0);
             pool_ = std::exchange(other.pool_, nullptr);
+            area_token_ = std::exchange(other.area_token_, 0);
         }
         return *this;
     }
@@ -83,6 +86,7 @@ private:
     void *data_ = nullptr;
     size_t size_ = 0;
     ZeroCopyRxBufferPool *pool_ = nullptr;
+    uint64_t area_token_ = 0;
 };
 
 /**
@@ -258,11 +262,11 @@ public:
         void *data = static_cast<char *>(area_ptr_) +
                      (rcqe->off & ~IORING_ZCRX_AREA_MASK);
         size_t size = static_cast<size_t>(cqe->res);
-        return ZeroCopyRxBuffer(data, size, this);
+        return ZeroCopyRxBuffer(data, size, this, area_token_);
     }
 
-    void add_buffer_back(void *ptr, size_t size) noexcept {
-        rq_enqueue_(ptr, size);
+    void add_buffer_back(void *ptr, size_t size, uint64_t area_token) noexcept {
+        rq_enqueue_(ptr, size, area_token);
         maybe_flush_rq_();
     }
 
@@ -335,13 +339,13 @@ private:
         return rq_ring_.rq_tail - io_uring_smp_load_acquire(rq_ring_.khead);
     }
 
-    void rq_enqueue_(void *ptr, size_t size) noexcept {
+    void rq_enqueue_(void *ptr, size_t size, uint64_t area_token) noexcept {
         assert(rq_nr_queued_() < rq_ring_.ring_entries);
         io_uring_zcrx_rqe *rqe;
         unsigned rq_mask = rq_ring_.ring_entries - 1;
         rqe = &rq_ring_.rqes[rq_ring_.rq_tail & rq_mask];
         rqe->off = (static_cast<char *>(ptr) - static_cast<char *>(area_ptr_)) |
-                   area_token_;
+                   area_token;
         rqe->len = static_cast<uint32_t>(size);
         io_uring_smp_store_release(rq_ring_.ktail, ++rq_ring_.rq_tail);
     }
@@ -375,11 +379,12 @@ private:
 
 inline void ZeroCopyRxBuffer::reset() noexcept {
     if (pool_ != nullptr) {
-        pool_->add_buffer_back(data_, size_);
+        pool_->add_buffer_back(data_, size_, area_token_);
     }
     data_ = nullptr;
     size_ = 0;
     pool_ = nullptr;
+    area_token_ = 0;
 }
 
 #endif
