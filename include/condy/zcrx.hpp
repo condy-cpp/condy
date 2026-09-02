@@ -10,13 +10,14 @@
 
 #pragma once
 
-#include "condy/detail/buffers.hpp"
 #include "condy/detail/context.hpp"
 #include "condy/detail/ring.hpp"
 #include "condy/detail/utils.hpp"
 #include "condy/runtime.hpp"
 #include <bit>
+#include <cstddef>
 #include <sys/mman.h>
+#include <utility>
 
 namespace condy {
 
@@ -32,10 +33,56 @@ class ZeroCopyRxBufferPool;
  * @note The lifetime of the buffer must not exceed the lifetime of the
  * ZeroCopyRxBufferPool it is associated with.
  */
-class ZeroCopyRxBuffer : public detail::ManagedBuffer<ZeroCopyRxBufferPool> {
+class ZeroCopyRxBuffer {
 public:
-    using Base = detail::ManagedBuffer<ZeroCopyRxBufferPool>;
-    using Base::Base;
+    using CondyBuffer = void;
+
+    ZeroCopyRxBuffer() = default;
+    ZeroCopyRxBuffer(void *data, size_t size, ZeroCopyRxBufferPool *pool)
+        : data_(data), size_(size), pool_(pool) {}
+    ZeroCopyRxBuffer(ZeroCopyRxBuffer &&other) noexcept
+        : data_(std::exchange(other.data_, nullptr)),
+          size_(std::exchange(other.size_, 0)),
+          pool_(std::exchange(other.pool_, nullptr)) {}
+    ZeroCopyRxBuffer &operator=(ZeroCopyRxBuffer &&other) noexcept {
+        if (this != &other) {
+            reset();
+            data_ = std::exchange(other.data_, nullptr);
+            size_ = std::exchange(other.size_, 0);
+            pool_ = std::exchange(other.pool_, nullptr);
+        }
+        return *this;
+    }
+
+    ~ZeroCopyRxBuffer() noexcept { reset(); }
+
+    CONDY_DELETE_COPY(ZeroCopyRxBuffer);
+
+public:
+    /**
+     * @brief Get the data pointer of the buffer
+     */
+    void *data() const noexcept { return data_; }
+
+    /**
+     * @brief Get the size of the buffer
+     */
+    size_t size() const noexcept { return size_; }
+
+    /**
+     * @brief Reset the buffer, returning it to the pool if owned
+     */
+    void reset() noexcept;
+
+    /**
+     * @brief Check if the buffer owns a buffer from a pool.
+     */
+    bool owns_buffer() const noexcept { return pool_ != nullptr; }
+
+private:
+    void *data_ = nullptr;
+    size_t size_ = 0;
+    ZeroCopyRxBufferPool *pool_ = nullptr;
 };
 
 /**
@@ -325,6 +372,15 @@ private:
     uint64_t area_token_;
     uint32_t flags_;
 };
+
+inline void ZeroCopyRxBuffer::reset() noexcept {
+    if (pool_ != nullptr) {
+        pool_->add_buffer_back(data_, size_);
+    }
+    data_ = nullptr;
+    size_ = 0;
+    pool_ = nullptr;
+}
 
 #endif
 
