@@ -22,7 +22,7 @@ c++ main.cpp -std=c++20 -luring -I/path/to/condy
 You can add Condy to your project via Git submodule:
 
 ```bash
-git submodule add https://github.com/wokron/condy.git third_party/condy
+git submodule add https://github.com/condy-cpp/condy.git third_party/condy
 ```
 
 In your `CMakeLists.txt`:
@@ -48,7 +48,7 @@ Alternatively, you can add Condy with FetchContent:
 include(FetchContent)
 FetchContent_Declare(
     condy
-    GIT_REPOSITORY https://github.com/wokron/condy.git
+    GIT_REPOSITORY https://github.com/condy-cpp/condy.git
     GIT_TAG v1.9  # Change to the tag you want
 )
 FetchContent_MakeAvailable(condy)
