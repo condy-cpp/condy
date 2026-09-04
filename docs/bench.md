@@ -2,7 +2,7 @@
 
 @brief Performance comparison between Condy and other frameworks.
 
-The benchmark source code can be found at [condy-bench](https://github.com/wokron/condy-bench).
+The benchmark source code can be found at [condy-bench](https://github.com/condy-cpp/condy-bench).
 
 Test Environment:
 - **CPU**: AMD Ryzen 9 7945HX with Radeon Graphics × 16

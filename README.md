@@ -1,15 +1,15 @@
 # Condy🍬
 
 ![C++](https://img.shields.io/badge/C++-20-blue)
-![License](https://img.shields.io/github/license/wokron/condy)
-![Release](https://img.shields.io/github/v/release/wokron/condy)
-![Stars](https://img.shields.io/github/stars/wokron/condy?style=social)
+![License](https://img.shields.io/github/license/condy-cpp/condy)
+![Release](https://img.shields.io/github/v/release/condy-cpp/condy)
+![Stars](https://img.shields.io/github/stars/condy-cpp/condy?style=social)
 
-![CI (Main)](https://github.com/wokron/condy/actions/workflows/ci-main.yml/badge.svg?branch=master)
-![CI (Latest Kernel)](https://github.com/wokron/condy/actions/workflows/ci-latest-kernel.yml/badge.svg?branch=master)
-![CI (Toolchain)](https://github.com/wokron/condy/actions/workflows/ci-toolchain.yml/badge.svg?branch=master)
-![CI (Static Check)](https://github.com/wokron/condy/actions/workflows/ci-static-check.yml/badge.svg?branch=master)
-![Deploy Docs](https://github.com/wokron/condy/actions/workflows/deploy-docs.yml/badge.svg?branch=master)
+![CI (Main)](https://github.com/condy-cpp/condy/actions/workflows/ci-main.yml/badge.svg?branch=master)
+![CI (Latest Kernel)](https://github.com/condy-cpp/condy/actions/workflows/ci-latest-kernel.yml/badge.svg?branch=master)
+![CI (Toolchain)](https://github.com/condy-cpp/condy/actions/workflows/ci-toolchain.yml/badge.svg?branch=master)
+![CI (Static Check)](https://github.com/condy-cpp/condy/actions/workflows/ci-static-check.yml/badge.svg?branch=master)
+![Deploy Docs](https://github.com/condy-cpp/condy/actions/workflows/deploy-docs.yml/badge.svg?branch=master)
 
 ***C++ Asynchronous System Call Layer for Linux, Powered by io_uring and C++20 Coroutines***
 
@@ -59,5 +59,5 @@ See [Documentation](#documentation) for more details.
 
 ## Support
 
-- For questions, bug reports, or feature requests, please open an [issue](https://github.com/wokron/condy/issues).
-- [Pull requests](https://github.com/wokron/condy/pulls) are welcome!
+- For questions, bug reports, or feature requests, please open an [issue](https://github.com/condy-cpp/condy/issues).
+- [Pull requests](https://github.com/condy-cpp/condy/pulls) are welcome!
