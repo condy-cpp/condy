@@ -68,13 +68,17 @@ cat << 'EOF' > "$WORK_DIR/init"
 set -euo pipefail
 
 # Initialize minimal directories
-busybox mkdir -p /etc /proc /root /sbin /sys /usr/bin /usr/sbin /dev/pts
+busybox mkdir -p /etc /proc /root /sbin /sys /usr/bin /usr/sbin /dev /tmp /run
 
 # Mount necessary filesystems
 busybox mount -t proc proc /proc
 busybox mount -t sysfs sys /sys
+busybox mount -t devtmpfs devtmpfs /dev
+busybox mkdir -p /dev/pts /dev/shm
 busybox mount -t devpts devpts /dev/pts
-busybox mdev -s
+busybox mount -t tmpfs -o mode=1777,nodev,nosuid tmpfs /dev/shm
+busybox mount -t tmpfs -o mode=1777,nodev,nosuid tmpfs /tmp
+busybox mount -t tmpfs -o mode=0755,nodev,nosuid tmpfs /run
 
 # Install busybox applets
 busybox --install -s
@@ -108,6 +112,7 @@ done
 
 # Create the initrd image
 OUTPUT_FILE_REAL=$(realpath "$OUTPUT_FILE")
+chmod 755 "$WORK_DIR"
 cd "$WORK_DIR"
 find . | cpio -o -H newc -R 0:0 | gzip -9 > "$OUTPUT_FILE_REAL"
 echo "Created initrd image: $OUTPUT_FILE"
