@@ -14,6 +14,9 @@
 #include <atomic>
 #include <cerrno>
 #include <optional>
+#ifdef CONDY_HAS_STDEXEC
+#include "condy/detail/execution.hpp"
+#endif
 
 namespace condy {
 
@@ -38,8 +41,15 @@ public:
 
     CONDY_DELETE_COPY_MOVE(Futex);
 
+private:
+    struct [[nodiscard]] WaitSenderImpl;
+
 public:
-    struct [[nodiscard]] WaitSender;
+#ifdef CONDY_HAS_STDEXEC
+    using WaitSender = detail::StandardSender<WaitSenderImpl>;
+#else
+    using WaitSender = WaitSenderImpl;
+#endif
     /**
      * @brief Wait if the futex value equals to the specified old value. The
      * awaiting coroutine will be suspended until a notify is received. If the
@@ -191,12 +201,12 @@ private:
     std::optional<StopCallbackType> stop_callback_;
 };
 
-template <typename T> struct Futex<T>::WaitSender {
+template <typename T> struct Futex<T>::WaitSenderImpl {
 public:
     using CondySender = void;
     using ReturnType = int32_t;
 
-    WaitSender(Futex &futex, T old) : futex_(futex), old_(old) {}
+    WaitSenderImpl(Futex &futex, T old) : futex_(futex), old_(old) {}
 
     template <typename Receiver> auto connect_impl(Receiver receiver) noexcept {
         return OperationState<Receiver>(futex_, old_, std::move(receiver));
