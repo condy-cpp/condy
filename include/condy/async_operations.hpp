@@ -1100,6 +1100,17 @@ inline auto async_cmd_discard(Fd fd, uint64_t offset, uint64_t nbytes) {
 }
 #endif
 
+#if CONDY_URING_VERSION_GE(2, 16) // >= 2.16
+/**
+ * @brief See io_uring_prep_cmd_zone_reset_all
+ */
+template <FdLike Fd>
+inline auto async_cmd_zone_reset_all(Fd fd) {
+    auto op = detail::make_op_awaiter(io_uring_prep_cmd_zone_reset_all, fd);
+    return detail::maybe_flag_fixed_fd(std::move(op), fd);
+}
+#endif
+
 #if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 /**
  * @brief See io_uring_prep_bind

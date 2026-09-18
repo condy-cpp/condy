@@ -982,6 +982,51 @@ TEST_CASE("test async_operations - test cmd_discard - fixed fd") {
 }
 #endif
 
+#if CONDY_URING_VERSION_GE(2, 16) // >= 2.16
+TEST_CASE("test async_operations - test cmd_zone_reset_all - basic") {
+    BlkDevice blkdev;
+    if (blkdev.path().empty()) {
+        MESSAGE("Can't create loop device, skipping");
+        return;
+    }
+
+    int fd = open(blkdev.path().c_str(), O_RDWR);
+    REQUIRE(fd >= 0);
+
+    auto func = [&]() -> condy::Coro<void> {
+        int r = co_await condy::async_cmd_zone_reset_all(fd);
+        REQUIRE(r == 0);
+    };
+    condy::sync_wait(func());
+    close(fd);
+}
+#endif
+
+#if CONDY_URING_VERSION_GE(2, 16) // >= 2.16
+TEST_CASE("test async_operations - test cmd_zone_reset_all - fixed fd") {
+    BlkDevice blkdev;
+    if (blkdev.path().empty()) {
+        MESSAGE("Can't create loop device, skipping");
+        return;
+    }
+
+    int fd = open(blkdev.path().c_str(), O_RDWR);
+    REQUIRE(fd >= 0);
+
+    auto func = [&]() -> condy::Coro<void> {
+        auto &fd_table = condy::current_runtime().fd_table();
+        fd_table.init(1);
+        int r = co_await condy::async_files_update(&fd, 1, 0);
+        REQUIRE(r == 1);
+
+        r = co_await condy::async_cmd_zone_reset_all(condy::fixed(0));
+        REQUIRE(r == 0);
+    };
+    condy::sync_wait(func());
+    close(fd);
+}
+#endif
+
 #if CONDY_URING_VERSION_GE(2, 7) // >= 2.7
 TEST_CASE("test async_operations - test bind - basic") {
     int sock_fd = socket(AF_INET, SOCK_DGRAM, 0);

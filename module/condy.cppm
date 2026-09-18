@@ -206,6 +206,9 @@ using condy::async_cmd_getsockname;
 using condy::async_nop128;
 using condy::async_uring_cmd128;
 #endif
+#if CONDY_URING_VERSION_GE(2, 16) // >= 2.16
+using condy::async_cmd_zone_reset_all;
+#endif
 
 } // namespace condy
 
