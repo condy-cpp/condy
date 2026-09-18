@@ -10,13 +10,15 @@
 
 #pragma once
 
-#include "condy/detail/buffers.hpp"
 #include "condy/detail/context.hpp"
 #include "condy/detail/ring.hpp"
 #include "condy/detail/utils.hpp"
 #include "condy/runtime.hpp"
 #include <bit>
+#include <cstddef>
 #include <sys/mman.h>
+#include <unordered_map>
+#include <utility>
 
 namespace condy {
 
@@ -32,10 +34,60 @@ class ZeroCopyRxBufferPool;
  * @note The lifetime of the buffer must not exceed the lifetime of the
  * ZeroCopyRxBufferPool it is associated with.
  */
-class ZeroCopyRxBuffer : public detail::ManagedBuffer<ZeroCopyRxBufferPool> {
+class ZeroCopyRxBuffer {
 public:
-    using Base = detail::ManagedBuffer<ZeroCopyRxBufferPool>;
-    using Base::Base;
+    using CondyBuffer = void;
+
+    ZeroCopyRxBuffer() = default;
+    ZeroCopyRxBuffer(void *data, size_t size, ZeroCopyRxBufferPool *pool,
+                     uint64_t area_token)
+        : data_(data), size_(size), pool_(pool), area_token_(area_token) {}
+    ZeroCopyRxBuffer(ZeroCopyRxBuffer &&other) noexcept
+        : data_(std::exchange(other.data_, nullptr)),
+          size_(std::exchange(other.size_, 0)),
+          pool_(std::exchange(other.pool_, nullptr)),
+          area_token_(std::exchange(other.area_token_, 0)) {}
+    ZeroCopyRxBuffer &operator=(ZeroCopyRxBuffer &&other) noexcept {
+        if (this != &other) {
+            reset();
+            data_ = std::exchange(other.data_, nullptr);
+            size_ = std::exchange(other.size_, 0);
+            pool_ = std::exchange(other.pool_, nullptr);
+            area_token_ = std::exchange(other.area_token_, 0);
+        }
+        return *this;
+    }
+
+    ~ZeroCopyRxBuffer() noexcept { reset(); }
+
+    CONDY_DELETE_COPY(ZeroCopyRxBuffer);
+
+public:
+    /**
+     * @brief Get the data pointer of the buffer
+     */
+    void *data() const noexcept { return data_; }
+
+    /**
+     * @brief Get the size of the buffer
+     */
+    size_t size() const noexcept { return size_; }
+
+    /**
+     * @brief Reset the buffer, returning it to the pool if owned
+     */
+    void reset() noexcept;
+
+    /**
+     * @brief Check if the buffer owns a buffer from a pool.
+     */
+    bool owns_buffer() const noexcept { return pool_ != nullptr; }
+
+private:
+    void *data_ = nullptr;
+    size_t size_ = 0;
+    ZeroCopyRxBufferPool *pool_ = nullptr;
+    uint64_t area_token_ = 0;
 };
 
 /**
@@ -55,8 +107,6 @@ struct ZeroCopyRxArea {
 struct ZeroCopyRxDMABufArea {
     /** @brief File descriptor of the DMA-BUF to use. */
     int dmabuf_fd;
-    /** @brief Offset into the DMA-BUF where the buffer area starts. */
-    size_t offset;
     /** @brief Size of the buffer area within the DMA-BUF, in bytes. */
     size_t size;
 };
@@ -138,13 +188,10 @@ public:
             }
         });
 
-        area_size_ = 0;
-        area_ptr_ = nullptr;
-
         io_uring_zcrx_area_reg area_reg = {};
-        area_reg.addr = area.offset;
         area_reg.len = area.size;
         area_reg.flags = IORING_ZCRX_AREA_DMABUF;
+        area_reg.dmabuf_fd = area.dmabuf_fd;
 
         register_ifq_(if_idx, if_rxq, rq_entries, area_reg,
                       sysconf(_SC_PAGESIZE));
@@ -170,26 +217,25 @@ private:
         const size_t page_size = sysconf(_SC_PAGESIZE);
 
         if (area.addr == nullptr) {
-            area_size_ = detail::align_up(area.size, page_size);
-            area_ptr_ = mmap(nullptr, area_size_, PROT_READ | PROT_WRITE,
+            area_.size = detail::align_up(area.size, page_size);
+            area_.ptr = mmap(nullptr, area_.size, PROT_READ | PROT_WRITE,
                              MAP_ANONYMOUS | MAP_PRIVATE, 0, 0);
-            if (area_ptr_ == MAP_FAILED) {
+            if (area_.ptr == MAP_FAILED) {
                 throw detail::make_system_error("mmap");
             }
 
             io_uring_zcrx_area_reg area_reg = {};
-            area_reg.addr = reinterpret_cast<uint64_t>(area_ptr_);
-            area_reg.len = area_size_;
+            area_reg.addr = reinterpret_cast<uint64_t>(area_.ptr);
+            area_reg.len = area_.size;
             area_reg.flags = 0;
 
             register_ifq_(if_idx, if_rxq, rq_entries, area_reg, page_size);
         } else {
             // Not owned, so we don't track the size for unmapping
-            area_size_ = 0;
-            area_ptr_ = area.addr;
+            area_.ptr = area.addr;
 
             io_uring_zcrx_area_reg area_reg = {};
-            area_reg.addr = reinterpret_cast<uint64_t>(area_ptr_);
+            area_reg.addr = reinterpret_cast<uint64_t>(area_.ptr);
             area_reg.len = area.size;
             area_reg.flags = 0;
 
@@ -200,6 +246,11 @@ private:
     }
 
 public:
+    // TODO: Implement this after liburing sync kernel uapi
+    // void add_area(const ZeroCopyRxArea &area);
+    // void add_area(const ZeroCopyRxDMABufArea &area);
+
+public:
     uint32_t zcrx_id() const noexcept { return zcrx_id_; }
 
     ZeroCopyRxBuffer handle_finish(io_uring_cqe *cqe) noexcept {
@@ -208,26 +259,28 @@ public:
         }
         io_uring_zcrx_cqe *rcqe =
             reinterpret_cast<io_uring_zcrx_cqe *>(cqe->big_cqe);
-        void *data = static_cast<char *>(area_ptr_) +
+        const uint64_t token = rcqe->off & IORING_ZCRX_AREA_MASK;
+        Area *area = find_area_(token);
+        assert(area != nullptr);
+        void *data = static_cast<char *>(area->ptr) +
                      (rcqe->off & ~IORING_ZCRX_AREA_MASK);
         size_t size = static_cast<size_t>(cqe->res);
-        return ZeroCopyRxBuffer(data, size, this);
+        return ZeroCopyRxBuffer(data, size, this, token);
     }
 
-    void add_buffer_back(void *ptr, size_t size) noexcept {
-        rq_enqueue_(ptr, size);
+    void add_buffer_back(void *ptr, size_t size, uint64_t area_token) noexcept {
+        rq_enqueue_(ptr, size, area_token);
         maybe_flush_rq_();
     }
 
 private:
     void cleanup_() noexcept {
-        [[maybe_unused]] int r;
-        if (area_ptr_ != nullptr && area_size_ > 0) {
-            r = munmap(area_ptr_, area_size_);
-            assert(r == 0);
+        area_.maybe_cleanup();
+        for (auto &&[_, area] : other_areas_) {
+            area.maybe_cleanup();
         }
         if (rq_ring_.ring_ptr != nullptr) {
-            r = munmap(rq_ring_.ring_ptr, ring_size_);
+            [[maybe_unused]] int r = munmap(rq_ring_.ring_ptr, ring_size_);
             assert(r == 0);
         }
         // TODO: Unregister ifq. For now there's no way to unregister ifq, so we
@@ -273,7 +326,7 @@ private:
         rq_ring_.ring_ptr = ring_ptr;
 
         zcrx_id_ = reg.zcrx_id;
-        area_token_ = area_reg.rq_area_token;
+        area_.token = area_reg.rq_area_token;
     }
 
     static size_t get_refill_ring_size_(uint32_t rq_entries,
@@ -288,13 +341,15 @@ private:
         return rq_ring_.rq_tail - io_uring_smp_load_acquire(rq_ring_.khead);
     }
 
-    void rq_enqueue_(void *ptr, size_t size) noexcept {
+    void rq_enqueue_(void *ptr, size_t size, uint64_t area_token) noexcept {
+        Area *area = find_area_(area_token);
+        assert(area != nullptr);
         assert(rq_nr_queued_() < rq_ring_.ring_entries);
         io_uring_zcrx_rqe *rqe;
         unsigned rq_mask = rq_ring_.ring_entries - 1;
         rqe = &rq_ring_.rqes[rq_ring_.rq_tail & rq_mask];
-        rqe->off = (static_cast<char *>(ptr) - static_cast<char *>(area_ptr_)) |
-                   area_token_;
+        rqe->off = (static_cast<char *>(ptr) - static_cast<char *>(area->ptr)) |
+                   area->token;
         rqe->len = static_cast<uint32_t>(size);
         io_uring_smp_store_release(rq_ring_.ktail, ++rq_ring_.rq_tail);
     }
@@ -316,15 +371,48 @@ private:
     }
 
 private:
+    struct Area {
+        void *ptr = nullptr;
+        size_t size = 0;
+        uint64_t token = 0;
+
+        void maybe_cleanup() noexcept {
+            if (ptr != nullptr && size > 0) {
+                [[maybe_unused]] int r = munmap(ptr, size);
+                assert(r == 0);
+            }
+        }
+    };
+
+    Area *find_area_(uint64_t area_token) noexcept {
+        if (area_.token == area_token) {
+            return &area_;
+        }
+        auto it = other_areas_.find(area_token);
+        if (it != other_areas_.end()) {
+            return &it->second;
+        }
+        return nullptr;
+    }
+
     detail::Ring *ring_;
-    size_t area_size_ = 0;
-    void *area_ptr_ = nullptr;
+    Area area_;
+    std::unordered_map<uint64_t, Area> other_areas_;
     size_t ring_size_ = 0;
     io_uring_zcrx_rq rq_ring_ = {};
     uint32_t zcrx_id_;
-    uint64_t area_token_;
     uint32_t flags_;
 };
+
+inline void ZeroCopyRxBuffer::reset() noexcept {
+    if (pool_ != nullptr) {
+        pool_->add_buffer_back(data_, size_, area_token_);
+    }
+    data_ = nullptr;
+    size_ = 0;
+    pool_ = nullptr;
+    area_token_ = 0;
+}
 
 #endif
 
