@@ -1044,3 +1044,45 @@ condy::Coro<void> func() {
 
 condy::co_spawn(runtime1, func());
 ```
+
+### std::execution Integration
+
+Condy can interoperate with `std::execution` in both directions. Enable it as described in [Building and Usage](build.md). Once enabled, Condy's operations become standard senders: every `condy::async_*` function, along with `condy::Channel` push/pop and `condy::Futex` wait, satisfies the standard sender concept. The examples below use the `stdexec` backend.
+
+They can therefore be awaited directly from a coroutine of the execution implementation and composed with its algorithms. `condy::get_scheduler()` exposes a `condy::Runtime` as a standard scheduler, so that such work runs on the runtime's event loop:
+
+```cpp
+condy::Runtime runtime;
+std::thread runtime_thread([&] { runtime.run(); });
+auto scheduler = condy::get_scheduler(runtime);
+
+auto my_task = []() -> stdexec::task<int> {
+    int r = co_await condy::async_nop();
+    co_return r;
+};
+
+auto [result] = stdexec::sync_wait(stdexec::starts_on(scheduler, my_task())).value();
+
+runtime.allow_exit();
+runtime_thread.join();
+```
+
+Condy's own `condy::Coro` keeps working as before, and can `co_await` Condy senders directly:
+
+```cpp
+condy::Coro<int> co_main() {
+    int r = co_await condy::async_nop();
+    co_return r;
+}
+```
+
+The two directions are not symmetric. A `condy::Coro` cannot `co_await` a foreign standard sender (one produced by the execution implementation rather than by Condy) directly; convert it with `condy::wait_sender()` first:
+
+```cpp
+condy::Coro<void> co_main() {
+    std::optional<std::tuple<int>> result =
+        co_await condy::wait_sender(stdexec::just(42));
+}
+```
+
+Consistent with `sync_wait`, the awaiter yields `std::optional<std::tuple<...>>`: it is empty when the sender completes with `set_stopped`, and a `set_error` completion is rethrown.
