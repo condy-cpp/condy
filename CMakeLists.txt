@@ -25,6 +25,8 @@ option(CONDY_TESTS_TSAN "Enable thread sanitizer for tests" OFF)
 option(CONDY_TESTS_ASAN "Enable address and undefined behavior sanitizers for tests" OFF)
 option(CONDY_LINK_LIBURING "Use liburing and link it to condy" ON)
 set(CONDY_LINK_LIBURING_VERSION "2.15" CACHE STRING "liburing version to fetch and link")
+option(CONDY_LINK_STDEXEC "Use stdexec as the std::execution backend" OFF)
+option(CONDY_LINK_BEMAN "Use beman::execution as the std::execution backend" OFF)
 
 # Backward compatibility for the unprefixed option names.
 macro(condy_legacy_option legacy new)
@@ -48,6 +50,8 @@ include(FetchContent)
 set(DOXYGEN_AWESOME_CSS_VERSION v2.4.1)
 set(DOCTEST_VERSION v2.5.0)
 set(LIBURING_VERSION liburing-${CONDY_LINK_LIBURING_VERSION})
+set(STDEXEC_VERSION 2c56ffe)
+set(BEMAN_VERSION d24898d)
 
 FetchContent_Declare(
     doxygen-awesome-css
@@ -62,6 +66,16 @@ FetchContent_Declare(
 FetchContent_Declare(
     liburing
     URL https://github.com/axboe/liburing/archive/refs/tags/${LIBURING_VERSION}.tar.gz
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_Declare(
+    stdexec
+    URL https://github.com/NVIDIA/stdexec/archive/${STDEXEC_VERSION}.tar.gz
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_Declare(
+    beman
+    URL https://github.com/bemanproject/execution/archive/${BEMAN_VERSION}.tar.gz
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 
@@ -102,6 +116,31 @@ endif()
 
 if(CONDY_LINK_LIBURING)
     target_link_libraries(condy INTERFACE uring)
+endif()
+
+if(CONDY_LINK_STDEXEC AND CONDY_LINK_BEMAN)
+    message(FATAL_ERROR "CONDY_LINK_STDEXEC and CONDY_LINK_BEMAN are mutually exclusive")
+endif()
+
+if(CONDY_LINK_STDEXEC)
+    message(STATUS "Fetching stdexec ${STDEXEC_VERSION}")
+    FetchContent_GetProperties(stdexec)
+    if(NOT stdexec_POPULATED)
+        FetchContent_Populate(stdexec)
+    endif()
+    add_library(condy_stdexec INTERFACE)
+    target_include_directories(condy_stdexec SYSTEM INTERFACE ${stdexec_SOURCE_DIR}/include)
+    target_link_libraries(condy INTERFACE condy_stdexec)
+elseif(CONDY_LINK_BEMAN)
+    target_compile_features(condy INTERFACE cxx_std_23)
+    message(STATUS "Fetching beman.execution ${BEMAN_VERSION}")
+    FetchContent_GetProperties(beman)
+    if(NOT beman_POPULATED)
+        FetchContent_Populate(beman)
+    endif()
+    add_library(condy_beman INTERFACE)
+    target_include_directories(condy_beman SYSTEM INTERFACE ${beman_SOURCE_DIR}/include)
+    target_link_libraries(condy INTERFACE condy_beman)
 endif()
 
 if(CONDY_BUILD_MODULE)
