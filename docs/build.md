@@ -40,7 +40,7 @@ target_link_libraries(my_app PRIVATE condy)
 > - By default, Condy downloads and links liburing via FetchContent (`CONDY_LINK_LIBURING=ON`). Set `CONDY_LINK_LIBURING_VERSION` to use a specific liburing version, e.g. `-DCONDY_LINK_LIBURING_VERSION=2.15`.
 > - To link against the system liburing, set `CONDY_LINK_LIBURING=OFF` and install liburing manually.
 
-### Using Condy via FetchContent
+## Using Condy via FetchContent
 
 Alternatively, you can add Condy with FetchContent:
 
@@ -54,6 +54,23 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(condy)
 add_executable(my_app src/main.cpp)
 target_link_libraries(my_app PRIVATE condy)
+```
+
+## Enabling std::execution Support
+
+Condy can expose its senders as standard senders. See the [User Guide](guide.md) for the usage. The implementation is detected automatically, in this order:
+
+1. `__cpp_lib_senders`, provided by the standard library (C++26),
+2. `stdexec`, if `<stdexec/execution.hpp>` is on the include path,
+3. `beman::execution`, if `<beman/execution.hpp>` is on the include path.
+
+When one of them is available, the feature is on. On toolchains that do not ship `std::execution` yet, Condy can fetch a known-good revision of a third-party implementation:
+
+- `CONDY_LINK_STDEXEC` (default `OFF`)
+- `CONDY_LINK_BEMAN` (default `OFF`)
+
+```bash
+cmake -B build -S . -DCONDY_LINK_BEMAN=ON
 ```
 
 ## Building Examples / Benchmarks / Tests
