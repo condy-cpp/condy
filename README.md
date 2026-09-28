@@ -15,13 +15,13 @@
 
 Condy is designed to provide an intuitive, high-performance coroutine runtime on top of io_uring:
 
-- 🛠️ **Comprehensive io_uring Integration**
+- **Comprehensive io_uring Integration**
   Designed to integrate and maintain support for most io_uring features, with ongoing updates to track kernel and liburing advancements.
 
-- 🏃 **Low Overhead**
+- **Low Overhead**
   Efficient template-based abstractions and precise lifetime management eliminate nearly all heap allocations outside coroutine frames, resulting in extremely low runtime overhead.
 
-- 💡 **Intuitive Programming Model**
+- **Intuitive Programming Model**
   Write asynchronous code in a direct, readable style using C++20 coroutines—no callbacks. Friendly APIs, high-level combinators, and channels make complex async flows easy to express.
 
 ## Quick Start
