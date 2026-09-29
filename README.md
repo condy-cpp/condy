@@ -9,6 +9,7 @@
 ![CI (Latest Kernel)](https://github.com/condy-cpp/condy/actions/workflows/ci-latest-kernel.yml/badge.svg?branch=master)
 ![CI (Toolchain)](https://github.com/condy-cpp/condy/actions/workflows/ci-toolchain.yml/badge.svg?branch=master)
 ![CI (Static Check)](https://github.com/condy-cpp/condy/actions/workflows/ci-static-check.yml/badge.svg?branch=master)
+![CI (Execution)](https://github.com/condy-cpp/condy/actions/workflows/ci-execution.yml/badge.svg?branch=master)
 ![Deploy Docs](https://github.com/condy-cpp/condy/actions/workflows/deploy-docs.yml/badge.svg?branch=master)
 
 ***C++ Asynchronous System Call Layer for Linux, Powered by io_uring and C++20 Coroutines***
@@ -23,6 +24,9 @@ Condy is designed to provide an intuitive, high-performance coroutine runtime on
 
 - **Intuitive Programming Model**
   Write asynchronous code in a direct, readable style using C++20 coroutines—no callbacks. Friendly APIs, high-level combinators, and channels make complex async flows easy to express.
+
+- **Ready for std::execution**
+  Condy's senders satisfy the standard sender concept and compose directly with the C++26 execution ecosystem.
 
 ## Quick Start
 
@@ -47,6 +51,35 @@ c++ hello.cpp -o hello -std=c++20 -luring -I./include
 ```
 
 See [Documentation](#documentation) for more details.
+
+## Using std::execution
+
+When a `std::execution` implementation is available, Condy's operations become standard senders and can be used from execution-style code. See [Building and Usage](docs/build.md) for how to enable an implementation.
+
+```cpp
+// hello_execution.cpp
+#include <condy.hpp>
+#include <string>
+#include <thread>
+
+// C++26; otherwise <stdexec/execution.hpp> or <beman/execution.hpp>
+#include <execution>
+
+namespace ex = /* ... */ ;
+
+int main() {
+    condy::Runtime runtime;
+    std::jthread runtime_thread([&] { runtime.run(); });
+
+    std::string msg = "Hello, Condy!\n";
+    auto [r] = ex::sync_wait(ex::starts_on(
+        condy::get_scheduler(runtime),
+        condy::async_write(STDOUT_FILENO, condy::buffer(msg), 0))).value();
+
+    runtime.allow_exit();
+    return r < 0;
+}
+```
 
 ## Documentation
 
