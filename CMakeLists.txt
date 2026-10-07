@@ -50,8 +50,8 @@ include(FetchContent)
 set(DOXYGEN_AWESOME_CSS_VERSION v2.4.1)
 set(DOCTEST_VERSION v2.5.0)
 set(LIBURING_VERSION liburing-${CONDY_LINK_LIBURING_VERSION})
-set(STDEXEC_VERSION 2c56ffe)
-set(BEMAN_VERSION d24898d)
+set(STDEXEC_VERSION dd6ca14)
+set(BEMAN_VERSION 8e358c0)
 
 FetchContent_Declare(
     doxygen-awesome-css
