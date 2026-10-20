@@ -69,6 +69,7 @@ These are fundamental asynchronous operations. Many of them are asynchronous ver
 - `condy::async_fixed_fd_install()`
 - `condy::async_ftruncate()`
 - `condy::async_cmd_discard()`
+- `condy::async_cmd_zone_reset_all()`
 - `condy::async_bind()`
 - `condy::async_listen()`
 - `condy::async_epoll_ctl()`
@@ -135,6 +136,7 @@ These asynchronous operations accept the index of a file registered with the ker
 - `condy::async_cmd_getsockname()`
 - `condy::async_ftruncate()`
 - `condy::async_cmd_discard()`
+- `condy::async_cmd_zone_reset_all()`
 - `condy::async_bind()`
 - `condy::async_listen()`
 
