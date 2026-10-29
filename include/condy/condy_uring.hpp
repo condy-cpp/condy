@@ -7,6 +7,7 @@
 #include <liburing.h> // IWYU pragma: export
 
 #include <cerrno>
+#include <cstdint>
 #include <cstring>
 #include <sys/mman.h>
 
@@ -23,6 +24,39 @@
 #define CONDY_URING_VERSION_GE(major, minor)                                   \
     (IO_URING_VERSION_MAJOR > (major) ||                                       \
      (IO_URING_VERSION_MAJOR == (major) && IO_URING_VERSION_MINOR >= (minor)))
+
+// TODO: Wait for these Linux 7.4 UAPI definitions to be synced into liburing;
+// remove this temporary compatibility block before merging.
+struct io_uring_rsrc_update2_tmp {
+    __u32 offset;
+    __u32 flags;
+    __aligned_u64 data;
+    __aligned_u64 tags;
+    __u32 nr;
+    __u32 resv2;
+};
+
+enum io_uring_rsrc_reg_flags {
+    IORING_RSRC_UPDATE_EXTENDED = 1U << 1,
+};
+
+enum io_uring_regbuf_type {
+    IO_REGBUF_TYPE_EMPTY,
+    IO_REGBUF_TYPE_UADDR,
+    IO_REGBUF_TYPE_DMABUF,
+
+    __IO_REGBUF_TYPE_MAX,
+};
+
+struct io_uring_regbuf_desc {
+    __u32 type; // enum io_uring_regbuf_type
+    __u32 flags;
+    uint64_t size;
+    uint64_t uaddr;
+    __s32 dmabuf_fd;
+    __s32 target_fd;
+    uint64_t __resv[6];
+};
 
 // Polyfill for io_uring_prep_uring_cmd (added in liburing 2.13)
 // Opcode exists since 2.3, only the helper function is missing

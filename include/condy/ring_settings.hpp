@@ -130,6 +130,29 @@ public:
                                                     nullptr, nr_vecs);
     }
 
+#if CONDY_URING_VERSION_GE(2, 16) // >= 2.16
+    /**
+     * @brief Update registered buffers using extended kernel descriptors.
+     * @param index_base First buffer-table index to update.
+     * @param descs Array of extended buffer descriptors.
+     * @param nr Number of descriptors in the array.
+     * @return Number of buffers updated, or a negative errno on failure.
+     * @details Requires Linux 7.4. Descriptor types and flags follow the
+     * kernel UAPI; support is determined by the running kernel.
+     */
+    int update(unsigned index_base, const io_uring_regbuf_desc *descs,
+               unsigned nr) noexcept {
+        io_uring_rsrc_update2_tmp update{};
+        update.offset = index_base;
+        update.flags = IORING_RSRC_UPDATE_EXTENDED;
+        update.data = reinterpret_cast<uint64_t>(descs);
+        update.nr = nr;
+        return io_uring_register(ring_.ring_fd, IORING_REGISTER_BUFFERS_UPDATE,
+                                 &update, sizeof(update));
+    }
+
+#endif
+
 #if CONDY_URING_VERSION_GE(2, 10) // >= 2.10
 
     /**
