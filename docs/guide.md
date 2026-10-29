@@ -733,6 +733,8 @@ int main() { return condy::sync_wait(co_main()); }
 
 ### Buffer Registration
 
+TODO: Document extended buffer registration and dma-buf backed buffers.
+
 Similar to files, each io_uring async operation needs to acquire a reference to memory pages. Pre-registering memory regions with the kernel can avoid this overhead and improve performance.
 
 Condy abstracts buffer registration as operations on the `condy::BufferTable` type. Each `condy::Runtime` has a `condy::BufferTable` object, accessible via `condy::Runtime::buffer_table()`.
