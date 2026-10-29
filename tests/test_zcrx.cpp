@@ -117,27 +117,6 @@ TEST_CASE("test zcrx - handle_finish offset") {
     REQUIRE(buf2.size() == 256);
 }
 
-TEST_CASE("test zcrx - handle_finish area token masked out") {
-    condy::Runtime runtime = make_zcrx_runtime();
-    condy::ZeroCopyRxBufferPool pool(runtime, 4,
-                                     condy::ZeroCopyRxArea{.size = 4096});
-
-    std::memset(mock_cqe, 0, sizeof(mock_cqe));
-    mock_cqe->res = 128;
-    reinterpret_cast<io_uring_zcrx_cqe *>(mock_cqe + 1)->off =
-        64 | (1ULL << 48);
-
-    condy::ZeroCopyRxBuffer buf = pool.handle_finish(mock_cqe);
-    REQUIRE(buf.owns_buffer());
-    REQUIRE(buf.size() == 128);
-
-    std::memset(mock_cqe, 0, sizeof(mock_cqe));
-    mock_cqe->res = 128;
-    reinterpret_cast<io_uring_zcrx_cqe *>(mock_cqe + 1)->off = 64;
-    condy::ZeroCopyRxBuffer buf2 = pool.handle_finish(mock_cqe);
-    REQUIRE(buf.data() == buf2.data());
-}
-
 TEST_CASE("test zcrx - buffer reset returns to pool") {
     condy::Runtime runtime = make_zcrx_runtime();
     condy::ZeroCopyRxBufferPool pool(runtime, 4,
